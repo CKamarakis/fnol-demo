@@ -41,7 +41,7 @@ function useScrollMemory(key) {
 /** The demo harness bar, rendered above the product in its own root. */
 export function Chrome() {
   useStore();
-  return toEl(renderChrome());
+  return renderChrome();
 }
 
 export function App() {

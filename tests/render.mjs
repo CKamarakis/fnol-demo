@@ -146,6 +146,28 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
 
 
 /**
+ * The design-notes toggle.
+ *
+ * Every dn() callout is hidden by CSS until body.notes-on is set, and those
+ * callouts carry the entire product argument. A dead line after an early
+ * return once meant the class was never applied and the toggle silently did
+ * nothing — the demo looked fine and made none of its points.
+ */
+{
+  const before = document.body.className;
+  const notesBtn = document.querySelector('[data-act="toggle-notes"]');
+  check(!!notesBtn, 'design-notes toggle exists');
+  notesBtn?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await wait();
+  check(document.body.classList.contains('notes-on'),
+    'toggling design notes sets body.notes-on', `class was "${document.body.className}"`);
+  notesBtn?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  await wait();
+  check(!document.body.classList.contains('notes-on'),
+    'toggling again removes body.notes-on');
+}
+
+/**
  * The injury safety route, in its own DOM.
  *
  * "Someone is hurt" must reach 112 before a single claims field is shown.
@@ -181,6 +203,7 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   check(hit('emg-continue'), 'can continue past the emergency screen');
   fresh.window.close();
 }
+
 
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');
 process.exit(failed ? 1 : 0);
