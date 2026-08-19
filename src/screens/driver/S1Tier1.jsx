@@ -1,155 +1,254 @@
-import { el } from '../../core/dom.jsx';
 import { I } from '../../core/utils.js';
 import { SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { dn, savedChip } from '../../components/DriverShell.jsx';
+import { Choice } from '../../components/Choice.jsx';
 import { svgMap } from '../../components/svg.js';
 
 /* ---------- S1 · TIER 1 — the six blocking fields ---------- */
-export function scrTier1(){
-  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario];
-  const wrap=el("div",{class:"scroll"});
-  const head=el("div",{class:"pad",style:"padding-top:16px"});
+
+const TIER1_NOTE =
+  'Six fields block. Everything else in this product is <b>optional at submission</b> and captured ' +
+  'afterwards. Five of the six are already answered by the vehicle, so the driver <b>confirms ' +
+  'rather than types</b>. An abandoned FNOL is strictly worse than an incomplete one: an ' +
+  'incomplete report still starts the clock, still dispatches recovery, still gives the driver ' +
+  "something to hand the police officer. A form that demands the other party&rsquo;s policy " +
+  'number before it accepts anything gets closed at the roadside.';
+
+const ART9_NOTE =
+  "<b style='color:#546b62'>GDPR Art. 9 &mdash; health data.</b> A roadside app on a driver&rsquo;s " +
+  "phone is not an appropriate basis for collecting someone&rsquo;s medical details, and a shaken " +
+  'driver is not a reliable source for them. The loss adjuster gathers this later under a proper ' +
+  "basis, from the person it belongs to. <b style='color:#546b62'>Presence + severity band + " +
+  'emergency attended</b> is everything the reserve and the notification actually need.';
+
+const VISIBLE_REFUSAL_NOTE =
+  'A missing field reads as an oversight. A <b>visible refusal</b> reads as a decision. This is ' +
+  'the same reason the no-fault omission is annotated rather than silent &mdash; restraint that ' +
+  'nobody notices buys you nothing in a review.';
+
+const MONEY_FIELD_NOTE =
+  '&ldquo;Can you drive it&rdquo; answered at minute 2 instead of hour 6 is the single ' +
+  'highest-value field in the form. It starts recovery, and it starts &mdash; or does not start ' +
+  '&mdash; the <b>credit hire clock</b>. Replacement-vehicle exposure on a tractor unit runs into ' +
+  'hundreds of euros a day, and the meter is running whether or not anyone has been told.';
+
+const TYPE_LABELS = {
+  collision: 'Collision with another vehicle',
+  glass: 'Glass / windscreen',
+  theft: 'Vehicle stolen',
+};
+
+const TYPE_OPTIONS = [
+  ['collision', 'Collision with another vehicle'],
+  ['glass', 'Glass / windscreen'],
+  ['theft', 'Vehicle stolen'],
+  ['animal', 'Animal'],
+  ['single', 'Single vehicle — no one else involved'],
+  ['cargo', 'Cargo damage'],
+  ['other', 'Something else'],
+];
+
+const SEVERITY_OPTIONS = [
+  ['walking', 'Walking and talking'],
+  ['needs_help', 'Needs help but conscious'],
+  ['serious', 'Serious'],
+];
+
+export function fieldRow({ ic, label, value, pre, state, act, hint }) {
+  return (
+    <button className={`frow ${state || ''}`} data-act={act}>
+      <span className="frow-ic" dangerouslySetInnerHTML={{ __html: ic }} />
+      <span className="frow-body">
+        <span className="frow-label">
+          {label}
+          {pre && ' '}
+          {pre && <span className="chip-pre">from the truck</span>}
+        </span>
+        <span className={`frow-value${value ? '' : ' empty'}`}>{value || '—'}</span>
+      </span>
+      <span className="frow-right">
+        {state === 'confirmed'
+          ? <span className="tick" style={{ color: 'var(--ok)' }} dangerouslySetInnerHTML={{ __html: I.chk }} />
+          : <span className="tiny" style={{ fontSize: '11px' }}>{hint || ''}</span>}
+      </span>
+    </button>
+  );
+}
+
+/** Injury detail: presence, band, and whether help is there. Never a diagnosis. */
+function InjuryDetail({ d }) {
+  return (
+    <>
+      <div className="sp12" />
+      <p className="lbl">How bad — roughly?</p>
+      {SEVERITY_OPTIONS.map(([v, l]) => (
+        <Choice key={v} act="set-severity" value={v} label={l} selected={d.injurySeverity === v} />
+      ))}
+
+      <div className="sp12" />
+      <p className="lbl">Are emergency services there?</p>
+      <div className="grid2">
+        <Choice act="set-emergency" value="yes" label="Yes" selected={d.injuryEmergency === true} />
+        <Choice act="set-emergency" value="no" label="Not yet" selected={d.injuryEmergency === false} />
+      </div>
+
+      {/* The Art. 9 field — visibly greyed, reason inline. The restraint is the feature. */}
+      <div className="sp12" />
+      <div className="blocked-field dn-anchor">
+        <div className="bf-label">Description of the injuries</div>
+        <div className="bf-fake">Deliberately not collected here</div>
+        <div className="bf-why">
+          <span dangerouslySetInnerHTML={{ __html: I.warn }} />
+          <div dangerouslySetInnerHTML={{ __html: ART9_NOTE }} />
+        </div>
+      </div>
+
+      {dn('Why show a field you refuse to have', VISIBLE_REFUSAL_NOTE)}
+    </>
+  );
+}
+
+export function scrTier1() {
+  const s = Store.s;
+  const d = s.draft;
+  const sc = SCENARIOS[s.scenario];
 
   const answered = [
     d.vehicleConfirmed || d.vehicle,
     d.timeConfirmed || d.occurredAt,
     d.locationConfirmed || d.location,
     d.typeConfirmed || d.type,
-    d.injured!==null,
-    d.drivable!==null
+    d.injured !== null,
+    d.drivable !== null,
   ].filter(Boolean).length;
 
-  head.append(el("div",{class:"step-meta"},
-    el("span",{class:"step-count",text:answered+" of 6 · nothing else blocks you"}),
-    savedChip()
-  ));
-  head.append(el("h2",{class:"h2",text:T("tier1")}));
-  head.append(el("p",{class:"sub",style:"font-size:14.5px",text:T("tier1sub")}));
-  head.append(el("div",{class:"sp16"}));
-  wrap.append(head);
+  const ready = d.vehicleConfirmed && d.timeConfirmed && d.locationConfirmed
+    && d.typeConfirmed && d.injured !== null && d.drivable !== null;
 
-  const inner=el("div",{class:"pad"});
+  return (
+    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+      <div className="scroll">
+        <div className="pad" style={{ paddingTop: '16px' }}>
+          <div className="step-meta">
+            <span className="step-count">{answered} of 6 · nothing else blocks you</span>
+            {savedChip()}
+          </div>
+          <h2 className="h2">{T('tier1')}</h2>
+          <p className="sub" style={{ fontSize: '14.5px' }}>{T('tier1sub')}</p>
+          <div className="sp16" />
+        </div>
 
-  inner.append(dn("Two-tier mandatory — the whole argument in one screen",
-    "Six fields block. Everything else in this product is <b>optional at submission</b> and captured afterwards. Five of the six are already answered by the vehicle, so the driver <b>confirms rather than types</b>. An abandoned FNOL is strictly worse than an incomplete one: an incomplete report still starts the clock, still dispatches recovery, still gives the driver something to hand the police officer. A form that demands the other party's policy number before it accepts anything gets closed at the roadside."));
+        <div className="pad">
+          {dn('Two-tier mandatory — the whole argument in one screen', TIER1_NOTE)}
 
-  // 1 vehicle
-  inner.append(fieldRow({
-    ic:I.truck, label:"1 · Vehicle", value:d.vehicle, pre:true,
-    state: d.vehicleConfirmed?"confirmed":"pending",
-    act:"confirm-vehicle", hint:"tap to confirm"
-  }));
-  // 2 date/time
-  inner.append(fieldRow({
-    ic:I.clock, label:"2 · Date & time", value:d.occurredAt+" · "+new Date().toLocaleDateString("de-DE"), pre:true,
-    state:d.timeConfirmed?"confirmed":"pending", act:"confirm-time", hint:"tap to confirm"
-  }));
-  // 3 location (map)
-  const locWrap=el("div",{style:"margin-top:9px"});
-  locWrap.append(fieldRow({
-    ic:I.pin, label:"3 · Location", value:d.location, pre:true,
-    state:d.locationConfirmed?"confirmed":"pending", act:"confirm-location", hint:"tap to confirm"
-  }));
-  if(!d.locationConfirmed){
-    locWrap.append(el("div",{style:"margin-top:8px;border-radius:14px;overflow:hidden;border:1px solid var(--line)",html:svgMap(sc,true)}));
-  }
-  inner.append(locWrap);
+          {fieldRow({
+            ic: I.truck, label: '1 · Vehicle', value: d.vehicle, pre: true,
+            state: d.vehicleConfirmed ? 'confirmed' : 'pending',
+            act: 'confirm-vehicle', hint: 'tap to confirm',
+          })}
 
-  // 4 type
-  inner.append(el("div",{style:"margin-top:9px"},
-    fieldRow({
-      ic:I.crash, label:"4 · What happened", value:{collision:"Collision with another vehicle",glass:"Glass / windscreen",theft:"Vehicle stolen"}[d.type]||d.type,
-      pre:true, state:d.typeConfirmed?"confirmed":"pending", act:"confirm-type", hint:"tap to confirm"
-    })
-  ));
-  if(s.subScreen==="type"){
-    const box=el("div",{style:"margin-top:9px"});
-    [["collision","Collision with another vehicle"],["glass","Glass / windscreen"],["theft","Vehicle stolen"],
-     ["animal","Animal"],["single","Single vehicle — no one else involved"],["cargo","Cargo damage"],["other","Something else"]]
-     .forEach(([v,l])=>box.append(el("button",{class:"choice","data-act":"set-type","data-v":v,"aria-pressed":String(d.type===v)},
-        el("span",{class:"cbox round"}),el("span",{},l))));
-    inner.append(box);
-  }
+          {fieldRow({
+            ic: I.clock, label: '2 · Date & time',
+            value: `${d.occurredAt} · ${new Date().toLocaleDateString('de-DE')}`, pre: true,
+            state: d.timeConfirmed ? 'confirmed' : 'pending',
+            act: 'confirm-time', hint: 'tap to confirm',
+          })}
 
-  // 5 injured — the one real question
-  inner.append(el("div",{class:"sp20"}));
-  inner.append(el("div",{class:"dn-anchor"},
-    el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"5 · Is anyone hurt?"}),
-    el("div",{class:"grid2"},
-      el("button",{class:"choice","data-act":"set-injured","data-v":"no","aria-pressed":String(d.injured===false)},
-        el("span",{class:"cbox round",html:d.injured===false?I.chkS:""}),el("span",{},"No one")),
-      el("button",{class:"choice","data-act":"set-injured","data-v":"yes","aria-pressed":String(d.injured===true)},
-        el("span",{class:"cbox round",html:d.injured===true?I.chkS:""}),el("span",{},"Yes"))
-    )
-  ));
+          <div style={{ marginTop: '9px' }}>
+            {fieldRow({
+              ic: I.pin, label: '3 · Location', value: d.location, pre: true,
+              state: d.locationConfirmed ? 'confirmed' : 'pending',
+              act: 'confirm-location', hint: 'tap to confirm',
+            })}
+            {!d.locationConfirmed && (
+              <div
+                style={{
+                  marginTop: '8px', borderRadius: '14px',
+                  overflow: 'hidden', border: '1px solid var(--line)',
+                }}
+                dangerouslySetInnerHTML={{ __html: svgMap(sc, true) }}
+              />
+            )}
+          </div>
 
-  if(d.injured===true){
-    inner.append(el("div",{class:"sp12"}));
-    inner.append(el("p",{class:"lbl",text:"How bad — roughly?"}));
-    [["walking","Walking and talking"],["needs_help","Needs help but conscious"],["serious","Serious"]]
-      .forEach(([v,l])=>inner.append(el("button",{class:"choice","data-act":"set-severity","data-v":v,"aria-pressed":String(d.injurySeverity===v)},
-        el("span",{class:"cbox round",html:d.injurySeverity===v?I.chkS:""}),el("span",{},l))));
-    inner.append(el("div",{class:"sp12"}));
-    inner.append(el("p",{class:"lbl",text:"Are emergency services there?"}));
-    inner.append(el("div",{class:"grid2"},
-      el("button",{class:"choice","data-act":"set-emergency","data-v":"yes","aria-pressed":String(d.injuryEmergency===true)},
-        el("span",{class:"cbox round",html:d.injuryEmergency===true?I.chkS:""}),el("span",{},"Yes")),
-      el("button",{class:"choice","data-act":"set-emergency","data-v":"no","aria-pressed":String(d.injuryEmergency===false)},
-        el("span",{class:"cbox round",html:d.injuryEmergency===false?I.chkS:""}),el("span",{},"Not yet"))
-    ));
+          <div style={{ marginTop: '9px' }}>
+            {fieldRow({
+              ic: I.crash, label: '4 · What happened',
+              value: TYPE_LABELS[d.type] || d.type, pre: true,
+              state: d.typeConfirmed ? 'confirmed' : 'pending',
+              act: 'confirm-type', hint: 'tap to confirm',
+            })}
+          </div>
 
-    // The Art. 9 field — visibly greyed, reason inline. The restraint is the feature.
-    inner.append(el("div",{class:"sp12"}));
-    inner.append(el("div",{class:"blocked-field dn-anchor"},
-      el("div",{class:"bf-label",text:"Description of the injuries"}),
-      el("div",{class:"bf-fake",text:"Deliberately not collected here"}),
-      el("div",{class:"bf-why"}, el("span",{html:I.warn}),
-        el("div",{html:"<b style='color:#546b62'>GDPR Art. 9 — health data.</b> A roadside app on a driver's phone is not an appropriate basis for collecting someone's medical details, and a shaken driver is not a reliable source for them. The loss adjuster gathers this later under a proper basis, from the person it belongs to. <b style='color:#546b62'>Presence + severity band + emergency attended</b> is everything the reserve and the notification actually need."}))
-    ));
-    inner.append(dn("Why show a field you refuse to have",
-      "A missing field reads as an oversight. A <b>visible refusal</b> reads as a decision. This is the same reason the no-fault omission is annotated rather than silent — restraint that nobody notices buys you nothing in a review."));
-  }
+          {s.subScreen === 'type' && (
+            <div style={{ marginTop: '9px' }}>
+              {TYPE_OPTIONS.map(([v, l]) => (
+                <Choice key={v} act="set-type" value={v} label={l} selected={d.type === v} />
+              ))}
+            </div>
+          )}
 
-  // 6 drivable — the money field
-  inner.append(el("div",{class:"sp20"}));
-  inner.append(el("div",{class:"dn-anchor"},
-    el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"6 · Can you drive it?"}),
-    el("div",{class:"grid2"},
-      el("button",{class:"choice","data-act":"set-drivable","data-v":"yes","aria-pressed":String(d.drivable===true)},
-        el("span",{class:"cbox round",html:d.drivable===true?I.chkS:""}),el("span",{},"Yes")),
-      el("button",{class:"choice","data-act":"set-drivable","data-v":"no","aria-pressed":String(d.drivable===false)},
-        el("span",{class:"cbox round",html:d.drivable===false?I.chkS:""}),
-        el("span",{},"No",el("span",{class:"choice-sub",text:"Recovery is dispatched now"})))
-    )
-  ));
-  inner.append(dn("The money field",
-    "“Can you drive it” answered at minute 2 instead of hour 6 is the single highest-value field in the form. It starts recovery, and it starts — or does not start — the <b>credit hire clock</b>. Replacement-vehicle exposure on a tractor unit runs into hundreds of euros a day, and the meter is running whether or not anyone has been told."));
+          {/* 5 — the one question the vehicle cannot answer */}
+          <div className="sp20" />
+          <div className="dn-anchor">
+            <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
+              5 · Is anyone hurt?
+            </p>
+            <div className="grid2">
+              <Choice act="set-injured" value="no" label="No one" selected={d.injured === false} />
+              <Choice act="set-injured" value="yes" label="Yes" selected={d.injured === true} />
+            </div>
+          </div>
 
-  inner.append(el("div",{class:"sp28"}));
-  wrap.append(inner);
+          {d.injured === true && <InjuryDetail d={d} />}
 
-  const ready = d.vehicleConfirmed && d.timeConfirmed && d.locationConfirmed && d.typeConfirmed
-             && d.injured!==null && d.drivable!==null;
+          {/* 6 — the money field */}
+          <div className="sp20" />
+          <div className="dn-anchor">
+            <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
+              6 · Can you drive it?
+            </p>
+            <div className="grid2">
+              <Choice act="set-drivable" value="yes" label="Yes" selected={d.drivable === true} />
+              <button
+                className="choice"
+                data-act="set-drivable"
+                data-v="no"
+                aria-pressed={String(d.drivable === false)}
+              >
+                <span
+                  className="cbox round"
+                  dangerouslySetInnerHTML={{ __html: d.drivable === false ? I.chkS : '' }}
+                />
+                <span>
+                  No
+                  <span className="choice-sub">Recovery is dispatched now</span>
+                </span>
+              </button>
+            </div>
+          </div>
 
-  const dock=el("div",{class:"dock"});
-  dock.append(el("button",{class:"btn "+(ready?"btn-primary":"btn-secondary")+" btn-lg","data-act":"submit-tier1",
-    disabled: !ready || undefined, style: ready?"":"opacity:.5"},
-    ready ? T("submit") : (6-answered)+" left"));
-  if(!ready) dock.append(el("p",{class:"tiny",style:"text-align:center;margin-top:8px",text:"Tap each line to confirm what the vehicle already told us."}));
-  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
-}
+          {dn('The money field', MONEY_FIELD_NOTE)}
+          <div className="sp28" />
+        </div>
+      </div>
 
-export function fieldRow({ic,label,value,pre,state,act,hint}){
-  return el("button",{class:"frow "+(state||""),"data-act":act},
-    el("span",{class:"frow-ic",html:ic}),
-    el("span",{class:"frow-body"},
-      el("span",{class:"frow-label"},label, pre?" ":"", pre?el("span",{class:"chip-pre",text:"from the truck"}):null),
-      el("span",{class:"frow-value"+(value?"":" empty"),text:value||"—"})),
-    el("span",{class:"frow-right"},
-      state==="confirmed" ? el("span",{class:"tick",html:I.chk,style:"color:var(--ok)"})
-        : el("span",{class:"tiny",style:"font-size:11px",text:hint||""}))
+      <div className="dock">
+        <button
+          className={`btn ${ready ? 'btn-primary' : 'btn-secondary'} btn-lg`}
+          data-act="submit-tier1"
+          disabled={!ready || undefined}
+          style={ready ? undefined : { opacity: 0.5 }}
+        >
+          {ready ? T('submit') : `${6 - answered} left`}
+        </button>
+        {!ready && (
+          <p className="tiny" style={{ textAlign: 'center', marginTop: '8px' }}>
+            Tap each line to confirm what the vehicle already told us.
+          </p>
+        )}
+      </div>
+    </div>
   );
 }
-
-
