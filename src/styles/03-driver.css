@@ -183,7 +183,7 @@
   border-top:1px solid var(--line);border-bottom:1px solid var(--line);
   line-height:0;
 }
-.map-bleed svg{width:100%;height:auto;max-height:150px;object-fit:cover;display:block}
+.map-bleed svg{width:100%;height:auto;max-height:120px;object-fit:cover;display:block}
 
 /* language dropdown */
 .lang-wrap{position:relative;display:inline-flex;align-items:center;flex:none}
@@ -389,3 +389,13 @@
 
 /* the third action is a different KIND of choice, so it carries less weight */
 .btn.btn-quiet-sm{min-height:48px;font-size:15px;font-weight:600}
+
+/* S0 headline meta — address and timestamp, each behind its own icon */
+.s0-meta{display:flex;flex-direction:column;gap:6px;margin-top:9px}
+.s0-meta-row{
+  display:flex;align-items:flex-start;gap:9px;
+  font-size:15px;line-height:1.4;color:var(--ink-2);
+}
+.s0-meta-ic{flex:none;color:var(--ink-3);display:flex;margin-top:1px}
+.s0-meta-ic svg{width:17px;height:17px}
+.s0-meta-note{color:var(--ink-3);font-style:italic}

@@ -50,10 +50,7 @@ function TruckReport({ t }) {
         </div>
       ))}
 
-      <p className="tiny trep-foot">
-        Sent automatically when the vehicle detected the event. Nothing here needs an answer —
-        it is shown so you can see what we already know.
-      </p>
+      <p className="tiny trep-foot">The vehicle sent this. We already have it.</p>
     </div>
   );
 }
@@ -81,9 +78,19 @@ export function scrS0() {
 
           <div className="sp20" />
           <h1 className="h1">{s.lang === 'en' ? sc.headline : T('detected')}</h1>
-          <p className="sub" style={{ fontSize: '16.5px' }}>
-            {`${t.location.split(',')[0]} · ${t.time} · ${T('today')}`}
-          </p>
+          <div className="s0-meta">
+            <div className="s0-meta-row">
+              <span className="s0-meta-ic" dangerouslySetInnerHTML={{ __html: I.pin }} />
+              <span>
+                {t.location}
+                {t.locationNote && <em className="s0-meta-note"> · {t.locationNote}</em>}
+              </span>
+            </div>
+            <div className="s0-meta-row">
+              <span className="s0-meta-ic" dangerouslySetInnerHTML={{ __html: I.clock }} />
+              <span>{`${t.time} · ${t.date}`}</span>
+            </div>
+          </div>
 
           <div className="sp20" />
           <div className="map-bleed" dangerouslySetInnerHTML={{ __html: svgMap(sc, false) }} />

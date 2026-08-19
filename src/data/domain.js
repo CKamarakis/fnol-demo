@@ -87,8 +87,8 @@ export const SCENARIOS = {
     id:"glass", label:"Glass — single vehicle", short:"Glass",
     type:"glass", fieldCount:8, thirdParty:false, eas:false, photos:["wide","damage"],
     telematics:{
-      location:"B1 near Brandenburg an der Havel", lat:52.4125, lon:12.5316,
-      time:"09:12", speed:"84 km/h · no deceleration event", impact:"Windscreen acoustic sensor · impact zone upper-centre",
+      location:"B1 near Brandenburg an der Havel, Brandenburg, Germany", lat:52.4125, lon:12.5316,
+      time:"09:12", date:"19 August 2026", speed:"84 km/h · no deceleration event", impact:"Windscreen acoustic sensor · impact zone upper-centre",
       vehicle:"B-RL 4471", driver:"Marek K.", clip:"00:06", inferred:"glass",
     },
     headline:"Windscreen damage detected",
@@ -100,8 +100,8 @@ export const SCENARIOS = {
     type:"collision", fieldCount:41, thirdParty:true, eas:true,
     photos:["wide","damage","other","signage","docs"],
     telematics:{
-      location:"A2 near Magdeburg, km 74.3, eastbound", lat:52.1621, lon:11.5872,
-      time:"14:32", speed:"62 → 0 km/h in 1.4 s", impact:"3.1 g front-left",
+      location:"A2 near Magdeburg, km 74.3, eastbound, Saxony-Anhalt, Germany", lat:52.1621, lon:11.5872,
+      time:"14:32", date:"19 August 2026", speed:"62 → 0 km/h in 1.4 s", impact:"3.1 g front-left",
       vehicle:"B-RL 4471", driver:"Marek K.", clip:"00:14", inferred:"collision",
     },
     headline:"We detected an incident",
@@ -112,8 +112,8 @@ export const SCENARIOS = {
     id:"theft", label:"Theft — vehicle gone", short:"Theft",
     type:"theft", fieldCount:14, thirdParty:false, eas:false, photos:["scene_empty","signage"],
     telematics:{
-      location:"Last known ping · Raststätte Michendorf Süd, A10", lat:52.2914, lon:13.0338,
-      time:"03:47", speed:"ignition off · 03:47, unit offline 04:02", impact:"no impact event · telemetry loss",
+      location:"Raststätte Michendorf Süd, A10, Brandenburg, Germany", lat:52.2914, lon:13.0338,
+      locationNote:"last known position", time:"03:47", date:"19 August 2026", speed:"ignition off · 03:47, unit offline 04:02", impact:"no impact event · telemetry loss",
       vehicle:"B-RL 4471", driver:"Marek K.", clip:"unavailable — unit offline",
       inferred:"theft",
     },
