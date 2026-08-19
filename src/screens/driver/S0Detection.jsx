@@ -8,59 +8,52 @@ import { svgMap } from '../../components/svg.js';
 
 const COLD_OPEN_NOTE =
   'This is not a form. It is a <b>question about people</b>. The claim can wait ninety seconds; a ' +
-  'person on the ground cannot. Everything the vehicle already knows is collapsed below &mdash; ' +
-  '<b>three taps to see it, zero to ignore it</b>. The driver&rsquo;s first action is never data ' +
-  'entry.';
+  'person on the ground cannot. What the truck already reported is shown plainly underneath, so ' +
+  'the driver can see it is right &mdash; but nothing there needs an answer. The first action is ' +
+  'never data entry.';
 
 const DISMISS_NOTE =
   'Dismiss is a <b>first-class button</b>, same visual weight class as the others, &le;2 taps to ' +
   'complete. Telematics false positives will be the loudest early problem and the fastest way to ' +
   'lose driver trust. If dismissal is buried, drivers stop opening the app &mdash; and then you ' +
-  'lose the true positives too.';
+  'lose the true positives too. It reads &ldquo;report something else&rdquo; rather than just ' +
+  '&ldquo;dismiss&rdquo;, because a shifted load is still worth reporting.';
 
-const WORKS_COUNCIL_NOTE =
-  "Auto-notification from the vehicle is a <b style='color:var(--ink-2)'>works agreement</b> " +
-  '(Betriebsvereinbarung) question in Germany before it is a product question. The works council ' +
-  'signs off on this, not the PM.';
-
-function TelematicsDetail({ t }) {
-  const rows = [
-    ['Location', t.location],
-    ['Time', `${t.time} · ${new Date().toLocaleDateString('de-DE')}`],
+/**
+ * What the vehicle sent, minus anything already stated in the headline.
+ *
+ * Location and time appear above; repeating them here made the panel look
+ * like filler and buried the four rows that actually tell the driver
+ * something — speed, impact, which truck, and whether there is footage.
+ */
+function truckReport(t) {
+  return [
     ['Speed', t.speed],
     ['Impact', t.impact],
-    ['Vehicle', `${t.vehicle} · DAF XF 480 · fleet`],
-    ['Driver', `${t.driver} · tacho card active since 06:10`],
+    ['Vehicle', `${t.vehicle} · DAF XF 480`],
     ['Dashcam', t.clip],
   ];
+}
 
+function TruckReport({ t }) {
   return (
-    <div className="card-quiet" style={{ marginTop: '9px' }}>
-      {rows.map(([k, v]) => (
-        <div
-          key={k}
-          style={{
-            display: 'flex', gap: '12px', padding: '6px 0',
-            borderBottom: '1px solid var(--line-soft)',
-          }}
-        >
-          <span
-            className="mono"
-            style={{
-              fontSize: '11px', color: 'var(--ink-3)', width: '76px',
-              flex: 'none', textTransform: 'uppercase', letterSpacing: '.05em',
-            }}
-          >
-            {k}
-          </span>
-          <span style={{ fontSize: '13px', color: 'var(--ink-2)', flex: 1 }}>{v}</span>
+    <div className="card-quiet">
+      <div className="trep-head">
+        <span style={{ color: 'var(--warn)' }} dangerouslySetInnerHTML={{ __html: I.bolt }} />
+        {T('already')}
+      </div>
+
+      {truckReport(t).map(([k, v]) => (
+        <div key={k} className="trep-row">
+          <span className="trep-key">{k}</span>
+          <span className="trep-val">{v}</span>
         </div>
       ))}
-      <p
-        className="tiny"
-        style={{ marginTop: '10px', lineHeight: 1.5 }}
-        dangerouslySetInnerHTML={{ __html: WORKS_COUNCIL_NOTE }}
-      />
+
+      <p className="tiny trep-foot">
+        Sent automatically when the vehicle detected the event. Nothing here needs an answer —
+        it is shown so you can see what we already know.
+      </p>
     </div>
   );
 }
@@ -97,23 +90,13 @@ export function scrS0() {
 
           {dn('Screen 1 of the whole product', COLD_OPEN_NOTE)}
 
-          <div className="sp20" />
-          <h2 className="h2">{T('ok')}</h2>
           <div className="sp16" />
+          <h2 className="h2">{T('ok')}</h2>
+          <div className="sp12" />
 
-          {/* everything the vehicle already knows — collapsed by default */}
-          <button className="frow" data-act="toggle-detail" style={{ width: '100%' }}>
-            <span className="frow-ic" dangerouslySetInnerHTML={{ __html: I.bolt }} />
-            <span className="frow-body">
-              <span className="frow-label">{T('already')}</span>
-              <span className="frow-value" style={{ fontSize: '14.5px', fontWeight: 550 }}>
-                Location · time · speed · impact · vehicle · driver · dashcam
-              </span>
-            </span>
-            <span className="frow-right" dangerouslySetInnerHTML={{ __html: I.chevD }} />
-          </button>
-
-          {s.detailOpen && <TelematicsDetail t={t} />}
+          {/* Shown outright, not behind a tap: it is four short rows and the
+              driver should be able to check them at a glance. */}
+          <TruckReport t={t} />
 
           {dn('False positives were designed for, not discovered', DISMISS_NOTE)}
           <div className="sp16" />
@@ -122,9 +105,9 @@ export function scrS0() {
 
       {/* primary actions — bottom third, thumb zone */}
       <div className="dock">
-        <button className="btn btn-primary btn-lg" data-act="s0-fine">{T('fine')}</button>
-        <button className="btn btn-danger btn-lg" data-act="s0-hurt">{T('hurt')}</button>
-        <button className="btn btn-ghost" data-act="s0-dismiss">{T('dismiss')}</button>
+        <button className="btn btn-primary" data-act="s0-fine">{T('fine')}</button>
+        <button className="btn btn-danger" data-act="s0-hurt">{T('hurt')}</button>
+        <button className="btn btn-ghost btn-quiet-sm" data-act="s0-dismiss">{T('dismiss')}</button>
       </div>
     </div>
   );

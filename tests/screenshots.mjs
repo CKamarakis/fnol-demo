@@ -43,6 +43,7 @@ const toUrl = p => `file:///${p.split('\\').join('/')}`;
 const SHOTS = [
   ['driver-cold-open', { persona: 'driver', screen: 's0' }],
   ['driver-notes-on', { persona: 'driver', screen: 's0', notes: true }],
+  ['driver-theft', { persona: 'driver', screen: 's0', scenario: 'theft' }],
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
   ['fleet', { persona: 'fleet' }],
   ['system', { persona: 'system' }],

@@ -36,8 +36,8 @@ export const EAS_STATEMENTS = [
 export const STR = {
   en:{
     lang:"English", detected:"We detected an incident", ok:"Is everyone okay?",
-    fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident — dismiss",
-    already:"What we already have", today:"today",
+    fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident — report something else",
+    already:"What the truck reported", today:"today",
     call112:"Call 112", emgCta:"Emergency 112", emgTitle:"Safety first", emgSub:"Nothing about the claim matters yet.",
     emgBody:"If anyone is injured, call the emergency number now. This report will wait for you — nothing you have entered is lost.",
     emgCalled:"I've called — continue", emgNoNeed:"No ambulance needed — continue",
@@ -49,8 +49,8 @@ export const STR = {
   },
   de:{
     lang:"Deutsch", detected:"Wir haben einen Unfall erkannt", ok:"Sind alle wohlauf?",
-    fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall — verwerfen",
-    already:"Was wir bereits haben", today:"heute",
+    fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall — etwas anderes melden",
+    already:"Was der Lkw gemeldet hat", today:"heute",
     call112:"112 anrufen", emgCta:"Notruf 112", emgTitle:"Sicherheit zuerst", emgSub:"Der Schaden ist jetzt nicht wichtig.",
     emgBody:"Wenn jemand verletzt ist, rufen Sie jetzt den Notruf. Diese Meldung wartet auf Sie — nichts geht verloren.",
     emgCalled:"Angerufen — weiter", emgNoNeed:"Kein Rettungswagen nötig — weiter",
@@ -62,8 +62,8 @@ export const STR = {
   },
   pl:{
     lang:"Polski", detected:"Wykryliśmy zdarzenie", ok:"Czy wszyscy są cali?",
-    fine:"Wszystko w porządku", hurt:"Ktoś jest ranny", dismiss:"To nie zdarzenie — odrzuć",
-    already:"Co już mamy", today:"dzisiaj",
+    fine:"Wszystko w porządku", hurt:"Ktoś jest ranny", dismiss:"To nie zdarzenie — zgłoś co innego",
+    already:"Co zgłosiła ciężarówka", today:"dzisiaj",
     call112:"Zadzwoń 112", emgCta:"Alarmowy 112", emgTitle:"Najpierw bezpieczeństwo", emgSub:"Szkoda może poczekać.",
     emgBody:"Jeśli ktoś jest ranny, zadzwoń teraz pod numer alarmowy. Zgłoszenie poczeka — nic nie zostanie utracone.",
     emgCalled:"Zadzwoniłem — dalej", emgNoNeed:"Karetka niepotrzebna — dalej",
