@@ -1,4 +1,5 @@
-import { I, el, nowHM } from '../core/dom.js';
+import { el } from '../core/dom.jsx';
+import { I, nowHM } from '../core/utils.js';
 import { STR, T } from '../data/domain.js';
 import { Store } from '../core/store.js';
 

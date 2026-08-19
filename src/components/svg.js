@@ -1,4 +1,5 @@
-import { $, esc } from '../core/dom.js';
+import { $ } from '../core/dom.jsx';
+import { esc } from '../core/utils.js';
 
 /* ==================================================================
    §5 INLINE SVG GRAPHICS — all hand-authored. No tiles, no images.

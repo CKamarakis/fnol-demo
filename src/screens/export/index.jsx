@@ -1,8 +1,9 @@
-import { $, I, el, esc } from '../../core/dom.js';
+import { $, el } from '../../core/dom.jsx';
+import { I, esc } from '../../core/utils.js';
 import { ACORD_MAP, EAS_STATEMENTS, PHOTO_SLOTS, SCENARIOS } from '../../data/domain.js';
 import { IMPACT_LABEL } from '../../components/svg.js';
 import { Store } from '../../core/store.js';
-import { dn } from '../../components/DriverShell.js';
+import { dn } from '../../components/DriverShell.jsx';
 
 /* ==================================================================
    §10 EAS EXPORT — the closing move

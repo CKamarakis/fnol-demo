@@ -1,7 +1,8 @@
-import { $, I, el, esc } from '../../core/dom.js';
+import { $, el } from '../../core/dom.jsx';
+import { I, esc } from '../../core/utils.js';
 import { PERISHABLE, SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
-import { dn, savedChip } from '../../components/DriverShell.js';
+import { dn, savedChip } from '../../components/DriverShell.jsx';
 
 /* ---------- S3 · perishability hub ---------- */
 export function gapItems(){

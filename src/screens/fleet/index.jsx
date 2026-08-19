@@ -1,7 +1,8 @@
-import { I, el } from '../../core/dom.js';
+import { el } from '../../core/dom.jsx';
+import { I } from '../../core/utils.js';
 import { PERISHABLE } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
-import { dn } from '../../components/DriverShell.js';
+import { dn } from '../../components/DriverShell.jsx';
 
 /* ==================================================================
    §8 FLEET MANAGER

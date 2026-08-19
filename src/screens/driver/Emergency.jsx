@@ -1,6 +1,7 @@
-import { I, el } from '../../core/dom.js';
+import { el } from '../../core/dom.jsx';
+import { I } from '../../core/utils.js';
 import { T } from '../../data/domain.js';
-import { dn } from '../../components/DriverShell.js';
+import { dn } from '../../components/DriverShell.jsx';
 
 /* ---------- INJURY SAFETY ROUTE — before ANY data collection ---------- */
 export function scrEmergency(){

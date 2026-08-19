@@ -1,6 +1,6 @@
 {
   "name": "fnol-demo",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "First Notice of Loss demo flow for a connected truck fleet. Private study project.",
@@ -8,7 +8,17 @@
     "build": "node build/build.mjs",
     "watch": "node build/build.mjs --watch",
     "test": "node tests/run.mjs",
-    "verify": "node build/build.mjs && node tests/run.mjs"
+    "verify": "npm run build && npm test"
   },
-  "engines": { "node": ">=18" }
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "esbuild": "^0.24.0",
+    "jsdom": "^25.0.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
 }

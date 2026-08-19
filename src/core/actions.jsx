@@ -1,9 +1,9 @@
 import { FakeApi } from './FakeApi.js';
 import { SCENARIOS } from '../data/domain.js';
 import { Store, freshDraft, logAdd } from './store.js';
-import { clockT, el, rnd, toast, uuid } from './dom.js';
-import { gapItems } from '../screens/driver/GapsHub.js';
-import { render } from './render.js';
+import { el } from './dom.jsx';
+import { clockT, rnd, toast, uuid } from './utils.js';
+import { gapItems } from '../screens/driver/GapsHub.jsx';
 
 /* ==================================================================
    §13 ACTIONS — one delegated listener for the whole app

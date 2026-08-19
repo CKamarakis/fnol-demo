@@ -1,22 +1,23 @@
 import { FakeApi } from '../../core/FakeApi.js';
-import { I, el } from '../../core/dom.js';
+import { el } from '../../core/dom.jsx';
+import { I } from '../../core/utils.js';
 import { SCENARIOS } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
-import { emergencyRail, navBar, offlineBanner, statusBar, timerRail } from '../../components/DriverShell.js';
-import { scrCargo } from './Cargo.js';
-import { scrDismiss } from './Dismiss.js';
-import { scrEAS } from './EasCircumstances.js';
-import { scrEmergency } from './Emergency.js';
-import { scrGaps } from './GapsHub.js';
-import { scrOtherInsurer } from './OtherInsurer.js';
-import { scrOtherVehicle } from './OtherVehicle.js';
-import { scrPhotos } from './Photos.js';
-import { scrPolice } from './Police.js';
-import { scrReference } from './S2Reference.js';
-import { scrS0, scrS0Detail } from './S0Detection.js';
-import { scrSoftStop } from './SoftStop.js';
-import { scrTier1 } from './S1Tier1.js';
-import { scrWitness } from './Witness.js';
+import { emergencyRail, navBar, offlineBanner, statusBar, timerRail } from '../../components/DriverShell.jsx';
+import { scrCargo } from './Cargo.jsx';
+import { scrDismiss } from './Dismiss.jsx';
+import { scrEAS } from './EasCircumstances.jsx';
+import { scrEmergency } from './Emergency.jsx';
+import { scrGaps } from './GapsHub.jsx';
+import { scrOtherInsurer } from './OtherInsurer.jsx';
+import { scrOtherVehicle } from './OtherVehicle.jsx';
+import { scrPhotos } from './Photos.jsx';
+import { scrPolice } from './Police.jsx';
+import { scrReference } from './S2Reference.jsx';
+import { scrS0, scrS0Detail } from './S0Detection.jsx';
+import { scrSoftStop } from './SoftStop.jsx';
+import { scrTier1 } from './S1Tier1.jsx';
+import { scrWitness } from './Witness.jsx';
 
 /* ---------------- driver screen router ---------------- */
 export function renderDriver(){

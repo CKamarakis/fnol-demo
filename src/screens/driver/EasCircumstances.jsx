@@ -1,9 +1,10 @@
 import { EAS_STATEMENTS } from '../../data/domain.js';
-import { I, el } from '../../core/dom.js';
+import { el } from '../../core/dom.jsx';
+import { I } from '../../core/utils.js';
 import { IMPACT_LABEL, svgImpact } from '../../components/svg.js';
 import { Store } from '../../core/store.js';
-import { dn } from '../../components/DriverShell.js';
-import { gapShell } from './GapsHub.js';
+import { dn } from '../../components/DriverShell.jsx';
+import { gapShell } from './GapsHub.jsx';
 
 /* ---------- EAS circumstances ---------- */
 export function scrEAS(){

@@ -1,6 +1,5 @@
 import { SCENARIOS, setLangSource } from '../data/domain.js';
-import { clockT, rnd } from './dom.js';
-import { render } from './render.js';
+import { clockT, rnd } from './utils.js';
 
 /* ==================================================================
    §3 STORE — single state object, localStorage-backed, subscribe/render
@@ -62,7 +61,12 @@ export const Store = {
     easLangCol:"en",
   },
   subs:[],
-  sub(f){ this.subs.push(f); },
+  version:0,                     // bumped on every emit; React's snapshot
+  sub(f){
+    this.subs.push(f);
+    return () => { this.subs = this.subs.filter(x => x !== f); };
+  },
+  getSnapshot(){ return this.version; },
   set(patch){
     // any screen change pushes the screen we're leaving, so Back always works.
     // NO_HISTORY screens are terminal//destructive resets that must not be re-entered backwards.
@@ -87,7 +91,10 @@ export const Store = {
     this.s.lastSaved=Date.now();          // persist on every keystroke
     this.save(); this.emit();
   },
-  emit(){ this.subs.forEach(f=>{ try{ f(); }catch(e){ console.error(e); } }); },
+  emit(){
+    this.version++;
+    this.subs.forEach(f=>{ try{ f(); }catch(e){ console.error(e); } });
+  },
   save(){
     try{
       const {persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,

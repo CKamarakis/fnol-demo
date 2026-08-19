@@ -1,6 +1,7 @@
-import { I, el, esc } from '../../core/dom.js';
+import { el } from '../../core/dom.jsx';
+import { I, esc } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
-import { dn } from '../../components/DriverShell.js';
+import { dn } from '../../components/DriverShell.jsx';
 
 /* ==================================================================
    §9 SYSTEM CONSOLE — the argument-carrier

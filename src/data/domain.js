@@ -1,4 +1,4 @@
-import { I } from '../core/dom.js';
+import { I } from '../core/utils.js';
 
 /* ==================================================================
    §2 DOMAIN DATA

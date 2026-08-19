@@ -1,6 +1,6 @@
 import { PERISHABLE, SCENARIOS } from '../data/domain.js';
 import { Store, hookFire, logAdd } from './store.js';
-import { clockT, rnd, sleep, toast, uuid } from './dom.js';
+import { clockT, rnd, sleep, toast, uuid } from './utils.js';
 
 /* ==================================================================
    §4 FakeApi — implements the REAL contract. The contract is the

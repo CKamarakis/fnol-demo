@@ -1,7 +1,7 @@
 import { Store } from '../../core/store.js';
-import { dn } from '../../components/DriverShell.js';
-import { el } from '../../core/dom.js';
-import { gapItems } from './GapsHub.js';
+import { dn } from '../../components/DriverShell.jsx';
+import { el } from '../../core/dom.jsx';
+import { gapItems } from './GapsHub.jsx';
 import { svgRing } from '../../components/svg.js';
 
 /* ---------- soft stop ---------- */

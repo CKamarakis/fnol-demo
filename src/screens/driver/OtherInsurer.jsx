@@ -1,6 +1,7 @@
-import { I, el } from '../../core/dom.js';
-import { dn } from '../../components/DriverShell.js';
-import { gapShell, textField } from './GapsHub.js';
+import { el } from '../../core/dom.jsx';
+import { I } from '../../core/utils.js';
+import { dn } from '../../components/DriverShell.jsx';
+import { gapShell, textField } from './GapsHub.jsx';
 
 /* ---------- other insurer — deliberately last ---------- */
 export function scrOtherInsurer(){

@@ -1,7 +1,8 @@
-import { I, el } from '../../core/dom.js';
+import { el } from '../../core/dom.jsx';
+import { I } from '../../core/utils.js';
 import { SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
-import { dn, langSelect } from '../../components/DriverShell.js';
+import { dn, langSelect } from '../../components/DriverShell.jsx';
 import { svgMap } from '../../components/svg.js';
 
 /* ---------- S0 · telematics cold open ---------- */

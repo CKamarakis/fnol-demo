@@ -1,5 +1,5 @@
-import { dn } from '../../components/DriverShell.js';
-import { el } from '../../core/dom.js';
+import { dn } from '../../components/DriverShell.jsx';
+import { el } from '../../core/dom.jsx';
 
 /* ---------- dismissal ---------- */
 export function scrDismiss(){

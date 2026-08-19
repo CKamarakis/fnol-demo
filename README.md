@@ -50,13 +50,14 @@ The **European Accident Statement** (*constat amiable* / *Europäischer Unfallbe
 ## Project layout
 
 ```
-src/          ES modules — core, data, components, screens, styles
-build/        zero-dependency build script (no npm install)
-tests/        smoke, navigation and integrity suites
+src/          React 18 source — core, data, components, screens, styles
+build/        esbuild bundler script
+tests/        render (jsdom), navigation and integrity suites
 dist/         the built single-file artifact
 ```
 
 ```bash
+npm install       # first time only
 npm run build     # src/ -> dist/prototype.html
 npm run watch     # rebuild on change
 npm test          # all suites
@@ -67,7 +68,7 @@ See [CLAUDE.md](CLAUDE.md) for architecture, constraints and domain rules.
 
 ## Technical notes
 
-Built to a single self-contained HTML file — vanilla JS, hand-written CSS, hand-authored inline SVG. Zero external requests by design: no CDN, no fonts, no map tiles, no analytics. It has to survive being emailed and reopened on someone else's laptop in three weeks.
+Built to a single self-contained HTML file — React 18, hand-written CSS, hand-authored inline SVG. Zero external requests by design: no CDN, no fonts, no map tiles, no analytics. It has to survive being emailed and reopened on someone else's laptop in three weeks.
 
 Verified: no external requests, JS parses clean, no fault-attribution field, 112 reachable from every driver screen, back navigation covered by unit assertions.
 

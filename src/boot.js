@@ -1,12 +1,11 @@
-import { $, toast } from './core/dom.js';
+import { $ } from './core/dom.jsx';
+import { toast } from './core/utils.js';
 import { LS_KEY, Store } from './core/store.js';
-import { render } from './core/render.js';
 
 /* ==================================================================
    §14 BOOT
    ================================================================== */
-/* Subscribe the renderer before loading state, so the first emit paints. */
-Store.sub(render);
+/* React subscribes via useStore; boot only restores persisted state. */
 Store.load();
 // the timer needs a heartbeat while it's running
 setInterval(()=>{
@@ -29,7 +28,6 @@ window.addEventListener("resize", ()=>{
   if(c) document.documentElement.style.setProperty("--chrome-h",(c.offsetHeight||88)+"px");
 });
 
-render();
 
 // A one-time orientation for whoever opens this cold.
 if(!localStorage.getItem(LS_KEY+".seen")){

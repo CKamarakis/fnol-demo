@@ -1,19 +1,4 @@
-/* ================= §1 utils ================= */
-export const $  = (s,r)=> (r||document).querySelector(s);
-export const el = (t,a,...c)=>{
-  const n=document.createElement(t);
-  if(a) for(const k in a){
-    const v=a[k];
-    if(v==null||v===false) continue;
-    if(k==="class") n.className=v;
-    else if(k==="html") n.innerHTML=v;
-    else if(k==="text") n.textContent=v;
-    else if(k.startsWith("on")&&typeof v==="function") n.addEventListener(k.slice(2),v);
-    else n.setAttribute(k,v===true?"":v);
-  }
-  for(const ch of c.flat(9)){ if(ch==null||ch===false) continue; n.append(ch.nodeType?ch:document.createTextNode(String(ch))); }
-  return n;
-};
+/* utils, icons and the toast helper. Element construction lives in dom.jsx. */
 export const esc = s => String(s==null?"":s).replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[m]));
 export const uuid = () => (crypto.randomUUID ? crypto.randomUUID()
   : "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g,c=>{
@@ -62,11 +47,18 @@ export const I = {
   x:      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>',
 };
 
-/* toast */
+/* Toast lives outside the React tree — it is transient, fire-and-forget,
+   and triggered from action handlers rather than from render. Plain DOM. */
 export function toast(msg,kind,ms){
-  const t=el("div",{class:"toast "+(kind||""),html:(kind==="ok"?I.chkS:kind==="err"?I.warn:kind==="warn"?I.warn:I.info)+"<span>"+esc(msg)+"</span>"});
-  $("#toast").append(t);
-  setTimeout(()=>{t.style.transition="opacity .3s";t.style.opacity="0";setTimeout(()=>t.remove(),320);}, ms||2600);
+  const host=document.querySelector("#toast");
+  if(!host) return;
+  const t=document.createElement("div");
+  t.className="toast "+(kind||"");
+  t.innerHTML=(kind==="ok"?I.chkS:kind==="err"||kind==="warn"?I.warn:I.info)
+    +"<span>"+esc(msg)+"</span>";
+  host.append(t);
+  setTimeout(()=>{
+    t.style.transition="opacity .3s"; t.style.opacity="0";
+    setTimeout(()=>t.remove(),320);
+  }, ms||2600);
 }
-
-

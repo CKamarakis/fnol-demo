@@ -1,14 +1,14 @@
-import { $, el } from '../core/dom.js';
+import { el } from '../core/dom.jsx';
 import { SCENARIOS } from '../data/domain.js';
 import { Store } from '../core/store.js';
 
 /* ==================================================================
    §6 CHROME (demo scaffolding — deliberately not product-styled)
    ================================================================== */
+/** The demo harness bar. Rendered into its own root, above the product. */
 export function renderChrome(){
   const s=Store.s;
-  const c=$("#chrome");
-  c.innerHTML="";
+  const c=el("div",{});
 
   // row 1 — persona + scenario
   const r1=el("div",{class:"chrome-row"});
@@ -45,6 +45,7 @@ export function renderChrome(){
   );
 
   c.append(r1,r2);
+  return c;
   document.documentElement.style.setProperty("--chrome-h", (c.offsetHeight||88)+"px");
   document.body.classList.toggle("notes-on", !!s.notes);
 
