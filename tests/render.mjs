@@ -52,6 +52,14 @@ const text = () => document.querySelector('#root')?.textContent || '';
 check(/is everyone okay/i.test(text()), 'cold open asks about people first');
 check(!!document.querySelector('[data-act="call112"]'), '112 is reachable on the first screen');
 
+const clickIn = (a, v) => {
+  const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+  const n = document.querySelector(sel);
+  if (!n) return false;
+  n.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  return true;
+};
+
 const click = sel => {
   const n = document.querySelector(sel);
   if (!n) return false;
@@ -83,14 +91,8 @@ if (submitted) {
 // Walk the full gap-fill flow. Each of these screens is a separate module,
 // so this is what catches a screen broken during refactoring — without it a
 // conversion can pass every other check while a screen throws on mount.
-const clickIn = (a, v) => {
-  const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
-  const n = document.querySelector(sel);
-  if (!n) return false;
-  n.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
-  return true;
-};
-
+// Safety route: "someone is hurt" must reach 112 before any claims field.
+// This is the single most important ordering rule in the product.
 check(clickIn('go-gaps'), 'can reach the perishability hub');
 await wait();
 check(/disappear/i.test(text()), 'hub is framed as what disappears, not a progress bar');
@@ -141,6 +143,44 @@ for (const t of ['fail-tpa', 'fail-offline', 'fail-coverage', 'triple-tap']) {
 }
 
 check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).join(' | '));
+
+
+/**
+ * The injury safety route, in its own DOM.
+ *
+ * "Someone is hurt" must reach 112 before a single claims field is shown.
+ * Tested from a clean mount rather than by resetting mid-flow, so nothing
+ * about the earlier walk can mask a regression here.
+ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const fresh = new JSDOM(html, {
+    runScripts: 'dangerously',
+    pretendToBeVisual: true,
+    url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); }),
+  });
+  const d2 = fresh.window.document;
+  await wait();
+
+  const hit = a => {
+    const n = d2.querySelector(`#root [data-act="${a}"]`);
+    if (!n) return false;
+    n.dispatchEvent(new fresh.window.MouseEvent('click', { bubbles: true }));
+    return true;
+  };
+  const t2 = () => d2.querySelector('#root')?.textContent || '';
+
+  check(hit('s0-hurt'), 'can answer "someone is hurt" from the cold open');
+  await wait();
+  check(/112/.test(t2()), 'injury routes straight to the 112 screen');
+  check(!/plate|witness|photograph/i.test(t2()), 'no claims question appears before 112');
+  check(!d2.querySelector('#root [data-act="nav-back"]'),
+    'no Back button above the safety instruction');
+  check(hit('emg-continue'), 'can continue past the emergency screen');
+  fresh.window.close();
+}
 
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');
 process.exit(failed ? 1 : 0);
