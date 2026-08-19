@@ -21,14 +21,18 @@ const check = (ok, msg, detail) => {
   else { console.error(`FAIL  ${msg}${detail ? `\n      ${detail}` : ''}`); failed++; }
 };
 
+// jsdom has no canvas backend, so the sketch and signature pads throw here.
+// Real browsers do not. Everything else is a genuine failure.
+const IGNORE = /HTMLCanvasElement.prototype.getContext/;
+
 const errors = [];
 const dom = new JSDOM(html, {
   runScripts: 'dangerously',
   url: 'https://localhost/',   // localStorage needs a real origin in jsdom
   pretendToBeVisual: true,
   virtualConsole: new (await import('jsdom')).VirtualConsole()
-    .on('jsdomError', e => errors.push(e.message))
-    .on('error', m => errors.push(String(m))),
+    .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); })
+    .on('error', m => { if (!IGNORE.test(String(m))) errors.push(String(m)); }),
 });
 
 const { window } = dom;
@@ -74,6 +78,42 @@ if (submitted) {
   check(/INS-DE-\d{4}-\d+/.test(text()), 'a claim reference was issued');
 } else {
   console.log('note  submit control not found by name — reference path unverified here');
+}
+
+// Walk the full gap-fill flow. Each of these screens is a separate module,
+// so this is what catches a screen broken during refactoring — without it a
+// conversion can pass every other check while a screen throws on mount.
+const clickIn = (a, v) => {
+  const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+  const n = document.querySelector(sel);
+  if (!n) return false;
+  n.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+  return true;
+};
+
+check(clickIn('go-gaps'), 'can reach the perishability hub');
+await wait();
+check(/disappear/i.test(text()), 'hub is framed as what disappears, not a progress bar');
+
+const GAPS = [
+  ['witness', /saw it|witness/i],
+  ['otherv', /plate/i],
+  ['photos', /photo|scene/i],
+  ['eas', /circumstance|tick|statement/i],
+  ['police', /police/i],
+  ['otherins', /insurer/i],
+];
+for (const [id, expect] of GAPS) {
+  const reached = clickIn('goto', id);
+  await wait();
+  check(reached, `can open the "${id}" screen`);
+  if (reached) {
+    check(expect.test(text()), `"${id}" screen rendered its content`);
+    check(errors.length === 0, `"${id}" screen mounted without errors`,
+      errors.slice(-2).join(' | '));
+    clickIn('nav-back');
+    await wait();
+  }
 }
 
 // every pane must render — the fleet and system views carry the arguments

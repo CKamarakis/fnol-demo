@@ -74,7 +74,7 @@ function keyed(kids) {
   return kids.map((c, i) => {
     if (c == null || c === false || c === true) return null;
     if (isValidElement(c)) return c.key == null ? createElement(Fragment, { key: i }, c) : c;
-    if (c && typeof c.toElement === 'function') return createElement(Fragment, { key: i }, c.toElement());
+    if (c && typeof c.build === 'function') return createElement(Fragment, { key: i }, c.build());
     return c;
   }).filter(c => c != null);
 }
@@ -83,7 +83,7 @@ class Builder {
   constructor(tag, attrs, children) {
     this.tag = tag;
     const { props, text, html } = toProps(attrs);
-    this.props = props;
+    this.attrs = props;
     this.html = html;
     this.children = [];
     if (text != null) this.children.push(text);
@@ -97,26 +97,46 @@ class Builder {
     }
     return this;
   }
-  toElement() {
+  build() {
     if (this.html != null) {
       return createElement(this.tag, {
-        ...this.props,
+        ...this.attrs,
         dangerouslySetInnerHTML: { __html: this.html },
       });
     }
-    return createElement(this.tag, this.props, ...keyed(this.children));
+    return createElement(this.tag, this.attrs, ...keyed(this.children));
   }
 }
 
 /**
- * React only accepts real elements, so the builder must become one before it
- * is returned into a tree. Screens call el() and append to it in the same
- * function, so converting at the point of return is enough: toElement() is
- * called by keyed() for any builder appended as a child, and by the render
- * boundary for the value a screen returns.
+ * A Builder is accepted anywhere a React element is.
+ *
+ * React identifies elements by the `$$typeof` symbol and then reads `type`,
+ * `props`, `key` and `ref`. Exposing those as lazy getters means the builder
+ * materialises only when React actually reads it — so children appended after
+ * construction are still included, and a builder can be returned straight into
+ * JSX without any conversion call at the boundary.
+ *
+ * This matters because screens mix both styles freely: JSX that embeds a
+ * builder-returning helper like textField(), and builders that append JSX.
+ * Requiring an explicit conversion at every crossing is exactly the kind of
+ * rule that gets forgotten and fails at runtime.
  */
+function materialise(b) {
+  return (b._el ??= b.build());
+}
+
+Object.defineProperties(Builder.prototype, {
+  $$typeof: { get() { return materialise(this).$$typeof; }, configurable: true },
+  type:     { get() { return materialise(this).type; }, configurable: true },
+  props:    { get() { return materialise(this).props; }, configurable: true },
+  key:      { get() { return materialise(this).key; }, configurable: true },
+  ref:      { get() { return materialise(this).ref ?? null; }, configurable: true },
+});
+
+/** Kept for explicit use; the getters above make it optional. */
 export function toEl(x) {
-  return x && typeof x.toElement === 'function' ? x.toElement() : x;
+  return x && typeof x.build === 'function' ? materialise(x) : x;
 }
 
 export function el(tag, attrs, ...children) {
