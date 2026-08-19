@@ -10,7 +10,8 @@ import { dirname, join, resolve } from 'node:path';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const suites = readdirSync(HERE)
-  .filter(f => f.endsWith('.mjs') && f !== 'run.mjs')
+  // screenshots.mjs and serve.mjs are manual tools, not pass/fail suites
+  .filter(f => f.endsWith('.mjs') && !['run.mjs', 'screenshots.mjs', 'serve.mjs'].includes(f))
   .sort();
 
 let failed = 0;

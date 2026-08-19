@@ -23,7 +23,7 @@ export function renderSystem(){
   return el("div",{class:"deskframe"},
     el("div",{class:"desk-bar"},
       el("div",{class:"dots"},el("i"),el("i"),el("i")),
-      el("span",{class:"desk-title",text:"the insurer FNOL · developer console · everything downstream is simulated"})),
+      el("span",{class:"desk-title",text:"FNOL · developer console · everything downstream is simulated"})),
     body);
 }
 

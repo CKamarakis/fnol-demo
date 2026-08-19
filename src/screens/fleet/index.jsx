@@ -32,7 +32,7 @@ export function renderFleet(){
   return el("div",{class:"deskframe"},
     el("div",{class:"desk-bar"},
       el("div",{class:"dots"},el("i"),el("i"),el("i")),
-      el("span",{class:"desk-title",text:"the insurer Dispatch · Anja Weber · 40-vehicle fleet · Berlin"})),
+      el("span",{class:"desk-title",text:"Dispatch · Anja Weber · 40-vehicle fleet · Berlin"})),
     body);
 }
 

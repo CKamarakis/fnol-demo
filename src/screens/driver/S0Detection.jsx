@@ -115,6 +115,7 @@ export function scrS0() {
 
           {s.detailOpen && <TelematicsDetail t={t} />}
 
+          {dn('False positives were designed for, not discovered', DISMISS_NOTE)}
           <div className="sp16" />
         </div>
       </div>
@@ -124,7 +125,6 @@ export function scrS0() {
         <button className="btn btn-primary btn-lg" data-act="s0-fine">{T('fine')}</button>
         <button className="btn btn-danger btn-lg" data-act="s0-hurt">{T('hurt')}</button>
         <button className="btn btn-ghost" data-act="s0-dismiss">{T('dismiss')}</button>
-        {dn('False positives were designed for, not discovered', DISMISS_NOTE)}
       </div>
     </div>
   );

@@ -8,7 +8,9 @@
     "build": "node build/build.mjs",
     "watch": "node build/build.mjs --watch",
     "test": "node tests/run.mjs",
-    "verify": "npm run build && npm test"
+    "verify": "npm run build && npm test",
+    "shots": "node tests/screenshots.mjs",
+    "serve": "node tests/serve.mjs"
   },
   "dependencies": {
     "react": "^18.3.1",

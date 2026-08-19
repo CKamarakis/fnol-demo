@@ -62,6 +62,8 @@ npm run build     # src/ -> dist/prototype.html
 npm run watch     # rebuild on change
 npm test          # all suites
 npm run verify    # build + test
+npm run serve     # view at http://localhost:5173
+npm run shots     # screenshots via headless Chrome
 ```
 
 See [CLAUDE.md](CLAUDE.md) for architecture, constraints and domain rules.
