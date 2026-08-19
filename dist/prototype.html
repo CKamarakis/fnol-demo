@@ -14,6 +14,7 @@
   Built by Chris Kamarakis as an interview artefact for the insurer GmbH.
 -->
 <style>
+/* ===== 00-tokens.css ===== */
 /* ============================================================
    0. TOKENS
    ============================================================ */
@@ -71,6 +72,9 @@ button{cursor:pointer;background:none;border:none;padding:0}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-track{background:transparent}
 
+
+
+/* ===== 01-chrome.css ===== */
 /* ============================================================
    1. DEMO CHROME  —  deliberately NOT product-styled.
    Monospace, hazard-tape edge, muted. The founders must never
@@ -127,6 +131,9 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .chrome-btn.danger:hover{background:var(--danger-soft);border-color:#e0a89c;color:#b8341c}
 .chrome-hint{color:#4c5a6b;font-size:10.5px;font-style:italic}
 
+
+
+/* ===== 02-stage.css ===== */
 /* ============================================================
    2. STAGE
    ============================================================ */
@@ -180,6 +187,9 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .desk-title{font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
 .desk-body{flex:1;padding:24px 26px 40px;overflow:auto}
 
+
+
+/* ===== 03-driver.css ===== */
 /* ============================================================
    3. DRIVER UI PRIMITIVES
    ============================================================ */
@@ -550,6 +560,9 @@ button{cursor:pointer;background:none;border:none;padding:0}
 .toast.warn{border-color:#e8d3a4;background:#fbeed5;color:#7d5008}
 .toast.err{border-color:#e8b3a7;background:#fdeae5;color:#a02c16}
 
+
+
+/* ===== 04-design-notes.css ===== */
 /* ============================================================
    4. DESIGN NOTES OVERLAY
    ============================================================ */
@@ -567,6 +580,9 @@ button{cursor:pointer;background:none;border:none;padding:0}
 body:not(.notes-on) .dn{display:none}
 .notes-on .dn-anchor{outline:1px dashed #6a4fa033;outline-offset:3px;border-radius:8px}
 
+
+
+/* ===== 05-fleet.css ===== */
 /* ============================================================
    5. FLEET VIEW
    ============================================================ */
@@ -634,6 +650,9 @@ table.tbl tr:hover td{background:#e7edf3}
 .tabs button:hover{color:var(--ink-2)}
 .tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--accent)}
 
+
+
+/* ===== 06-system.css ===== */
 /* ============================================================
    6. SYSTEM CONSOLE
    ============================================================ */
@@ -708,6 +727,9 @@ table.tbl tr:hover td{background:#e7edf3}
 .faked li{margin-bottom:7px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
 .faked li b{color:var(--ink)}
 
+
+
+/* ===== 07-eas-export.css ===== */
 /* ============================================================
    7. EAS EXPORT
    ============================================================ */
@@ -791,6 +813,9 @@ table.map td.a{color:var(--warn);white-space:nowrap}
 table.map td.f{color:var(--ink-2);overflow-wrap:anywhere}
 table.map td.e{color:var(--ink-3);font-family:var(--sans);font-size:11.5px}
 
+
+
+/* ===== 08-print.css ===== */
 /* ============================================================
    8. PRINT — EAS export must print to PDF cleanly
    ============================================================ */
@@ -813,6 +838,7 @@ table.map td.e{color:var(--ink-3);font-family:var(--sans);font-size:11.5px}
   .phone{width:100%;max-width:390px;height:82vh;border-radius:30px;box-shadow:none;border-color:var(--line)}
   .phone-caption{width:100%}
 }
+
 </style>
 </head>
 <body>
@@ -823,21 +849,7 @@ table.map td.e{color:var(--ink-3);font-family:var(--sans);font-size:11.5px}
 
 <script>
 "use strict";
-/* ==================================================================
-   INS FNOL DEMO — vanilla JS. No framework, no network.
-   Layout of this script:
-     §1  utils + icons (inline SVG)
-     §2  domain data (EAS statements, scenarios, field spec, ACORD map)
-     §3  Store (state + localStorage + subscribe)
-     §4  FakeApi (the real contract, simulated transport)
-     §5  render: chrome
-     §6  render: driver flow
-     §7  render: fleet
-     §8  render: system console
-     §9  render: EAS export
-     §10 event delegation + boot
-   ================================================================== */
-
+/* ===== src/core/dom.js ===== */
 /* ================= §1 utils ================= */
 const $  = (s,r)=> (r||document).querySelector(s);
 const el = (t,a,...c)=>{
@@ -909,6 +921,7 @@ function toast(msg,kind,ms){
   setTimeout(()=>{t.style.transition="opacity .3s";t.style.opacity="0";setTimeout(()=>t.remove(),320);}, ms||2600);
 }
 
+/* ===== src/data/domain.js ===== */
 /* ==================================================================
    §2 DOMAIN DATA
    ================================================================== */
@@ -983,7 +996,12 @@ const STR = {
     blockPath:"Ścieżka obowiązkowa", elapsed:"upłynęło",
   }
 };
-const T = k => (STR[Store.s.lang]||STR.en)[k] || STR.en[k] || k;
+/* Current-language getter, injected by the store at boot.
+   domain.js must not import the store: the store needs SCENARIOS from here,
+   and a cycle between them breaks a flattened single-scope bundle. */
+let currentLang = () => 'en';
+const setLangSource = fn => { currentLang = fn; };
+const T = k => (STR[currentLang()]||STR.en)[k] || STR.en[k] || k;
 
 /* --- Scenarios. Same form, three shapes. --- */
 const SCENARIOS = {
@@ -1078,145 +1096,115 @@ const PHOTO_SLOTS = {
   scene_empty: {n:1, label:"Where it was parked — empty space",       sil:"wide"},
 };
 
+/* ===== src/core/canvas.js ===== */
 /* ==================================================================
-   §3 STORE — single state object, localStorage-backed, subscribe/render
+   §12 CANVAS — sketch + two signature pads
    ================================================================== */
-const LS_KEY = "reli.fnol.demo.v1";
-
-function freshDraft(scenId){
-  const sc = SCENARIOS[scenId] || SCENARIOS.collision;
-  const t  = sc.telematics;
-  return {
-    // --- Tier 1: the only six fields that block submission ---
-    vehicle:      t.vehicle,        vehicleConfirmed:false,
-    occurredAt:   t.time,           timeConfirmed:false,
-    location:     t.location,       lat:t.lat, lon:t.lon, locationConfirmed:false,
-    type:         t.inferred,       typeConfirmed:false,
-    injured:      null,             // true | false — the one real question
-    drivable:     null,             // true | false — drives the credit-hire clock
-    // --- injury detail: presence + band + emergency attended. NOT description. ---
-    injurySeverity:null, injuryEmergency:null, injuryCount:null,
-    // --- perishable gap-fill ---
-    witnessPresent:null, witnessName:"", witnessPhone:"",
-    otherPlate:"", otherMake:"", otherDriver:"", otherPhone:"", otherInsurer:"", otherPolicy:"",
-    photos:{}, // slot -> {at, skipped}
-    easA:[], easB:[], impact:null, sketch:null, sigA:null, sigB:null,
-    policeAttended:null, policeRef:"",
-    cargoLaden:null, cargoDesc:"", trailer:"", hazardous:null,
-    skipped:[],      // ids of things the driver chose to skip — logged, never nagged
-    notes:"",
-  };
+function mountCanvases(){
+  const d=Store.s.draft;
+  setupPad("sketchCanvas","sketch","#0f5d84",3.2);
+  setupPad("sigA","sigA","#dbe7e1",2.4);
+  setupPad("sigB","sigB","#e8d3a4",2.4);
 }
-
-const Store = {
-  s:{
-    persona:"driver",              // driver | fleet | system
-    scenario:"collision",
-    lang:"en",
-    notes:false,                   // design-notes overlay
-    fail:{ tpa:false, offline:false, coverage:false },
-    screen:"s0",                   // driver flow position
-    navStack:[],                   // where the driver came from — every step is reversible
-    subScreen:null,
-    draft:freshDraft("collision"),
-    incident:null,                 // the server-side record once created
-    reference:null,
-    refLatencyMs:null,
-    startedAt:null,                // 90-second timer origin
-    stoppedAt:null,
-    tick:0,
-    log:[],                        // API call log
-    hooks:[],                      // webhook events
-    queue:[],                      // outbound queue (accept-then-forward)
-    incidents:[],                  // fleet list
-    mergeGroup:null,               // duplicate simulator result
-    exportOpen:false,
-    fleetTab:"list",
-    sysTab:"log",
-    detailOpen:false,
-    lastSaved:null,
-    easLangCol:"en",
-  },
-  subs:[],
-  sub(f){ this.subs.push(f); },
-  set(patch){
-    // any screen change pushes the screen we're leaving, so Back always works.
-    // NO_HISTORY screens are terminal//destructive resets that must not be re-entered backwards.
-    if(patch && patch.screen && patch.screen!==this.s.screen && !patch.__noHist){
-      // Every transition is recorded, s0 included — a mistap on the cold open
-      // must be as correctable as any other. Returning TO s0 resets the trail.
-      if(patch.screen==="s0") this.s.navStack=[];
-      else this.s.navStack=[...this.s.navStack, this.s.screen];
-    }
-    if(patch) delete patch.__noHist;
-    Object.assign(this.s,patch); this.save(); this.emit();
-  },
-  back(){
-    const st=[...this.s.navStack];
-    const prev=st.pop();
-    if(prev==null) return;
-    this.s.navStack=st;
-    this.set({screen:prev, __noHist:true});
-  },
-  patchDraft(patch){
-    Object.assign(this.s.draft,patch);
-    this.s.lastSaved=Date.now();          // persist on every keystroke
-    this.save(); this.emit();
-  },
-  emit(){ this.subs.forEach(f=>{ try{ f(); }catch(e){ console.error(e); } }); },
-  save(){
-    try{
-      const {persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
-             refLatencyMs,startedAt,stoppedAt,log,hooks,queue,incidents,mergeGroup,
-             fleetTab,sysTab,exportOpen,easLangCol} = this.s;
-      localStorage.setItem(LS_KEY, JSON.stringify({
-        persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
-        refLatencyMs,startedAt,stoppedAt,
-        log:log.slice(-140), hooks:hooks.slice(-80), queue, incidents, mergeGroup,
-        fleetTab,sysTab,exportOpen,easLangCol
-      }));
-    }catch(e){ /* quota or private mode — the demo still runs from memory */ }
-  },
-  load(){
-    try{
-      const raw=localStorage.getItem(LS_KEY); if(!raw) return;
-      const d=JSON.parse(raw);
-      if(d && typeof d==="object") Object.assign(this.s,d);
-      if(!this.s.draft) this.s.draft=freshDraft(this.s.scenario);
-      // sessions saved before back-navigation existed have no stack
-      if(!Array.isArray(this.s.navStack)) this.s.navStack=[];
-    }catch(e){}
-  },
-  reset(keepPersona){
-    const persona = keepPersona ? this.s.persona : "driver";
-    const scen = this.s.scenario, lang=this.s.lang, notes=this.s.notes;
-    localStorage.removeItem(LS_KEY);
-    this.s = Object.assign({}, {
-      persona, scenario:scen, lang, notes,
-      fail:{tpa:false,offline:false,coverage:false},
-      screen:"s0", subScreen:null, draft:freshDraft(scen),
-      incident:null, reference:null, refLatencyMs:null, startedAt:null, stoppedAt:null, tick:0,
-      log:[], hooks:[], queue:[], incidents:[], mergeGroup:null,
-      exportOpen:false, fleetTab:"list", sysTab:"log", detailOpen:false, lastSaved:null,
-      easLangCol:"en",
-    });
-    this.save(); this.emit();
+function setupPad(id, key, colour, width){
+  const c=document.getElementById(id); if(!c) return;
+  const ctx=c.getContext && c.getContext("2d");
+  if(!ctx) return;               // no 2D context (very old browser) — degrade quietly
+  ctx.clearRect(0,0,c.width,c.height);
+  const saved=Store.s.draft[key];
+  if(saved){ const im=new Image(); im.onload=()=>ctx.drawImage(im,0,0,c.width,c.height); im.src=saved; }
+  else if(id==="sketchCanvas"){
+    // faint guide: a road, so the driver knows what kind of drawing this is
+    ctx.strokeStyle="#c8d4de"; ctx.lineWidth=2; ctx.setLineDash([14,12]);
+    ctx.beginPath(); ctx.moveTo(0,210); ctx.lineTo(640,210); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle="#2a3644"; ctx.font="15px system-ui";
+    ctx.fillText("draw the road and both vehicles", 20, 34);
   }
-};
-
-/* --- log helpers --- */
-let logSeq=0;
-function logAdd(entry){
-  Store.s.log.push(Object.assign({id:++logSeq, t:clockT()}, entry));
-  if(Store.s.log.length>200) Store.s.log.splice(0,Store.s.log.length-200);
-  Store.save(); Store.emit();
+  if(c.dataset.wired) return;
+  c.dataset.wired="1";
+  let drawing=false, last=null;
+  const pos=e=>{
+    const r=c.getBoundingClientRect();
+    const p=e.touches?e.touches[0]:e;
+    return {x:(p.clientX-r.left)*(c.width/r.width), y:(p.clientY-r.top)*(c.height/r.height)};
+  };
+  const start=e=>{ e.preventDefault(); drawing=true; last=pos(e);
+    ctx.strokeStyle=colour; ctx.lineWidth=width; ctx.lineCap="round"; ctx.lineJoin="round"; };
+  const move=e=>{
+    if(!drawing) return; e.preventDefault();
+    const p=pos(e);
+    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
+    last=p;
+  };
+  const end=()=>{
+    if(!drawing) return; drawing=false;
+    try{ Store.s.draft[key]=c.toDataURL("image/png"); Store.s.lastSaved=Date.now(); Store.save(); }catch(e){}
+    if(key!=="sketch"){ const pad=c.closest(".sig-pad"); if(pad) pad.classList.add("signed"); }
+  };
+  c.addEventListener("mousedown",start); c.addEventListener("touchstart",start,{passive:false});
+  window.addEventListener("mousemove",move); c.addEventListener("touchmove",move,{passive:false});
+  window.addEventListener("mouseup",end);   c.addEventListener("touchend",end);
 }
-function hookFire(name, payload){
-  Store.s.hooks.push({id:++logSeq, t:clockT(), name, payload:payload||{}});
-  if(Store.s.hooks.length>100) Store.s.hooks.splice(0,Store.s.hooks.length-100);
-  logAdd({m:"HOOK", p:"→ webhook  "+name, s:"200", ms:rnd(8,34), body:JSON.stringify(payload||{},null,1)});
+
+/* ===== src/components/Chrome.js ===== */
+/* ==================================================================
+   §6 CHROME (demo scaffolding — deliberately not product-styled)
+   ================================================================== */
+function renderChrome(){
+  const s=Store.s;
+  const c=$("#chrome");
+  c.innerHTML="";
+
+  // row 1 — persona + scenario
+  const r1=el("div",{class:"chrome-row"});
+  r1.append(
+    el("span",{class:"chrome-brand",html:"<b>INS</b> FNOL"}),
+    el("span",{class:"chrome-hint",text:"demo harness — not the product"}),
+    el("div",{class:"chrome-sep"}),
+    el("span",{class:"chrome-tag",text:"Persona"}),
+    seg([["driver","Driver"],["fleet","Fleet manager"],["system","System"]], s.persona, "persona"),
+    el("div",{class:"chrome-sep"}),
+    el("span",{class:"chrome-tag",text:"Scenario"}),
+    seg(Object.values(SCENARIOS).map(x=>[x.id,x.label]), s.scenario, "scenario"),
+    el("div",{class:"chrome-spacer"}),
+    el("button",{class:"tog note","data-act":"toggle-notes","aria-pressed":String(s.notes)},
+      el("i",{class:"dot"}), "Design notes"),
+    el("button",{class:"chrome-btn danger","data-act":"reset"},"Reset")
+  );
+
+  // row 2 — failure theatre
+  const r2=el("div",{class:"chrome-row"});
+  r2.append(
+    el("span",{class:"chrome-tag",text:"Failure theatre"}),
+    tog("fail-tpa", s.fail.tpa, "TPA down"),
+    tog("fail-offline", s.fail.offline, "No signal"),
+    el("button",{class:"tog fire","data-act":"triple-tap"}, el("i",{class:"dot"}), "Triple-tap submit"),
+    tog("fail-coverage", s.fail.coverage, "Vehicle not on schedule"),
+    el("div",{class:"chrome-sep"}),
+    el("span",{class:"chrome-hint",text:
+      s.fail.tpa||s.fail.offline||s.fail.coverage
+        ? "flip these mid-flow — the driver's screens do not change"
+        : "flip any of these mid-flow"}),
+    el("div",{class:"chrome-spacer"}),
+    s.persona!=="system" && el("button",{class:"chrome-btn","data-act":"go-system"},"Watch it in the System pane →")
+  );
+
+  c.append(r1,r2);
+  document.documentElement.style.setProperty("--chrome-h", (c.offsetHeight||88)+"px");
+  document.body.classList.toggle("notes-on", !!s.notes);
+
+  function seg(items, cur, kind){
+    const d=el("div",{class:"seg"});
+    items.forEach(([v,l])=> d.append(el("button",{"data-act":"set-"+kind,"data-v":v,"aria-pressed":String(cur===v)},l)));
+    return d;
+  }
+  function tog(act,on,label){
+    return el("button",{class:"tog","data-act":act,"aria-pressed":String(!!on)}, el("i",{class:"dot"}), label);
+  }
 }
 
+/* ===== src/core/FakeApi.js ===== */
 /* ==================================================================
    §4 FakeApi — implements the REAL contract. The contract is the
    artefact; the server is not. Transport is simulated, honestly.
@@ -1664,6 +1652,280 @@ const FakeApi = (function(){
   };
 })();
 
+/* ===== src/components/DriverShell.js ===== */
+/* ==================================================================
+   §7 DRIVER FLOW
+   ================================================================== */
+
+/* helper: a design-note callout */
+function dn(tag, html){ return el("div",{class:"dn"}, el("span",{class:"dn-tag",text:tag}), el("div",{html})); }
+
+/* the 90-second timer, running from S0 and stopped on submit */
+function timerRail(){
+  const s=Store.s;
+  if(!s.startedAt) return null;
+  const end = s.stoppedAt || Date.now();
+  const secs = (end - s.startedAt)/1000;
+  const shown = secs.toFixed(1);
+  const pct = Math.min(100, secs/90*100);
+  const cls = secs>90 ? "over" : secs>65 ? "warn" : "";
+  const stopped = !!s.stoppedAt;
+  // Wall-clock, so an idle demo window drifts into the thousands and the number
+  // stops meaning anything. Past 3 min we say so instead of showing a big number.
+  const idle = !stopped && secs>180;
+  return el("div",{class:"timer-rail"+(stopped?" stopped":"")+(idle?" idle":""),
+      title:"Demo instrument. Times the blocking path — cold open to reference issued — against a 90-second target. Not shown to a real driver."},
+    el("span",{class:"timer-tag",text:"DEMO"}),
+    el("span",{class:"timer-lbl",text: stopped ? "blocking path took" : T("blockPath")}),
+    idle
+      ? el("span",{class:"timer-val idle-val",text:"paused — window left open"})
+      : el("span",{class:"timer-val "+cls, text: shown+"s"}),
+    idle ? el("span",{class:"timer-bar"}) 
+         : el("div",{class:"timer-bar"}, el("i",{style:"width:"+pct+"%;background:"+(secs>90?"#EE6B54":secs>65?"#9a6410":"#1f7a5a")})),
+    el("span",{class:"timer-lbl",text: stopped ? "stopped" : idle ? "" : "/ 90s target"})
+  );
+}
+
+/* language chooser — a dropdown, so it stays one control as languages grow */
+function langSelect(cur){
+  const sel=el("select",{class:"lang-sel","aria-label":"Language","data-act":"set-lang-sel"});
+  Object.keys(STR).forEach(k=>{
+    const op=el("option",{value:k,text:k.toUpperCase()+" · "+STR[k].lang});
+    if(k===cur) op.selected=true;
+    sel.append(op);
+  });
+  return el("div",{class:"lang-wrap"}, sel, el("span",{class:"lang-chev",html:I.chevD}));
+}
+
+/* back bar — a mistap must always be correctable.
+   Hidden where reversing is wrong: the cold open (nothing behind it) and
+   the 112 screen (never put a Back above a safety instruction). */
+const SCREEN_TITLES={
+  s0:"Incident", s0det:"Details", dismiss:"Dismiss", emg:"Emergency",
+  s1:"The six questions", s2:"Your reference", gaps:"What disappears",
+  witness:"Witness", otherv:"Other vehicle", photos:"Photos", eas:"Circumstances",
+  police:"Police", cargo:"Cargo", otherins:"Their insurer", done:"Finished",
+};
+const NO_BACK=["s0","emg"];
+function navBar(){
+  const s=Store.s;
+  if(NO_BACK.includes(s.screen)) return null;
+  if(!s.navStack.length) return null;
+  const label=(SCREEN_TITLES[s.navStack[s.navStack.length-1]]||"Back");
+  return el("div",{class:"nav-bar"},
+    el("button",{class:"nav-back","data-act":"nav-back","aria-label":"Go back to "+label},
+      el("span",{class:"nav-chev",html:I.chevL}),
+      el("span",{class:"nav-lbl",text:label})),
+    el("span",{class:"nav-saved",text:s.lastSaved?T("saved"):""})
+  );
+}
+
+/* the persistent 112 rail — above the fold on EVERY screen */
+function emergencyRail(){
+  return el("div",{class:"emg-rail dn-anchor"},
+    el("button",{class:"emg-btn","data-act":"call112"}, el("span",{html:I.phone}), T("emgCta"))
+  );
+}
+
+function statusBar(){
+  const off=Store.s.fail.offline;
+  return el("div",{class:"status-bar"},
+    el("span",{text:nowHM()}),
+    el("span",{class:"sb-right"},
+      el("span",{html: off
+        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9a6410" stroke-width="2.4" stroke-linecap="round"><path d="m2 2 20 20"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M12 20h.01"/></svg>'
+        : I.wifi}),
+      el("span",{html:I.batt})
+    )
+  );
+}
+
+/* saved affordance — "nothing is ever lost", so a shaken user isn't
+   afraid to close the app */
+function savedChip(){
+  if(!Store.s.lastSaved) return null;
+  return el("div",{class:"chip ok",style:"font-size:10.5px"}, el("span",{html:I.save}), T("saved"));
+}
+
+function offlineBanner(){
+  if(!Store.s.fail.offline) return null;
+  return el("div",{class:"banner banner-offline"},
+    el("span",{html:I.offline}),
+    el("div",{},
+      el("div",{text:"No signal — you can keep going."}),
+      el("div",{style:"font-weight:500;opacity:.85;margin-top:2px",
+        text:"Everything is saved on the phone and sent when you're back in coverage."})
+    )
+  );
+}
+
+/* ===== src/screens/driver/GapsHub.js ===== */
+/* ---------- S3 · perishability hub ---------- */
+function gapItems(){
+  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario];
+  const items=[];
+  const add=(id,screen,ic,doneWhen)=>{
+    if(!sc.perishable.includes(id) && id!=="otherIns" && id!=="cargo") return;
+    const p=PERISHABLE[id];
+    items.push({id, screen, ic, p, done:doneWhen, skipped:d.skipped.includes(id)});
+  };
+  add("witness","witness",I.user, d.witnessPresent!==null);
+  if(sc.thirdParty) add("otherPlate","otherv",I.plate, !!d.otherPlate);
+  add("photos","photos",I.cam, (sc.photos||[]).every(k=>d.photos[k]));
+  if(sc.eas) add("eas","eas",I.pen, d.easA.length>0 || d.easB.length>0);
+  add("police","police",I.police, d.policeAttended!==null);
+  if(sc.type!=="glass") add("cargo","cargo",I.box, d.cargoLaden!==null);
+  if(sc.thirdParty) add("otherIns","otherins",I.shield, !!d.otherInsurer);
+  // Sort by perishability. The DEFAULT half-life ordering lives in PERISHABLE.ord,
+  // but a scenario may override it: theft promotes the police reference above
+  // photographs, because no German insurer progresses a theft claim without a
+  // crime reference and there is no damage to photograph anyway. The scenario's
+  // own perishable[] array is the authority when it lists an item.
+  const rank = id => {
+    const i = sc.perishable.indexOf(id);
+    return i >= 0 ? i : 100 + PERISHABLE[id].ord;   // scenario order first, then the cool tail
+  };
+  items.sort((a,b)=> rank(a.id)-rank(b.id));
+  return items;
+}
+
+function scrGaps(){
+  const s=Store.s;
+  const items=gapItems();
+  const remaining = items.filter(x=>!x.done && !x.skipped);
+  const wrap=el("div",{class:"scroll"});
+  const inner=el("div",{class:"pad",style:"padding-top:18px"});
+
+  inner.append(el("div",{class:"step-meta"},
+    el("span",{class:"step-count",text:"optional · nothing here blocks you"}), savedChip()));
+  inner.append(el("h2",{class:"h2",text:T("perish")}));
+  inner.append(el("p",{class:"sub",style:"font-size:14.5px",
+    text:"Ordered by how fast each one evaporates. Not by how the form was drawn."}));
+  inner.append(el("div",{class:"sp16"}));
+
+  items.forEach(it=>{
+    const cls = it.done?"done": it.skipped?"skipped":"";
+    const wCls = it.p.half==="minutes" ? "" : it.p.half==="hours" ? "" : "cool";
+    inner.append(el("button",{class:"perish-item "+cls,"data-act":"goto","data-v":it.screen},
+      el("span",{class:"pi-clock",html: it.done?`<span style="color:var(--ok)">${I.chk}</span>`: it.skipped?`<span style="color:var(--ink-3)">${I.x}</span>`:it.ic}),
+      el("span",{class:"pi-body"},
+        el("span",{class:"pi-title",text:it.p.label}),
+        el("span",{class:"pi-window "+wCls}, it.skipped ? el("b",{style:"color:var(--ink-3)",text:"Skipped — we'll ask later"}) : el("b",{text:it.p.window}))),
+      el("span",{html:I.chev,style:"color:var(--ink-3);flex:none"})
+    ));
+  });
+
+  inner.append(dn("Perishability ordering — my recommendation, not an industry standard",
+    "Most FNOL forms are ordered by <i>logical grouping</i>: your details, their details, the incident, the vehicle. That ordering optimises for whoever drew the schema. This one is ordered by <b>half-life</b>. A witness is gone in ten minutes; the other party's insurer name is derivable from their plate next week. So the witness is first and the insurer is last — even though the insurer feels more “important”. Say plainly what you get for it: the last thing captured is the first thing lost, and contested liability is decided on exactly these items."));
+
+  inner.append(el("div",{class:"sp12"}));
+  inner.append(el("div",{class:"card-quiet"},
+    el("p",{class:"tiny",style:"line-height:1.5",html:"<b style='color:var(--ink-2)'>Never a percentage bar.</b> A progress bar tells a driver they are failing at something. This tells them what the world is about to take away. Same information, opposite emotional effect on someone with adrenaline in their hands."})));
+
+  inner.append(el("div",{class:"sp28"}));
+  wrap.append(inner);
+
+  const dock=el("div",{class:"dock"});
+  if(remaining.length){
+    dock.append(el("button",{class:"btn btn-primary btn-lg","data-act":"goto","data-v":remaining[0].screen},
+      "Next: "+remaining[0].p.label));
+  }
+  dock.append(el("button",{class:"btn btn-quiet","data-act":"finish-now"},
+    remaining.length ? "Stop here — the rest can wait" : "Done"));
+  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
+}
+
+/* generic sub-screen shell with a non-shaming Skip */
+function gapShell({id,title,sub,body,note,dockExtra,nextLabel}){
+  const wrap=el("div",{class:"scroll"});
+  const inner=el("div",{class:"pad",style:"padding-top:16px"});
+  inner.append(el("div",{class:"step-meta"},
+    el("button",{class:"step-count","data-act":"goto","data-v":"gaps",style:"display:flex;align-items:center;gap:5px"},
+      el("span",{html:I.back,style:"width:14px"}),"All items"),
+    savedChip()));
+  inner.append(el("div",{style:"display:flex;align-items:center;gap:9px;flex-wrap:wrap"},
+    el("h2",{class:"h2",text:title}),
+    el("span",{class:"chip warn",style:"font-size:10px",text:PERISHABLE[id]?PERISHABLE[id].window:"optional"})));
+  if(sub) inner.append(el("p",{class:"sub",style:"font-size:14.5px",text:sub}));
+  inner.append(el("div",{class:"sp16"}));
+  inner.append(body);
+  if(PERISHABLE[id]) inner.append(el("div",{class:"card-quiet",style:"margin-top:16px"},
+    el("p",{class:"tiny",style:"line-height:1.5",html:"<b style='color:var(--ink-2)'>Why this is here, in this position:</b> "+esc(PERISHABLE[id].why)})));
+  if(note) inner.append(note);
+  inner.append(el("div",{class:"sp28"}));
+  wrap.append(inner);
+
+  const dock=el("div",{class:"dock"});
+  if(dockExtra) dock.append(dockExtra);
+  dock.append(el("button",{class:"btn btn-primary btn-lg","data-act":"gap-next","data-v":id}, nextLabel||T("contin")));
+  // one tap. never asks "are you sure?".
+  dock.append(el("button",{class:"skip","data-act":"gap-skip","data-v":id}, T("skip")));
+  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
+}
+
+function textField(label, key, ph, type){
+  const d=Store.s.draft;
+  return el("div",{style:"margin-bottom:14px"},
+    el("label",{class:"lbl",text:label}),
+    el("div",{class:"inp-wrap has-mic"},
+      el("input",{class:"inp","data-field":key, value:d[key]||"", placeholder:ph||"", type:type||"text",
+        inputmode: type==="tel"?"tel":undefined, autocomplete:"off"}),
+      el("button",{class:"mic","data-act":"voice","data-v":key,html:I.mic,title:"Dictate — hands may be shaking or occupied"})
+    ));
+}
+
+/* ===== src/screens/driver/Cargo.js ===== */
+/* ---------- cargo (freight profile only) ---------- */
+function scrCargo(){
+  const d=Store.s.draft;
+  const body=el("div",{});
+  body.append(el("p",{class:"lbl",text:"Are you loaded?"}));
+  body.append(el("div",{class:"grid2",style:"margin-bottom:14px"},
+    el("button",{class:"choice","data-act":"set-cargo","data-v":"yes","aria-pressed":String(d.cargoLaden===true)},
+      el("span",{class:"cbox round",html:d.cargoLaden===true?I.chkS:""}),el("span",{},"Loaded")),
+    el("button",{class:"choice","data-act":"set-cargo","data-v":"no","aria-pressed":String(d.cargoLaden===false)},
+      el("span",{class:"cbox round",html:d.cargoLaden===false?I.chkS:""}),el("span",{},"Empty"))
+  ));
+  if(d.cargoLaden===true){
+    body.append(textField("What's on board — roughly","cargoDesc","24 pallets, packaged food"));
+    body.append(textField("Trailer number","trailer","B-RL 8829"));
+    body.append(el("p",{class:"lbl",text:"Anything hazardous (ADR)?"}));
+    body.append(el("div",{class:"grid2"},
+      el("button",{class:"choice","data-act":"set-hazard","data-v":"no","aria-pressed":String(d.hazardous===false)},
+        el("span",{class:"cbox round",html:d.hazardous===false?I.chkS:""}),el("span",{},"No")),
+      el("button",{class:"choice","data-act":"set-hazard","data-v":"yes","aria-pressed":String(d.hazardous===true)},
+        el("span",{class:"cbox round",html:d.hazardous===true?I.chkS:""}),el("span",{},"Yes — ADR load"))));
+    if(d.hazardous===true) body.append(el("div",{class:"card-quiet",style:"margin-top:12px;border-color:#e0a89c"},
+      el("p",{class:"tiny",style:"line-height:1.5",html:"<b style='color:#b8341c'>ADR load flagged.</b> This escalates immediately — it changes the recovery provider, the road closure, and who has to be told. This is the one “late” field that would justify being promoted."})));
+  }
+  return gapShell({
+    id:"cargo", title:"Cargo and trailer",
+    sub:"Only shown because this vehicle has a freight profile.",
+    body,
+    note: dn("Conditional on the vehicle profile, not on the driver",
+      "A van on a service round never sees this section. The cargo detail is reachable afterwards from the CMR note and the TMS, which is why it sits near the bottom — <b>with one exception</b>: a hazardous load is not a claims field at all, it is a safety escalation, and if the profile flags ADR I would promote that single question into Tier 1.")
+  });
+}
+
+/* ===== src/screens/driver/Dismiss.js ===== */
+/* ---------- dismissal ---------- */
+function scrDismiss(){
+  const reasons=[["pothole","Pothole or bad road surface"],["kerb","Kerb or ramp"],["hard_brake","Hard braking"],["load","Load shift in the trailer"],["other","Something else"]];
+  const wrap=el("div",{class:"scroll"});
+  const inner=el("div",{class:"pad",style:"padding-top:22px"});
+  inner.append(el("h1",{class:"h1",text:"What was it, actually?"}));
+  inner.append(el("p",{class:"sub",text:"One tap. No claim is created. This tunes the detection threshold so it stops bothering you."}));
+  inner.append(el("div",{class:"sp20"}));
+  reasons.forEach(([v,l])=> inner.append(el("button",{class:"choice","data-act":"dismiss-reason","data-v":v},
+    el("span",{class:"cbox round"}), el("span",{},l))));
+  inner.append(dn("Tap 2 of 2",
+    "Dismissal completes here. No confirmation dialog, no “are you sure”, no claim record, no reserve, no notification to the fleet manager. A <code>false_positive</code> event is written with the reason chip — watch it appear in the System pane. That event is the training data for the detection threshold; without it, false positives never get better."));
+  wrap.append(inner);
+  const dock=el("div",{class:"dock"},el("button",{class:"btn btn-ghost","data-act":"back-s0"},"Back"));
+  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
+}
+
+/* ===== src/components/svg.js ===== */
 /* ==================================================================
    §5 INLINE SVG GRAPHICS — all hand-authored. No tiles, no images.
    ================================================================== */
@@ -1792,255 +2054,314 @@ function svgRing(pct){
   </svg>`;
 }
 
-/* ==================================================================
-   §6 CHROME (demo scaffolding — deliberately not product-styled)
-   ================================================================== */
-function renderChrome(){
-  const s=Store.s;
-  const c=$("#chrome");
-  c.innerHTML="";
+/* ===== src/screens/driver/EasCircumstances.js ===== */
+/* ---------- EAS circumstances ---------- */
+function scrEAS(){
+  const s=Store.s, d=s.draft;
+  const body=el("div",{});
 
-  // row 1 — persona + scenario
-  const r1=el("div",{class:"chrome-row"});
-  r1.append(
-    el("span",{class:"chrome-brand",html:"<b>INS</b> FNOL"}),
-    el("span",{class:"chrome-hint",text:"demo harness — not the product"}),
-    el("div",{class:"chrome-sep"}),
-    el("span",{class:"chrome-tag",text:"Persona"}),
-    seg([["driver","Driver"],["fleet","Fleet manager"],["system","System"]], s.persona, "persona"),
-    el("div",{class:"chrome-sep"}),
-    el("span",{class:"chrome-tag",text:"Scenario"}),
-    seg(Object.values(SCENARIOS).map(x=>[x.id,x.label]), s.scenario, "scenario"),
-    el("div",{class:"chrome-spacer"}),
-    el("button",{class:"tog note","data-act":"toggle-notes","aria-pressed":String(s.notes)},
-      el("i",{class:"dot"}), "Design notes"),
-    el("button",{class:"chrome-btn danger","data-act":"reset"},"Reset")
-  );
+  body.append(el("div",{class:"card-quiet",style:"margin-bottom:14px"},
+    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.info,style:"color:var(--accent);flex:none;margin-top:2px"}),
+      el("p",{class:"tiny",style:"line-height:1.5",
+        html:"These are the <b style='color:var(--ink-2)'>17 statements from the European Accident Statement</b> — the same list the other driver has in their glovebox, in their language. Tick what was happening. <b style='color:var(--ink-2)'>Nobody is admitting anything by ticking a box.</b>"}))));
 
-  // row 2 — failure theatre
-  const r2=el("div",{class:"chrome-row"});
-  r2.append(
-    el("span",{class:"chrome-tag",text:"Failure theatre"}),
-    tog("fail-tpa", s.fail.tpa, "TPA down"),
-    tog("fail-offline", s.fail.offline, "No signal"),
-    el("button",{class:"tog fire","data-act":"triple-tap"}, el("i",{class:"dot"}), "Triple-tap submit"),
-    tog("fail-coverage", s.fail.coverage, "Vehicle not on schedule"),
-    el("div",{class:"chrome-sep"}),
-    el("span",{class:"chrome-hint",text:
-      s.fail.tpa||s.fail.offline||s.fail.coverage
-        ? "flip these mid-flow — the driver's screens do not change"
-        : "flip any of these mid-flow"}),
-    el("div",{class:"chrome-spacer"}),
-    s.persona!=="system" && el("button",{class:"chrome-btn","data-act":"go-system"},"Watch it in the System pane →")
-  );
+  // language for EAS column text
+  body.append(el("div",{style:"display:flex;justify-content:flex-end;margin-bottom:10px"},
+    el("div",{class:"seg",style:"transform:scale(.9);transform-origin:right"},
+      ...["en","de","pl"].map(k=>el("button",{"data-act":"eas-lang","data-v":k,"aria-pressed":String(s.easLangCol===k),
+        style:"font-family:var(--sans);font-weight:650"},k.toUpperCase())))));
 
-  c.append(r1,r2);
-  document.documentElement.style.setProperty("--chrome-h", (c.offsetHeight||88)+"px");
-  document.body.classList.toggle("notes-on", !!s.notes);
-
-  function seg(items, cur, kind){
-    const d=el("div",{class:"seg"});
-    items.forEach(([v,l])=> d.append(el("button",{"data-act":"set-"+kind,"data-v":v,"aria-pressed":String(cur===v)},l)));
-    return d;
-  }
-  function tog(act,on,label){
-    return el("button",{class:"tog","data-act":act,"aria-pressed":String(!!on)}, el("i",{class:"dot"}), label);
-  }
-}
-
-/* ==================================================================
-   §7 DRIVER FLOW
-   ================================================================== */
-
-/* helper: a design-note callout */
-function dn(tag, html){ return el("div",{class:"dn"}, el("span",{class:"dn-tag",text:tag}), el("div",{html})); }
-
-/* the 90-second timer, running from S0 and stopped on submit */
-function timerRail(){
-  const s=Store.s;
-  if(!s.startedAt) return null;
-  const end = s.stoppedAt || Date.now();
-  const secs = (end - s.startedAt)/1000;
-  const shown = secs.toFixed(1);
-  const pct = Math.min(100, secs/90*100);
-  const cls = secs>90 ? "over" : secs>65 ? "warn" : "";
-  const stopped = !!s.stoppedAt;
-  // Wall-clock, so an idle demo window drifts into the thousands and the number
-  // stops meaning anything. Past 3 min we say so instead of showing a big number.
-  const idle = !stopped && secs>180;
-  return el("div",{class:"timer-rail"+(stopped?" stopped":"")+(idle?" idle":""),
-      title:"Demo instrument. Times the blocking path — cold open to reference issued — against a 90-second target. Not shown to a real driver."},
-    el("span",{class:"timer-tag",text:"DEMO"}),
-    el("span",{class:"timer-lbl",text: stopped ? "blocking path took" : T("blockPath")}),
-    idle
-      ? el("span",{class:"timer-val idle-val",text:"paused — window left open"})
-      : el("span",{class:"timer-val "+cls, text: shown+"s"}),
-    idle ? el("span",{class:"timer-bar"}) 
-         : el("div",{class:"timer-bar"}, el("i",{style:"width:"+pct+"%;background:"+(secs>90?"#EE6B54":secs>65?"#9a6410":"#1f7a5a")})),
-    el("span",{class:"timer-lbl",text: stopped ? "stopped" : idle ? "" : "/ 90s target"})
-  );
-}
-
-/* language chooser — a dropdown, so it stays one control as languages grow */
-function langSelect(cur){
-  const sel=el("select",{class:"lang-sel","aria-label":"Language","data-act":"set-lang-sel"});
-  Object.keys(STR).forEach(k=>{
-    const op=el("option",{value:k,text:k.toUpperCase()+" · "+STR[k].lang});
-    if(k===cur) op.selected=true;
-    sel.append(op);
+  const grid=el("div",{class:"eas-grid"});
+  grid.append(el("div",{class:"eas-head"},
+    el("div",{class:"hA",html:"A<br>You"}), el("div",{},"What was happening"), el("div",{class:"hB",html:"B<br>Them"})));
+  EAS_STATEMENTS.forEach(st=>{
+    const onA=d.easA.includes(st.n), onB=d.easB.includes(st.n);
+    grid.append(el("div",{class:"eas-row"},
+      el("div",{class:"eas-tick A"+(onA?" on":""),"data-act":"eas-tick","data-col":"A","data-n":st.n},
+        el("i",{html:onA?I.chkS:""})),
+      el("div",{class:"txt"}, el("span",{class:"no",text:st.n}), el("span",{text:st[s.easLangCol]||st.en})),
+      el("div",{class:"eas-tick B"+(onB?" on":""),"data-act":"eas-tick","data-col":"B","data-n":st.n},
+        el("i",{html:onB?I.chkS:""}))
+    ));
   });
-  return el("div",{class:"lang-wrap"}, sel, el("span",{class:"lang-chev",html:I.chevD}));
-}
+  grid.append(el("div",{class:"eas-count"},
+    el("span",{style:"color:#3d5f54",text:"A — "+d.easA.length+" ticked"}),
+    el("span",{style:"color:#9a6410",text:"B — "+d.easB.length+" ticked"})));
+  body.append(grid);
 
-/* back bar — a mistap must always be correctable.
-   Hidden where reversing is wrong: the cold open (nothing behind it) and
-   the 112 screen (never put a Back above a safety instruction). */
-const SCREEN_TITLES={
-  s0:"Incident", s0det:"Details", dismiss:"Dismiss", emg:"Emergency",
-  s1:"The six questions", s2:"Your reference", gaps:"What disappears",
-  witness:"Witness", otherv:"Other vehicle", photos:"Photos", eas:"Circumstances",
-  police:"Police", cargo:"Cargo", otherins:"Their insurer", done:"Finished",
-};
-const NO_BACK=["s0","emg"];
-function navBar(){
-  const s=Store.s;
-  if(NO_BACK.includes(s.screen)) return null;
-  if(!s.navStack.length) return null;
-  const label=(SCREEN_TITLES[s.navStack[s.navStack.length-1]]||"Back");
-  return el("div",{class:"nav-bar"},
-    el("button",{class:"nav-back","data-act":"nav-back","aria-label":"Go back to "+label},
-      el("span",{class:"nav-chev",html:I.chevL}),
-      el("span",{class:"nav-lbl",text:label})),
-    el("span",{class:"nav-saved",text:s.lastSaved?T("saved"):""})
-  );
-}
+  // point of impact
+  body.append(el("div",{class:"sp20"}));
+  body.append(el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"Where were you hit? (EAS box 10)"}));
+  body.append(el("div",{class:"impact-wrap",html:svgImpact(d.impact)}));
+  if(d.impact) body.append(el("p",{class:"tiny",style:"text-align:center;margin-top:7px",text:"Point of impact: "+IMPACT_LABEL[d.impact]}));
 
-/* the persistent 112 rail — above the fold on EVERY screen */
-function emergencyRail(){
-  return el("div",{class:"emg-rail dn-anchor"},
-    el("button",{class:"emg-btn","data-act":"call112"}, el("span",{html:I.phone}), T("emgCta"))
-  );
-}
+  // sketch
+  body.append(el("div",{class:"sp20"}));
+  body.append(el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"Draw what happened (EAS box 13)"}));
+  body.append(el("div",{class:"sketch-wrap"},el("canvas",{id:"sketchCanvas",width:"640",height:"420"})));
+  body.append(el("div",{class:"sketch-tools"},
+    el("button",{class:"btn btn-sm btn-ghost","data-act":"sketch-clear"},"Clear"),
+    el("span",{class:"tiny",style:"align-self:center"},"Finger or mouse. Arrows and two boxes is plenty.")));
 
-function statusBar(){
-  const off=Store.s.fail.offline;
-  return el("div",{class:"status-bar"},
-    el("span",{text:nowHM()}),
-    el("span",{class:"sb-right"},
-      el("span",{html: off
-        ? '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#9a6410" stroke-width="2.4" stroke-linecap="round"><path d="m2 2 20 20"/><path d="M8.5 16.4a5 5 0 0 1 7 0"/><path d="M12 20h.01"/></svg>'
-        : I.wifi}),
-      el("span",{html:I.batt})
-    )
-  );
-}
-
-/* saved affordance — "nothing is ever lost", so a shaken user isn't
-   afraid to close the app */
-function savedChip(){
-  if(!Store.s.lastSaved) return null;
-  return el("div",{class:"chip ok",style:"font-size:10.5px"}, el("span",{html:I.save}), T("saved"));
-}
-
-function offlineBanner(){
-  if(!Store.s.fail.offline) return null;
-  return el("div",{class:"banner banner-offline"},
-    el("span",{html:I.offline}),
+  // signatures
+  body.append(el("div",{class:"sp20"}));
+  body.append(el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"Both drivers sign"}));
+  body.append(el("div",{style:"display:grid;gap:12px"},
     el("div",{},
-      el("div",{text:"No signal — you can keep going."}),
-      el("div",{style:"font-weight:500;opacity:.85;margin-top:2px",
-        text:"Everything is saved on the phone and sent when you're back in coverage."})
-    )
-  );
-}
-
-/* ---------------- driver screen router ---------------- */
-function renderDriver(){
-  const s=Store.s, sc=SCENARIOS[s.scenario];
-  const screen = el("div",{class:"screen"});
-
-  const ob=offlineBanner(); if(ob) screen.append(ob);
-  screen.append(emergencyRail());
-
-  const nb=navBar(); if(nb) screen.append(nb);
-
-  const t = timerRail(); if(t && ["s1","s0det"].includes(s.screen)) screen.append(t);
-
-  const body = ({
-    s0:      scrS0,
-    s0det:   scrS0Detail,
-    dismiss: scrDismiss,
-    emg:     scrEmergency,
-    s1:      scrTier1,
-    s2:      scrReference,
-    gaps:    scrGaps,
-    witness: scrWitness,
-    otherv:  scrOtherVehicle,
-    photos:  scrPhotos,
-    eas:     scrEAS,
-    police:  scrPolice,
-    cargo:   scrCargo,
-    otherins:scrOtherInsurer,
-    done:    scrSoftStop,
-  }[s.screen] || scrS0)();
-
-  screen.append(body);
-
-  const phone = el("div",{class:"phone"},
-    el("div",{class:"phone-notch"}), statusBar(), screen, el("div",{class:"home-ind"}));
-
-  return el("div",{class:"phone-wrap"},
+      el("div",{class:"tiny",style:"margin-bottom:6px;color:#3d5f54;font-weight:700",text:"A — you (Marek K.)"}),
+      el("div",{class:"sig-pad"+(d.sigA?" signed":"")},el("canvas",{id:"sigA",width:"620",height:"220"}),
+        el("span",{class:"sig-hint",text:"sign here"}))),
     el("div",{},
-      phone,
-      el("div",{class:"phone-caption",
-        text:"Driver · "+sc.short+" · "+(SCENARIOS[s.scenario].telematics.driver)+" · 390 × 844"})
-    ),
-    renderDriverSidecar()
-  );
+      el("div",{class:"tiny",style:"margin-bottom:6px;color:#9a6410;font-weight:700",text:"B — the other driver"}),
+      el("div",{class:"sig-pad"+(d.sigB?" signed":"")},el("canvas",{id:"sigB",width:"620",height:"220"}),
+        el("span",{class:"sig-hint",text:"hand them the phone"})))
+  ));
+  body.append(el("div",{style:"display:flex;gap:8px;margin-top:10px"},
+    el("button",{class:"btn btn-sm btn-ghost","data-act":"sig-clear","data-v":"A"},"Clear A"),
+    el("button",{class:"btn btn-sm btn-ghost","data-act":"sig-clear","data-v":"B"},"Clear B")));
+
+  body.append(el("div",{class:"sp16"}));
+  body.append(el("div",{class:"card-quiet",style:"border-color:#e8d3a4"},
+    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.warn,style:"color:var(--warn);flex:none;margin-top:2px"}),
+      el("p",{class:"tiny",style:"line-height:1.5",
+        html:"<b style='color:var(--ink-2)'>Known weak link:</b> half the value of this section depends on a stranger being willing to sign a phone screen. Column B is fully skippable and the report is still valid without it — but be honest that the outcome is materially worse."}))));
+
+  return gapShell({
+    id:"eas", title:"What was happening", sub:"The European Accident Statement, box 12 — both columns.",
+    body,
+    note: dn("Why we adopted the EAS instead of designing a schema",
+      "The constat amiable / Europäischer Unfallbericht has been the cross-border standard for decades. Every European handler reads it without training, both parties fill in <b>the same 17 statements</b> in their own language, and — the part that is legally load-bearing — it establishes <b>agreed facts without either party admitting liability</b>. Inventing our own circumstance model would have meant a mapping layer, a translation argument with every counterparty, and no legal precedent. We took the standard and made it tappable.")
+  });
 }
 
-/* a slim side panel next to the phone: what the founders read while narrating */
-function renderDriverSidecar(){
-  const s=Store.s, sc=SCENARIOS[s.scenario];
-  const inc = s.incident;
-  const comp = inc ? inc.completeness : null;
-  const box = el("div",{style:"width:330px;flex:none;display:flex;flex-direction:column;gap:12px"});
+/* ===== src/screens/driver/Emergency.js ===== */
+/* ---------- INJURY SAFETY ROUTE — before ANY data collection ---------- */
+function scrEmergency(){
+  const wrap=el("div",{class:"scroll"});
+  const inner=el("div",{class:"pad",style:"padding-top:26px"});
+  inner.append(el("div",{style:"width:72px;height:72px;border-radius:22px;background:var(--danger-soft);border:1px solid #e0a89c;display:grid;place-items:center;color:var(--danger-deep)",
+    html:'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>'}));
+  inner.append(el("div",{class:"sp20"}));
+  inner.append(el("h1",{class:"h1",text:T("emgTitle")}));
+  inner.append(el("p",{class:"sub",style:"font-size:17px;margin-top:10px",text:T("emgBody")}));
+  inner.append(el("div",{class:"sp20"}));
+  inner.append(el("div",{class:"card",style:"border-color:#e0a89c;background:linear-gradient(160deg,#fde5e0,#12181f)"},
+    el("div",{style:"font-size:13px;color:#b8341c;font-weight:650",text:"Germany · Europe-wide"}),
+    el("div",{style:"font-size:34px;font-weight:800;letter-spacing:.04em;margin-top:2px",text:"112"}),
+    el("p",{class:"tiny",style:"margin-top:6px",text:"Works from any mobile, any network, without a SIM."})
+  ));
+  inner.append(dn("The rule this screen enforces",
+    "<b>We never ask a claims question ahead of a safety one.</b> Answering “someone is hurt” routes here <i>before</i> any field is collected — not to a form with an injury section near the top. There is no Skip on this screen and no field on it. The claim is still open behind it; nothing entered is lost."));
+  wrap.append(inner);
+  const dock=el("div",{class:"dock"},
+    el("button",{class:"btn btn-danger btn-lg","data-act":"call112"},el("span",{html:I.phone}), T("call112")),
+    el("button",{class:"btn btn-secondary","data-act":"emg-continue"}, T("emgCalled")),
+    el("button",{class:"btn btn-quiet","data-act":"emg-continue"}, T("emgNoNeed"))
+  );
+  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
+}
 
-  box.append(el("div",{class:"card"},
-    el("div",{class:"sect-h"},el("h3",{text:sc.label})),
-    el("p",{class:"tiny",style:"line-height:1.5",text:sc.note}),
-    el("div",{class:"sp12"}),
-    el("div",{class:"chipset"},
-      el("span",{class:"chip info",text:sc.fieldCount+" fields capturable"}),
-      el("span",{class:"chip ok",text:"6 block"}),
-      sc.eas && el("span",{class:"chip",text:"EAS section"}),
-      sc.thirdParty && el("span",{class:"chip",text:"third party"})
-    )
+/* ===== src/screens/driver/OtherInsurer.js ===== */
+/* ---------- other insurer — deliberately last ---------- */
+function scrOtherInsurer(){
+  const body=el("div",{});
+  body.append(textField("Their insurer, if you can see the card","otherInsurer","HUK-Coburg, Allianz…"));
+  body.append(textField("Policy number","otherPolicy",""));
+  body.append(el("div",{class:"card-quiet"},
+    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.info,style:"color:var(--ink-3);flex:none;margin-top:2px"}),
+      el("p",{class:"tiny",style:"line-height:1.5",
+        html:"Genuinely optional. We can get this from the plate through the central register. <b style='color:var(--ink-2)'>Skip it without a second thought.</b>"}))));
+  return gapShell({
+    id:"otherIns", title:"Their insurance",
+    sub:"Last on the list on purpose.",
+    body,
+    note: dn("The field every FNOL form puts near the top",
+      "Insurer and policy number <i>feel</i> essential, which is why they usually appear on page one. They are the <b>least</b> perishable thing in the entire report: derivable from the plate, chaseable for weeks. Putting them early costs you the witness. This is the clearest example of what perishability ordering actually changes.")
+  });
+}
+
+/* ===== src/screens/driver/OtherVehicle.js ===== */
+/* ---------- other vehicle · plate first ---------- */
+function scrOtherVehicle(){
+  const d=Store.s.draft;
+  const body=el("div",{});
+  body.append(el("label",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"The other vehicle's plate"}));
+  body.append(el("div",{class:"inp-wrap has-mic"},
+    el("input",{class:"inp plate-inp","data-field":"otherPlate",value:d.otherPlate||"",placeholder:"M-XY 1234",autocomplete:"off",autocapitalize:"characters"}),
+    el("button",{class:"mic","data-act":"voice","data-v":"otherPlate",html:I.mic})));
+  body.append(el("div",{class:"card-quiet",style:"margin-top:12px"},
+    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.info,style:"color:var(--accent);flex:none;margin-top:2px"}),
+      el("p",{class:"tiny",style:"line-height:1.5;font-size:13.5px",
+        html:"<b style='color:var(--ink)'>Just the plate is enough. We'll chase the rest.</b>"}))));
+
+  body.append(el("div",{class:"sp20"}));
+  body.append(el("button",{class:"btn btn-ghost","data-act":"toggle-otherdetail"},
+    Store.s.subScreen==="otherdetail" ? "Hide the rest" : "They're standing here — add more (optional)"));
+  if(Store.s.subScreen==="otherdetail"){
+    body.append(el("div",{class:"sp16"}));
+    body.append(textField("Make and colour","otherMake","Silver Sprinter"));
+    body.append(textField("Their name","otherDriver",""));
+    body.append(textField("Their phone","otherPhone","","tel"));
+  }
+  return gapShell({
+    id:"otherPlate", title:"The other vehicle",
+    sub:"One field. Everything else about them can be found from it.",
+    body,
+    note: dn("Plate-first, and everything else demoted",
+      "A German plate resolves to the keeper and, through the central register (Zentralruf der Autoversicherer), to the insurer. So the plate is <b>load-bearing</b> and the insurer name is <b>derivable</b> — which is exactly why the insurer field sits at the bottom of the perishable list and not next to this one. Asking a shaken driver for a policy number while the other party is walking to their car costs you the plate.")
+  });
+}
+
+/* ===== src/screens/driver/Photos.js ===== */
+/* ---------- guided photo set ---------- */
+function scrPhotos(){
+  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario];
+  const slots=sc.photos||[];
+  const body=el("div",{});
+  const grid=el("div",{class:"photo-grid"});
+  slots.forEach((k,i)=>{
+    const meta=PHOTO_SLOTS[k]||{n:i+1,label:k,sil:"wide"};
+    const st=d.photos[k];
+    grid.append(el("button",{
+      class:"pslot"+(st&&!st.skipped?" shot":"")+(st&&st.skipped?" skipped":""),
+      "data-act":"shoot","data-v":k},
+      el("span",{html:svgSilhouette(meta.sil, !!(st&&!st.skipped))}),
+      el("span",{class:"pflash"}),
+      el("span",{class:"pnum",html: st&&!st.skipped ? I.chkS : String(meta.n)}),
+      el("span",{class:"plabel",text:meta.label})
+    ));
+  });
+  body.append(grid);
+
+  const done=slots.filter(k=>d.photos[k]&&!d.photos[k].skipped).length;
+  body.append(el("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-top:12px"},
+    el("span",{class:"tiny",text:done+" of "+slots.length+" captured"}),
+    el("button",{class:"btn btn-sm btn-ghost","data-act":"skip-remaining-photos"},"Skip the rest")));
+
+  body.append(el("div",{class:"card-quiet",style:"margin-top:14px"},
+    el("p",{class:"tiny",style:"line-height:1.5",
+      html:"Tap a slot to take that shot. The silhouette shows what to frame. <b style='color:var(--ink-2)'>Skipping a slot is fine and is logged</b> — a skipped slot is a known gap, an unnamed pile of photos is not."})));
+
+  if(s.fail.offline){
+    body.append(el("div",{class:"sp12"}));
+    body.append(el("div",{class:"card-quiet",style:"border-color:#e8d3a4"},
+      el("div",{style:"display:flex;gap:10px"},el("span",{html:I.offline,style:"color:var(--warn);flex:none;margin-top:2px"}),
+        el("p",{class:"tiny",style:"line-height:1.5",html:"Photos are held on the phone and queued <b style='color:var(--ink-2)'>separately from the report</b>. The report syncs first — it's a few kilobytes. Photos follow."}))));
+  }
+
+  return gapShell({
+    id:"photos", title:"Photographs", sub:"Five named shots, not “upload photos”. The order matters.",
+    body,
+    note: dn("A named sequence beats an upload button",
+      "“Attach photos” produces four pictures of the same dent. Named slots with silhouettes produce the <b>wide shot</b> that establishes position and the <b>signage shot</b> that establishes right of way — the two an adjuster actually needs and the two a driver never thinks to take. Each slot is independently skippable, and a skipped slot is recorded as a <i>known</i> gap rather than a silent one.")
+  });
+}
+
+/* ===== src/screens/driver/Police.js ===== */
+/* ---------- police ---------- */
+function scrPolice(){
+  const d=Store.s.draft, s=Store.s;
+  const theft = s.scenario==="theft";
+  const body=el("div",{});
+  body.append(el("div",{class:"grid2",style:"margin-bottom:14px"},
+    el("button",{class:"choice","data-act":"set-police","data-v":"yes","aria-pressed":String(d.policeAttended===true)},
+      el("span",{class:"cbox round",html:d.policeAttended===true?I.chkS:""}),el("span",{},"Yes")),
+    el("button",{class:"choice","data-act":"set-police","data-v":"no","aria-pressed":String(d.policeAttended===false)},
+      el("span",{class:"cbox round",html:d.policeAttended===false?I.chkS:""}),el("span",{},"No"))
+  ));
+  if(d.policeAttended===true){
+    body.append(textField(theft?"Crime reference (Aktenzeichen)":"Reference number, if they gave you one","policeRef","e.g. 2026/074/0084217"));
+  }
+  if(theft && d.policeAttended!==true){
+    body.append(el("div",{class:"card-quiet",style:"border-color:#e8d3a4"},
+      el("div",{style:"display:flex;gap:10px"},el("span",{html:I.warn,style:"color:var(--warn);flex:none;margin-top:2px"}),
+        el("p",{class:"tiny",style:"line-height:1.5",
+          html:"<b style='color:var(--ink-2)'>For a theft this is nearly blocking.</b> No German insurer will progress a theft claim without a police report. We still don't block on it — you may be on a motorway at 4 a.m. — but we will chase this one hard."}))));
+  }
+  return gapShell({
+    id:"police", title:theft?"Have you reported it stolen?":"Did the police attend?",
+    sub:theft?"This is the one thing a theft claim cannot proceed without.":"One question while the officer is still here.",
+    body,
+    note: dn("Hours, not minutes",
+      "A police reference is retrievable next week with a phone call, so it sits <b>below</b> the witness and the plate. It is above cargo and the other insurer because the officer is standing here <i>now</i> and it costs one question. Theft inverts this: no report, no claim, so it moves to the top for that scenario.")
+  });
+}
+
+/* ===== src/screens/driver/S2Reference.js ===== */
+/* ---------- S2 · reference issued ---------- */
+function scrReference(){
+  const s=Store.s, d=s.draft;
+  const wrap=el("div",{class:"scroll"});
+  const inner=el("div",{class:"pad",style:"padding-top:20px"});
+
+  const secs = s.stoppedAt && s.startedAt ? ((s.stoppedAt-s.startedAt)/1000).toFixed(1) : null;
+
+  inner.append(el("div",{style:"display:flex;align-items:center;gap:10px"},
+    el("span",{html:I.chk,style:"color:var(--ok)"}),
+    el("span",{style:"font-weight:700;color:var(--ok);font-size:14px",text:T("refTitle")})
+  ));
+  inner.append(el("div",{class:"sp16"}));
+
+  inner.append(el("div",{class:"ref-hero"},
+    el("div",{class:"tiny",style:"letter-spacing:.09em;text-transform:uppercase;font-size:10.5px;color:#8fbdea",text:"Your reference"}),
+    el("div",{class:"ref-code",text:s.reference||"…"}),
+    el("button",{class:"btn btn-secondary btn-sm","data-act":"copy-ref",style:"margin:10px auto 0"},
+      el("span",{html:I.copy}),"Copy"),
+    el("div",{class:"ref-stamp"},el("span",{html:I.shield}),"issued by the insurer — independent of the TPA"),
+    el("div",{style:"margin-top:10px"},
+      el("span",{class:"ref-latency",text:(s.fail.offline?"generated on this phone · 0 ms":"issued in "+(s.refLatencyMs||42)+" ms")}))
   ));
 
-  box.append(el("div",{class:"card"},
-    el("div",{class:"panel-h",style:"background:none;border:none;padding:0 0 9px"},"Never asked, anywhere"),
-    el("div",{style:"display:flex;gap:10px;align-items:flex-start"},
-      el("span",{html:I.x,style:"color:var(--danger-deep);margin-top:2px;flex:none"}),
-      el("div",{},
-        el("div",{style:"font-weight:700;font-size:14px",text:"“Whose fault was it?”"}),
-        el("p",{class:"tiny",style:"margin-top:5px;line-height:1.5",
-          html:"No such field exists in this form. Not hidden, not optional — <b style='color:var(--ink-2)'>absent</b>. The European Accident Statement's design principle is that it establishes agreed <i>facts</i> without either party admitting liability. A fault field at the roadside creates an admission a shaken driver is in no position to make, and it is worth money to the other side. Liability is determined later, by people whose job that is."})
-      ))
-  ));
+  inner.append(el("div",{class:"sp16"}));
+  inner.append(el("p",{class:"sub",style:"font-size:15px",
+    text:"Give this number to the police officer and the other driver. It is already valid."}));
 
-  if(comp){
-    box.append(el("div",{class:"card"},
-      el("div",{class:"panel-h",style:"background:none;border:none;padding:0 0 9px"},"GET /v1/incidents/{id}/requirements"),
-      el("pre",{class:"json",style:"max-height:250px;font-size:11px",
-        text:JSON.stringify({completeness:comp, next_actions:FakeApi.nextActions(FakeApi._raw.incidents[inc.id]||{draft:s.draft,completeness:comp})},null,1)}),
-      el("p",{class:"tiny",style:"margin-top:9px",text:"The driver's remaining list and the fleet manager's chase list are the same array. The API drives the prompting."})
+  inner.append(dn("Who issues the reference is a commercial question, not a technical one",
+    "The reference is generated by <b>the insurer</b>, client-side, from a format the insurer owns — <code>INS-DE-YYYY-NNNNNN</code>. It does not wait on the TPA, and offline it is produced <b>on the phone</b> with no round trip at all. If the claim reference can only come back from the TPA, then the TPA's uptime is the driver's problem and the insurer has outsourced its own moment of truth. Flip <b>TPA down</b> and this screen does not change by one pixel."));
+
+  if(d.drivable===false){
+    inner.append(el("div",{class:"sp16"}));
+    inner.append(el("div",{class:"card",style:"border-color:#c3d6cd;background:linear-gradient(160deg,#12233a,#101720)"},
+      el("div",{style:"display:flex;gap:12px;align-items:flex-start"},
+        el("span",{html:I.truck,style:"color:var(--accent);flex:none;margin-top:2px"}),
+        el("div",{},
+          el("div",{style:"font-weight:700;font-size:15.5px",text:"Recovery dispatched · ETA 45 min"}),
+          el("p",{class:"tiny",style:"margin-top:4px",text:"Anja at dispatch has been notified. Stay behind the barrier."}),
+          el("div",{class:"chip warn",style:"margin-top:9px;font-size:10px"},"SIMULATED — no recovery provider was contacted")
+        ))
     ));
   }
 
-  return box;
+  if(s.incident && s.incident.coverage_status==="disputed"){
+    inner.append(dn("What the driver does NOT see",
+      "The coverage check just failed — this vehicle is not on the policy schedule for today's date. The driver's screen is <b>identical</b>: reference issued, recovery dispatched, no warning, no delay. The flag went to the underwriting queue as a human review task. Auto-rejecting at the roadside would be an automated adverse decision on an individual, which under <b>Art. 22</b> needs human involvement and a right to contest — and it would be operationally wrong anyway, because schedule data is stale more often than drivers are dishonest."));
+  }
+
+  if(s.fail.tpa){
+    inner.append(dn("The TPA is down right now",
+      "Nothing on this screen knows that. The incident was accepted, persisted and acknowledged; the forward to the TPA is queued behind exponential backoff. <b>Accept → persist → acknowledge → forward async.</b> Watch the retries in the System pane."));
+  }
+
+  inner.append(el("div",{class:"sp16"}));
+  inner.append(el("div",{class:"card-quiet"},
+    el("div",{style:"display:flex;gap:10px"},
+      el("span",{html:I.info,style:"color:var(--ink-3);flex:none;margin-top:2px"}),
+      el("p",{class:"tiny",style:"line-height:1.5",html:"You can close the app now. Everything is saved. We'll message you a link to finish the rest whenever you're ready — <b style='color:var(--ink-2)'>the report is already filed</b>."}))
+  ));
+
+  inner.append(el("div",{class:"sp28"}));
+  wrap.append(inner);
+
+  const dock=el("div",{class:"dock"});
+  if(secs) dock.append(el("div",{style:"text-align:center;margin-bottom:10px"},
+    el("span",{class:"chip "+(parseFloat(secs)<=90?"ok":"warn"),style:"font-size:11px"},
+      "Blocking path complete in "+secs+"s")));
+  dock.append(el("button",{class:"btn btn-primary btn-lg","data-act":"go-gaps"},"A few things that disappear if we wait"));
+  dock.append(el("button",{class:"btn btn-quiet","data-act":"finish-now"},"I'm done for now"));
+  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
 }
 
+/* ===== src/screens/driver/S0Detection.js ===== */
 /* ---------- S0 · telematics cold open ---------- */
 function scrS0(){
   const s=Store.s, sc=SCENARIOS[s.scenario], t=sc.telematics;
@@ -2116,49 +2437,49 @@ function scrS0(){
 
 function scrS0Detail(){ return scrS0(); }
 
-/* ---------- dismissal ---------- */
-function scrDismiss(){
-  const reasons=[["pothole","Pothole or bad road surface"],["kerb","Kerb or ramp"],["hard_brake","Hard braking"],["load","Load shift in the trailer"],["other","Something else"]];
+/* ===== src/screens/driver/SoftStop.js ===== */
+/* ---------- soft stop ---------- */
+function scrSoftStop(){
+  const s=Store.s;
+  const inc = s.incident;
+  const score = inc ? inc.completeness.score : 0;
+  const items=gapItems();
+  const skipped=items.filter(x=>x.skipped || !x.done);
   const wrap=el("div",{class:"scroll"});
-  const inner=el("div",{class:"pad",style:"padding-top:22px"});
-  inner.append(el("h1",{class:"h1",text:"What was it, actually?"}));
-  inner.append(el("p",{class:"sub",text:"One tap. No claim is created. This tunes the detection threshold so it stops bothering you."}));
-  inner.append(el("div",{class:"sp20"}));
-  reasons.forEach(([v,l])=> inner.append(el("button",{class:"choice","data-act":"dismiss-reason","data-v":v},
-    el("span",{class:"cbox round"}), el("span",{},l))));
-  inner.append(dn("Tap 2 of 2",
-    "Dismissal completes here. No confirmation dialog, no “are you sure”, no claim record, no reserve, no notification to the fleet manager. A <code>false_positive</code> event is written with the reason chip — watch it appear in the System pane. That event is the training data for the detection threshold; without it, false positives never get better."));
-  wrap.append(inner);
-  const dock=el("div",{class:"dock"},el("button",{class:"btn btn-ghost","data-act":"back-s0"},"Back"));
-  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
-}
-
-/* ---------- INJURY SAFETY ROUTE — before ANY data collection ---------- */
-function scrEmergency(){
-  const wrap=el("div",{class:"scroll"});
-  const inner=el("div",{class:"pad",style:"padding-top:26px"});
-  inner.append(el("div",{style:"width:72px;height:72px;border-radius:22px;background:var(--danger-soft);border:1px solid #e0a89c;display:grid;place-items:center;color:var(--danger-deep)",
-    html:'<svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.6 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.6a2 2 0 0 0-3.4 0z"/><path d="M12 9v4M12 17h.01"/></svg>'}));
-  inner.append(el("div",{class:"sp20"}));
-  inner.append(el("h1",{class:"h1",text:T("emgTitle")}));
-  inner.append(el("p",{class:"sub",style:"font-size:17px;margin-top:10px",text:T("emgBody")}));
-  inner.append(el("div",{class:"sp20"}));
-  inner.append(el("div",{class:"card",style:"border-color:#e0a89c;background:linear-gradient(160deg,#fde5e0,#12181f)"},
-    el("div",{style:"font-size:13px;color:#b8341c;font-weight:650",text:"Germany · Europe-wide"}),
-    el("div",{style:"font-size:34px;font-weight:800;letter-spacing:.04em;margin-top:2px",text:"112"}),
-    el("p",{class:"tiny",style:"margin-top:6px",text:"Works from any mobile, any network, without a SIM."})
+  const inner=el("div",{class:"pad",style:"padding-top:30px;text-align:center"});
+  inner.append(el("div",{class:"softstop"},
+    el("div",{html:svgRing(score)}),
+    el("h1",{class:"h1",text:"That's everything perishable."}),
+    el("p",{class:"sub",style:"font-size:16.5px",text:"The rest can wait — we'll message you."})
   ));
-  inner.append(dn("The rule this screen enforces",
-    "<b>We never ask a claims question ahead of a safety one.</b> Answering “someone is hurt” routes here <i>before</i> any field is collected — not to a form with an injury section near the top. There is no Skip on this screen and no field on it. The claim is still open behind it; nothing entered is lost."));
+  inner.append(el("div",{class:"sp20"}));
+  inner.append(el("div",{class:"card",style:"text-align:left"},
+    el("div",{class:"tiny",style:"text-transform:uppercase;letter-spacing:.07em;font-size:10.5px",text:"Reference"}),
+    el("div",{class:"mono",style:"font-size:18px;font-weight:700;margin-top:3px",text:s.reference||"—"}),
+    el("div",{class:"sp12"}),
+    el("div",{class:"chipset"},
+      el("span",{class:"chip ok",text:score+"% complete"}),
+      s.draft.drivable===false && el("span",{class:"chip info",text:"Recovery en route"}),
+      s.fail.offline && el("span",{class:"chip warn",text:"Will sync when you're back in signal"}))
+  ));
+  if(skipped.length){
+    inner.append(el("div",{class:"sp16"}));
+    inner.append(el("div",{class:"card-quiet",style:"text-align:left"},
+      el("div",{class:"tiny",style:"font-weight:700;color:var(--ink-2);margin-bottom:8px",text:"We'll ask you about these later"}),
+      el("div",{class:"chipset"},...skipped.map(x=>el("span",{class:"chip",style:"font-size:10.5px",text:x.p.label}))),
+      el("p",{class:"tiny",style:"margin-top:10px",text:"No nagging now. A message tomorrow when you're not standing on a hard shoulder."})));
+  }
+  inner.append(dn("A soft stop, not a submit button",
+    "There is no final “Submit” here because the report was <b>already filed</b> at second 42. This screen exists to give a driver permission to stop. The alternative — a form that never says you're finished — is how you get abandonment on the last screen and a claim with photographs but no witness."));
+  inner.append(el("div",{class:"sp28"}));
   wrap.append(inner);
   const dock=el("div",{class:"dock"},
-    el("button",{class:"btn btn-danger btn-lg","data-act":"call112"},el("span",{html:I.phone}), T("call112")),
-    el("button",{class:"btn btn-secondary","data-act":"emg-continue"}, T("emgCalled")),
-    el("button",{class:"btn btn-quiet","data-act":"emg-continue"}, T("emgNoNeed"))
-  );
+    el("button",{class:"btn btn-primary btn-lg","data-act":"go-fleet"},"See what dispatch sees →"),
+    el("button",{class:"btn btn-ghost","data-act":"goto","data-v":"gaps"},"Add something after all"));
   return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
 }
 
+/* ===== src/screens/driver/S1Tier1.js ===== */
 /* ---------- S1 · TIER 1 — the six blocking fields ---------- */
 function scrTier1(){
   const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario];
@@ -2306,193 +2627,7 @@ function fieldRow({ic,label,value,pre,state,act,hint}){
   );
 }
 
-/* ---------- S2 · reference issued ---------- */
-function scrReference(){
-  const s=Store.s, d=s.draft;
-  const wrap=el("div",{class:"scroll"});
-  const inner=el("div",{class:"pad",style:"padding-top:20px"});
-
-  const secs = s.stoppedAt && s.startedAt ? ((s.stoppedAt-s.startedAt)/1000).toFixed(1) : null;
-
-  inner.append(el("div",{style:"display:flex;align-items:center;gap:10px"},
-    el("span",{html:I.chk,style:"color:var(--ok)"}),
-    el("span",{style:"font-weight:700;color:var(--ok);font-size:14px",text:T("refTitle")})
-  ));
-  inner.append(el("div",{class:"sp16"}));
-
-  inner.append(el("div",{class:"ref-hero"},
-    el("div",{class:"tiny",style:"letter-spacing:.09em;text-transform:uppercase;font-size:10.5px;color:#8fbdea",text:"Your reference"}),
-    el("div",{class:"ref-code",text:s.reference||"…"}),
-    el("button",{class:"btn btn-secondary btn-sm","data-act":"copy-ref",style:"margin:10px auto 0"},
-      el("span",{html:I.copy}),"Copy"),
-    el("div",{class:"ref-stamp"},el("span",{html:I.shield}),"issued by the insurer — independent of the TPA"),
-    el("div",{style:"margin-top:10px"},
-      el("span",{class:"ref-latency",text:(s.fail.offline?"generated on this phone · 0 ms":"issued in "+(s.refLatencyMs||42)+" ms")}))
-  ));
-
-  inner.append(el("div",{class:"sp16"}));
-  inner.append(el("p",{class:"sub",style:"font-size:15px",
-    text:"Give this number to the police officer and the other driver. It is already valid."}));
-
-  inner.append(dn("Who issues the reference is a commercial question, not a technical one",
-    "The reference is generated by <b>the insurer</b>, client-side, from a format the insurer owns — <code>INS-DE-YYYY-NNNNNN</code>. It does not wait on the TPA, and offline it is produced <b>on the phone</b> with no round trip at all. If the claim reference can only come back from the TPA, then the TPA's uptime is the driver's problem and the insurer has outsourced its own moment of truth. Flip <b>TPA down</b> and this screen does not change by one pixel."));
-
-  if(d.drivable===false){
-    inner.append(el("div",{class:"sp16"}));
-    inner.append(el("div",{class:"card",style:"border-color:#c3d6cd;background:linear-gradient(160deg,#12233a,#101720)"},
-      el("div",{style:"display:flex;gap:12px;align-items:flex-start"},
-        el("span",{html:I.truck,style:"color:var(--accent);flex:none;margin-top:2px"}),
-        el("div",{},
-          el("div",{style:"font-weight:700;font-size:15.5px",text:"Recovery dispatched · ETA 45 min"}),
-          el("p",{class:"tiny",style:"margin-top:4px",text:"Anja at dispatch has been notified. Stay behind the barrier."}),
-          el("div",{class:"chip warn",style:"margin-top:9px;font-size:10px"},"SIMULATED — no recovery provider was contacted")
-        ))
-    ));
-  }
-
-  if(s.incident && s.incident.coverage_status==="disputed"){
-    inner.append(dn("What the driver does NOT see",
-      "The coverage check just failed — this vehicle is not on the policy schedule for today's date. The driver's screen is <b>identical</b>: reference issued, recovery dispatched, no warning, no delay. The flag went to the underwriting queue as a human review task. Auto-rejecting at the roadside would be an automated adverse decision on an individual, which under <b>Art. 22</b> needs human involvement and a right to contest — and it would be operationally wrong anyway, because schedule data is stale more often than drivers are dishonest."));
-  }
-
-  if(s.fail.tpa){
-    inner.append(dn("The TPA is down right now",
-      "Nothing on this screen knows that. The incident was accepted, persisted and acknowledged; the forward to the TPA is queued behind exponential backoff. <b>Accept → persist → acknowledge → forward async.</b> Watch the retries in the System pane."));
-  }
-
-  inner.append(el("div",{class:"sp16"}));
-  inner.append(el("div",{class:"card-quiet"},
-    el("div",{style:"display:flex;gap:10px"},
-      el("span",{html:I.info,style:"color:var(--ink-3);flex:none;margin-top:2px"}),
-      el("p",{class:"tiny",style:"line-height:1.5",html:"You can close the app now. Everything is saved. We'll message you a link to finish the rest whenever you're ready — <b style='color:var(--ink-2)'>the report is already filed</b>."}))
-  ));
-
-  inner.append(el("div",{class:"sp28"}));
-  wrap.append(inner);
-
-  const dock=el("div",{class:"dock"});
-  if(secs) dock.append(el("div",{style:"text-align:center;margin-bottom:10px"},
-    el("span",{class:"chip "+(parseFloat(secs)<=90?"ok":"warn"),style:"font-size:11px"},
-      "Blocking path complete in "+secs+"s")));
-  dock.append(el("button",{class:"btn btn-primary btn-lg","data-act":"go-gaps"},"A few things that disappear if we wait"));
-  dock.append(el("button",{class:"btn btn-quiet","data-act":"finish-now"},"I'm done for now"));
-  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
-}
-
-/* ---------- S3 · perishability hub ---------- */
-function gapItems(){
-  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario];
-  const items=[];
-  const add=(id,screen,ic,doneWhen)=>{
-    if(!sc.perishable.includes(id) && id!=="otherIns" && id!=="cargo") return;
-    const p=PERISHABLE[id];
-    items.push({id, screen, ic, p, done:doneWhen, skipped:d.skipped.includes(id)});
-  };
-  add("witness","witness",I.user, d.witnessPresent!==null);
-  if(sc.thirdParty) add("otherPlate","otherv",I.plate, !!d.otherPlate);
-  add("photos","photos",I.cam, (sc.photos||[]).every(k=>d.photos[k]));
-  if(sc.eas) add("eas","eas",I.pen, d.easA.length>0 || d.easB.length>0);
-  add("police","police",I.police, d.policeAttended!==null);
-  if(sc.type!=="glass") add("cargo","cargo",I.box, d.cargoLaden!==null);
-  if(sc.thirdParty) add("otherIns","otherins",I.shield, !!d.otherInsurer);
-  // Sort by perishability. The DEFAULT half-life ordering lives in PERISHABLE.ord,
-  // but a scenario may override it: theft promotes the police reference above
-  // photographs, because no German insurer progresses a theft claim without a
-  // crime reference and there is no damage to photograph anyway. The scenario's
-  // own perishable[] array is the authority when it lists an item.
-  const rank = id => {
-    const i = sc.perishable.indexOf(id);
-    return i >= 0 ? i : 100 + PERISHABLE[id].ord;   // scenario order first, then the cool tail
-  };
-  items.sort((a,b)=> rank(a.id)-rank(b.id));
-  return items;
-}
-
-function scrGaps(){
-  const s=Store.s;
-  const items=gapItems();
-  const remaining = items.filter(x=>!x.done && !x.skipped);
-  const wrap=el("div",{class:"scroll"});
-  const inner=el("div",{class:"pad",style:"padding-top:18px"});
-
-  inner.append(el("div",{class:"step-meta"},
-    el("span",{class:"step-count",text:"optional · nothing here blocks you"}), savedChip()));
-  inner.append(el("h2",{class:"h2",text:T("perish")}));
-  inner.append(el("p",{class:"sub",style:"font-size:14.5px",
-    text:"Ordered by how fast each one evaporates. Not by how the form was drawn."}));
-  inner.append(el("div",{class:"sp16"}));
-
-  items.forEach(it=>{
-    const cls = it.done?"done": it.skipped?"skipped":"";
-    const wCls = it.p.half==="minutes" ? "" : it.p.half==="hours" ? "" : "cool";
-    inner.append(el("button",{class:"perish-item "+cls,"data-act":"goto","data-v":it.screen},
-      el("span",{class:"pi-clock",html: it.done?`<span style="color:var(--ok)">${I.chk}</span>`: it.skipped?`<span style="color:var(--ink-3)">${I.x}</span>`:it.ic}),
-      el("span",{class:"pi-body"},
-        el("span",{class:"pi-title",text:it.p.label}),
-        el("span",{class:"pi-window "+wCls}, it.skipped ? el("b",{style:"color:var(--ink-3)",text:"Skipped — we'll ask later"}) : el("b",{text:it.p.window}))),
-      el("span",{html:I.chev,style:"color:var(--ink-3);flex:none"})
-    ));
-  });
-
-  inner.append(dn("Perishability ordering — my recommendation, not an industry standard",
-    "Most FNOL forms are ordered by <i>logical grouping</i>: your details, their details, the incident, the vehicle. That ordering optimises for whoever drew the schema. This one is ordered by <b>half-life</b>. A witness is gone in ten minutes; the other party's insurer name is derivable from their plate next week. So the witness is first and the insurer is last — even though the insurer feels more “important”. Say plainly what you get for it: the last thing captured is the first thing lost, and contested liability is decided on exactly these items."));
-
-  inner.append(el("div",{class:"sp12"}));
-  inner.append(el("div",{class:"card-quiet"},
-    el("p",{class:"tiny",style:"line-height:1.5",html:"<b style='color:var(--ink-2)'>Never a percentage bar.</b> A progress bar tells a driver they are failing at something. This tells them what the world is about to take away. Same information, opposite emotional effect on someone with adrenaline in their hands."})));
-
-  inner.append(el("div",{class:"sp28"}));
-  wrap.append(inner);
-
-  const dock=el("div",{class:"dock"});
-  if(remaining.length){
-    dock.append(el("button",{class:"btn btn-primary btn-lg","data-act":"goto","data-v":remaining[0].screen},
-      "Next: "+remaining[0].p.label));
-  }
-  dock.append(el("button",{class:"btn btn-quiet","data-act":"finish-now"},
-    remaining.length ? "Stop here — the rest can wait" : "Done"));
-  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
-}
-
-/* generic sub-screen shell with a non-shaming Skip */
-function gapShell({id,title,sub,body,note,dockExtra,nextLabel}){
-  const wrap=el("div",{class:"scroll"});
-  const inner=el("div",{class:"pad",style:"padding-top:16px"});
-  inner.append(el("div",{class:"step-meta"},
-    el("button",{class:"step-count","data-act":"goto","data-v":"gaps",style:"display:flex;align-items:center;gap:5px"},
-      el("span",{html:I.back,style:"width:14px"}),"All items"),
-    savedChip()));
-  inner.append(el("div",{style:"display:flex;align-items:center;gap:9px;flex-wrap:wrap"},
-    el("h2",{class:"h2",text:title}),
-    el("span",{class:"chip warn",style:"font-size:10px",text:PERISHABLE[id]?PERISHABLE[id].window:"optional"})));
-  if(sub) inner.append(el("p",{class:"sub",style:"font-size:14.5px",text:sub}));
-  inner.append(el("div",{class:"sp16"}));
-  inner.append(body);
-  if(PERISHABLE[id]) inner.append(el("div",{class:"card-quiet",style:"margin-top:16px"},
-    el("p",{class:"tiny",style:"line-height:1.5",html:"<b style='color:var(--ink-2)'>Why this is here, in this position:</b> "+esc(PERISHABLE[id].why)})));
-  if(note) inner.append(note);
-  inner.append(el("div",{class:"sp28"}));
-  wrap.append(inner);
-
-  const dock=el("div",{class:"dock"});
-  if(dockExtra) dock.append(dockExtra);
-  dock.append(el("button",{class:"btn btn-primary btn-lg","data-act":"gap-next","data-v":id}, nextLabel||T("contin")));
-  // one tap. never asks "are you sure?".
-  dock.append(el("button",{class:"skip","data-act":"gap-skip","data-v":id}, T("skip")));
-  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
-}
-
-function textField(label, key, ph, type){
-  const d=Store.s.draft;
-  return el("div",{style:"margin-bottom:14px"},
-    el("label",{class:"lbl",text:label}),
-    el("div",{class:"inp-wrap has-mic"},
-      el("input",{class:"inp","data-field":key, value:d[key]||"", placeholder:ph||"", type:type||"text",
-        inputmode: type==="tel"?"tel":undefined, autocomplete:"off"}),
-      el("button",{class:"mic","data-act":"voice","data-v":key,html:I.mic,title:"Dictate — hands may be shaking or occupied"})
-    ));
-}
-
+/* ===== src/screens/driver/Witness.js ===== */
 /* ---------- witness ---------- */
 function scrWitness(){
   const d=Store.s.draft;
@@ -2518,280 +2653,342 @@ function scrWitness(){
   });
 }
 
-/* ---------- other vehicle · plate first ---------- */
-function scrOtherVehicle(){
-  const d=Store.s.draft;
-  const body=el("div",{});
-  body.append(el("label",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"The other vehicle's plate"}));
-  body.append(el("div",{class:"inp-wrap has-mic"},
-    el("input",{class:"inp plate-inp","data-field":"otherPlate",value:d.otherPlate||"",placeholder:"M-XY 1234",autocomplete:"off",autocapitalize:"characters"}),
-    el("button",{class:"mic","data-act":"voice","data-v":"otherPlate",html:I.mic})));
-  body.append(el("div",{class:"card-quiet",style:"margin-top:12px"},
-    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.info,style:"color:var(--accent);flex:none;margin-top:2px"}),
-      el("p",{class:"tiny",style:"line-height:1.5;font-size:13.5px",
-        html:"<b style='color:var(--ink)'>Just the plate is enough. We'll chase the rest.</b>"}))));
+/* ===== src/screens/driver/index.js ===== */
+/* ---------------- driver screen router ---------------- */
+function renderDriver(){
+  const s=Store.s, sc=SCENARIOS[s.scenario];
+  const screen = el("div",{class:"screen"});
 
-  body.append(el("div",{class:"sp20"}));
-  body.append(el("button",{class:"btn btn-ghost","data-act":"toggle-otherdetail"},
-    Store.s.subScreen==="otherdetail" ? "Hide the rest" : "They're standing here — add more (optional)"));
-  if(Store.s.subScreen==="otherdetail"){
-    body.append(el("div",{class:"sp16"}));
-    body.append(textField("Make and colour","otherMake","Silver Sprinter"));
-    body.append(textField("Their name","otherDriver",""));
-    body.append(textField("Their phone","otherPhone","","tel"));
-  }
-  return gapShell({
-    id:"otherPlate", title:"The other vehicle",
-    sub:"One field. Everything else about them can be found from it.",
-    body,
-    note: dn("Plate-first, and everything else demoted",
-      "A German plate resolves to the keeper and, through the central register (Zentralruf der Autoversicherer), to the insurer. So the plate is <b>load-bearing</b> and the insurer name is <b>derivable</b> — which is exactly why the insurer field sits at the bottom of the perishable list and not next to this one. Asking a shaken driver for a policy number while the other party is walking to their car costs you the plate.")
-  });
-}
+  const ob=offlineBanner(); if(ob) screen.append(ob);
+  screen.append(emergencyRail());
 
-/* ---------- guided photo set ---------- */
-function scrPhotos(){
-  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario];
-  const slots=sc.photos||[];
-  const body=el("div",{});
-  const grid=el("div",{class:"photo-grid"});
-  slots.forEach((k,i)=>{
-    const meta=PHOTO_SLOTS[k]||{n:i+1,label:k,sil:"wide"};
-    const st=d.photos[k];
-    grid.append(el("button",{
-      class:"pslot"+(st&&!st.skipped?" shot":"")+(st&&st.skipped?" skipped":""),
-      "data-act":"shoot","data-v":k},
-      el("span",{html:svgSilhouette(meta.sil, !!(st&&!st.skipped))}),
-      el("span",{class:"pflash"}),
-      el("span",{class:"pnum",html: st&&!st.skipped ? I.chkS : String(meta.n)}),
-      el("span",{class:"plabel",text:meta.label})
-    ));
-  });
-  body.append(grid);
+  const nb=navBar(); if(nb) screen.append(nb);
 
-  const done=slots.filter(k=>d.photos[k]&&!d.photos[k].skipped).length;
-  body.append(el("div",{style:"display:flex;justify-content:space-between;align-items:center;margin-top:12px"},
-    el("span",{class:"tiny",text:done+" of "+slots.length+" captured"}),
-    el("button",{class:"btn btn-sm btn-ghost","data-act":"skip-remaining-photos"},"Skip the rest")));
+  const t = timerRail(); if(t && ["s1","s0det"].includes(s.screen)) screen.append(t);
 
-  body.append(el("div",{class:"card-quiet",style:"margin-top:14px"},
-    el("p",{class:"tiny",style:"line-height:1.5",
-      html:"Tap a slot to take that shot. The silhouette shows what to frame. <b style='color:var(--ink-2)'>Skipping a slot is fine and is logged</b> — a skipped slot is a known gap, an unnamed pile of photos is not."})));
+  const body = ({
+    s0:      scrS0,
+    s0det:   scrS0Detail,
+    dismiss: scrDismiss,
+    emg:     scrEmergency,
+    s1:      scrTier1,
+    s2:      scrReference,
+    gaps:    scrGaps,
+    witness: scrWitness,
+    otherv:  scrOtherVehicle,
+    photos:  scrPhotos,
+    eas:     scrEAS,
+    police:  scrPolice,
+    cargo:   scrCargo,
+    otherins:scrOtherInsurer,
+    done:    scrSoftStop,
+  }[s.screen] || scrS0)();
 
-  if(s.fail.offline){
-    body.append(el("div",{class:"sp12"}));
-    body.append(el("div",{class:"card-quiet",style:"border-color:#e8d3a4"},
-      el("div",{style:"display:flex;gap:10px"},el("span",{html:I.offline,style:"color:var(--warn);flex:none;margin-top:2px"}),
-        el("p",{class:"tiny",style:"line-height:1.5",html:"Photos are held on the phone and queued <b style='color:var(--ink-2)'>separately from the report</b>. The report syncs first — it's a few kilobytes. Photos follow."}))));
-  }
+  screen.append(body);
 
-  return gapShell({
-    id:"photos", title:"Photographs", sub:"Five named shots, not “upload photos”. The order matters.",
-    body,
-    note: dn("A named sequence beats an upload button",
-      "“Attach photos” produces four pictures of the same dent. Named slots with silhouettes produce the <b>wide shot</b> that establishes position and the <b>signage shot</b> that establishes right of way — the two an adjuster actually needs and the two a driver never thinks to take. Each slot is independently skippable, and a skipped slot is recorded as a <i>known</i> gap rather than a silent one.")
-  });
-}
+  const phone = el("div",{class:"phone"},
+    el("div",{class:"phone-notch"}), statusBar(), screen, el("div",{class:"home-ind"}));
 
-/* ---------- EAS circumstances ---------- */
-function scrEAS(){
-  const s=Store.s, d=s.draft;
-  const body=el("div",{});
-
-  body.append(el("div",{class:"card-quiet",style:"margin-bottom:14px"},
-    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.info,style:"color:var(--accent);flex:none;margin-top:2px"}),
-      el("p",{class:"tiny",style:"line-height:1.5",
-        html:"These are the <b style='color:var(--ink-2)'>17 statements from the European Accident Statement</b> — the same list the other driver has in their glovebox, in their language. Tick what was happening. <b style='color:var(--ink-2)'>Nobody is admitting anything by ticking a box.</b>"}))));
-
-  // language for EAS column text
-  body.append(el("div",{style:"display:flex;justify-content:flex-end;margin-bottom:10px"},
-    el("div",{class:"seg",style:"transform:scale(.9);transform-origin:right"},
-      ...["en","de","pl"].map(k=>el("button",{"data-act":"eas-lang","data-v":k,"aria-pressed":String(s.easLangCol===k),
-        style:"font-family:var(--sans);font-weight:650"},k.toUpperCase())))));
-
-  const grid=el("div",{class:"eas-grid"});
-  grid.append(el("div",{class:"eas-head"},
-    el("div",{class:"hA",html:"A<br>You"}), el("div",{},"What was happening"), el("div",{class:"hB",html:"B<br>Them"})));
-  EAS_STATEMENTS.forEach(st=>{
-    const onA=d.easA.includes(st.n), onB=d.easB.includes(st.n);
-    grid.append(el("div",{class:"eas-row"},
-      el("div",{class:"eas-tick A"+(onA?" on":""),"data-act":"eas-tick","data-col":"A","data-n":st.n},
-        el("i",{html:onA?I.chkS:""})),
-      el("div",{class:"txt"}, el("span",{class:"no",text:st.n}), el("span",{text:st[s.easLangCol]||st.en})),
-      el("div",{class:"eas-tick B"+(onB?" on":""),"data-act":"eas-tick","data-col":"B","data-n":st.n},
-        el("i",{html:onB?I.chkS:""}))
-    ));
-  });
-  grid.append(el("div",{class:"eas-count"},
-    el("span",{style:"color:#3d5f54",text:"A — "+d.easA.length+" ticked"}),
-    el("span",{style:"color:#9a6410",text:"B — "+d.easB.length+" ticked"})));
-  body.append(grid);
-
-  // point of impact
-  body.append(el("div",{class:"sp20"}));
-  body.append(el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"Where were you hit? (EAS box 10)"}));
-  body.append(el("div",{class:"impact-wrap",html:svgImpact(d.impact)}));
-  if(d.impact) body.append(el("p",{class:"tiny",style:"text-align:center;margin-top:7px",text:"Point of impact: "+IMPACT_LABEL[d.impact]}));
-
-  // sketch
-  body.append(el("div",{class:"sp20"}));
-  body.append(el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"Draw what happened (EAS box 13)"}));
-  body.append(el("div",{class:"sketch-wrap"},el("canvas",{id:"sketchCanvas",width:"640",height:"420"})));
-  body.append(el("div",{class:"sketch-tools"},
-    el("button",{class:"btn btn-sm btn-ghost","data-act":"sketch-clear"},"Clear"),
-    el("span",{class:"tiny",style:"align-self:center"},"Finger or mouse. Arrows and two boxes is plenty.")));
-
-  // signatures
-  body.append(el("div",{class:"sp20"}));
-  body.append(el("p",{class:"lbl",style:"font-size:15px;color:var(--ink)",text:"Both drivers sign"}));
-  body.append(el("div",{style:"display:grid;gap:12px"},
+  return el("div",{class:"phone-wrap"},
     el("div",{},
-      el("div",{class:"tiny",style:"margin-bottom:6px;color:#3d5f54;font-weight:700",text:"A — you (Marek K.)"}),
-      el("div",{class:"sig-pad"+(d.sigA?" signed":"")},el("canvas",{id:"sigA",width:"620",height:"220"}),
-        el("span",{class:"sig-hint",text:"sign here"}))),
-    el("div",{},
-      el("div",{class:"tiny",style:"margin-bottom:6px;color:#9a6410;font-weight:700",text:"B — the other driver"}),
-      el("div",{class:"sig-pad"+(d.sigB?" signed":"")},el("canvas",{id:"sigB",width:"620",height:"220"}),
-        el("span",{class:"sig-hint",text:"hand them the phone"})))
-  ));
-  body.append(el("div",{style:"display:flex;gap:8px;margin-top:10px"},
-    el("button",{class:"btn btn-sm btn-ghost","data-act":"sig-clear","data-v":"A"},"Clear A"),
-    el("button",{class:"btn btn-sm btn-ghost","data-act":"sig-clear","data-v":"B"},"Clear B")));
-
-  body.append(el("div",{class:"sp16"}));
-  body.append(el("div",{class:"card-quiet",style:"border-color:#e8d3a4"},
-    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.warn,style:"color:var(--warn);flex:none;margin-top:2px"}),
-      el("p",{class:"tiny",style:"line-height:1.5",
-        html:"<b style='color:var(--ink-2)'>Known weak link:</b> half the value of this section depends on a stranger being willing to sign a phone screen. Column B is fully skippable and the report is still valid without it — but be honest that the outcome is materially worse."}))));
-
-  return gapShell({
-    id:"eas", title:"What was happening", sub:"The European Accident Statement, box 12 — both columns.",
-    body,
-    note: dn("Why we adopted the EAS instead of designing a schema",
-      "The constat amiable / Europäischer Unfallbericht has been the cross-border standard for decades. Every European handler reads it without training, both parties fill in <b>the same 17 statements</b> in their own language, and — the part that is legally load-bearing — it establishes <b>agreed facts without either party admitting liability</b>. Inventing our own circumstance model would have meant a mapping layer, a translation argument with every counterparty, and no legal precedent. We took the standard and made it tappable.")
-  });
+      phone,
+      el("div",{class:"phone-caption",
+        text:"Driver · "+sc.short+" · "+(SCENARIOS[s.scenario].telematics.driver)+" · 390 × 844"})
+    ),
+    renderDriverSidecar()
+  );
 }
 
-/* ---------- police ---------- */
-function scrPolice(){
-  const d=Store.s.draft, s=Store.s;
-  const theft = s.scenario==="theft";
-  const body=el("div",{});
-  body.append(el("div",{class:"grid2",style:"margin-bottom:14px"},
-    el("button",{class:"choice","data-act":"set-police","data-v":"yes","aria-pressed":String(d.policeAttended===true)},
-      el("span",{class:"cbox round",html:d.policeAttended===true?I.chkS:""}),el("span",{},"Yes")),
-    el("button",{class:"choice","data-act":"set-police","data-v":"no","aria-pressed":String(d.policeAttended===false)},
-      el("span",{class:"cbox round",html:d.policeAttended===false?I.chkS:""}),el("span",{},"No"))
-  ));
-  if(d.policeAttended===true){
-    body.append(textField(theft?"Crime reference (Aktenzeichen)":"Reference number, if they gave you one","policeRef","e.g. 2026/074/0084217"));
-  }
-  if(theft && d.policeAttended!==true){
-    body.append(el("div",{class:"card-quiet",style:"border-color:#e8d3a4"},
-      el("div",{style:"display:flex;gap:10px"},el("span",{html:I.warn,style:"color:var(--warn);flex:none;margin-top:2px"}),
-        el("p",{class:"tiny",style:"line-height:1.5",
-          html:"<b style='color:var(--ink-2)'>For a theft this is nearly blocking.</b> No German insurer will progress a theft claim without a police report. We still don't block on it — you may be on a motorway at 4 a.m. — but we will chase this one hard."}))));
-  }
-  return gapShell({
-    id:"police", title:theft?"Have you reported it stolen?":"Did the police attend?",
-    sub:theft?"This is the one thing a theft claim cannot proceed without.":"One question while the officer is still here.",
-    body,
-    note: dn("Hours, not minutes",
-      "A police reference is retrievable next week with a phone call, so it sits <b>below</b> the witness and the plate. It is above cargo and the other insurer because the officer is standing here <i>now</i> and it costs one question. Theft inverts this: no report, no claim, so it moves to the top for that scenario.")
-  });
-}
-
-/* ---------- cargo (freight profile only) ---------- */
-function scrCargo(){
-  const d=Store.s.draft;
-  const body=el("div",{});
-  body.append(el("p",{class:"lbl",text:"Are you loaded?"}));
-  body.append(el("div",{class:"grid2",style:"margin-bottom:14px"},
-    el("button",{class:"choice","data-act":"set-cargo","data-v":"yes","aria-pressed":String(d.cargoLaden===true)},
-      el("span",{class:"cbox round",html:d.cargoLaden===true?I.chkS:""}),el("span",{},"Loaded")),
-    el("button",{class:"choice","data-act":"set-cargo","data-v":"no","aria-pressed":String(d.cargoLaden===false)},
-      el("span",{class:"cbox round",html:d.cargoLaden===false?I.chkS:""}),el("span",{},"Empty"))
-  ));
-  if(d.cargoLaden===true){
-    body.append(textField("What's on board — roughly","cargoDesc","24 pallets, packaged food"));
-    body.append(textField("Trailer number","trailer","B-RL 8829"));
-    body.append(el("p",{class:"lbl",text:"Anything hazardous (ADR)?"}));
-    body.append(el("div",{class:"grid2"},
-      el("button",{class:"choice","data-act":"set-hazard","data-v":"no","aria-pressed":String(d.hazardous===false)},
-        el("span",{class:"cbox round",html:d.hazardous===false?I.chkS:""}),el("span",{},"No")),
-      el("button",{class:"choice","data-act":"set-hazard","data-v":"yes","aria-pressed":String(d.hazardous===true)},
-        el("span",{class:"cbox round",html:d.hazardous===true?I.chkS:""}),el("span",{},"Yes — ADR load"))));
-    if(d.hazardous===true) body.append(el("div",{class:"card-quiet",style:"margin-top:12px;border-color:#e0a89c"},
-      el("p",{class:"tiny",style:"line-height:1.5",html:"<b style='color:#b8341c'>ADR load flagged.</b> This escalates immediately — it changes the recovery provider, the road closure, and who has to be told. This is the one “late” field that would justify being promoted."})));
-  }
-  return gapShell({
-    id:"cargo", title:"Cargo and trailer",
-    sub:"Only shown because this vehicle has a freight profile.",
-    body,
-    note: dn("Conditional on the vehicle profile, not on the driver",
-      "A van on a service round never sees this section. The cargo detail is reachable afterwards from the CMR note and the TMS, which is why it sits near the bottom — <b>with one exception</b>: a hazardous load is not a claims field at all, it is a safety escalation, and if the profile flags ADR I would promote that single question into Tier 1.")
-  });
-}
-
-/* ---------- other insurer — deliberately last ---------- */
-function scrOtherInsurer(){
-  const body=el("div",{});
-  body.append(textField("Their insurer, if you can see the card","otherInsurer","HUK-Coburg, Allianz…"));
-  body.append(textField("Policy number","otherPolicy",""));
-  body.append(el("div",{class:"card-quiet"},
-    el("div",{style:"display:flex;gap:10px"},el("span",{html:I.info,style:"color:var(--ink-3);flex:none;margin-top:2px"}),
-      el("p",{class:"tiny",style:"line-height:1.5",
-        html:"Genuinely optional. We can get this from the plate through the central register. <b style='color:var(--ink-2)'>Skip it without a second thought.</b>"}))));
-  return gapShell({
-    id:"otherIns", title:"Their insurance",
-    sub:"Last on the list on purpose.",
-    body,
-    note: dn("The field every FNOL form puts near the top",
-      "Insurer and policy number <i>feel</i> essential, which is why they usually appear on page one. They are the <b>least</b> perishable thing in the entire report: derivable from the plate, chaseable for weeks. Putting them early costs you the witness. This is the clearest example of what perishability ordering actually changes.")
-  });
-}
-
-/* ---------- soft stop ---------- */
-function scrSoftStop(){
-  const s=Store.s;
+/* a slim side panel next to the phone: what the founders read while narrating */
+function renderDriverSidecar(){
+  const s=Store.s, sc=SCENARIOS[s.scenario];
   const inc = s.incident;
-  const score = inc ? inc.completeness.score : 0;
-  const items=gapItems();
-  const skipped=items.filter(x=>x.skipped || !x.done);
-  const wrap=el("div",{class:"scroll"});
-  const inner=el("div",{class:"pad",style:"padding-top:30px;text-align:center"});
-  inner.append(el("div",{class:"softstop"},
-    el("div",{html:svgRing(score)}),
-    el("h1",{class:"h1",text:"That's everything perishable."}),
-    el("p",{class:"sub",style:"font-size:16.5px",text:"The rest can wait — we'll message you."})
-  ));
-  inner.append(el("div",{class:"sp20"}));
-  inner.append(el("div",{class:"card",style:"text-align:left"},
-    el("div",{class:"tiny",style:"text-transform:uppercase;letter-spacing:.07em;font-size:10.5px",text:"Reference"}),
-    el("div",{class:"mono",style:"font-size:18px;font-weight:700;margin-top:3px",text:s.reference||"—"}),
+  const comp = inc ? inc.completeness : null;
+  const box = el("div",{style:"width:330px;flex:none;display:flex;flex-direction:column;gap:12px"});
+
+  box.append(el("div",{class:"card"},
+    el("div",{class:"sect-h"},el("h3",{text:sc.label})),
+    el("p",{class:"tiny",style:"line-height:1.5",text:sc.note}),
     el("div",{class:"sp12"}),
     el("div",{class:"chipset"},
-      el("span",{class:"chip ok",text:score+"% complete"}),
-      s.draft.drivable===false && el("span",{class:"chip info",text:"Recovery en route"}),
-      s.fail.offline && el("span",{class:"chip warn",text:"Will sync when you're back in signal"}))
+      el("span",{class:"chip info",text:sc.fieldCount+" fields capturable"}),
+      el("span",{class:"chip ok",text:"6 block"}),
+      sc.eas && el("span",{class:"chip",text:"EAS section"}),
+      sc.thirdParty && el("span",{class:"chip",text:"third party"})
+    )
   ));
-  if(skipped.length){
-    inner.append(el("div",{class:"sp16"}));
-    inner.append(el("div",{class:"card-quiet",style:"text-align:left"},
-      el("div",{class:"tiny",style:"font-weight:700;color:var(--ink-2);margin-bottom:8px",text:"We'll ask you about these later"}),
-      el("div",{class:"chipset"},...skipped.map(x=>el("span",{class:"chip",style:"font-size:10.5px",text:x.p.label}))),
-      el("p",{class:"tiny",style:"margin-top:10px",text:"No nagging now. A message tomorrow when you're not standing on a hard shoulder."})));
+
+  box.append(el("div",{class:"card"},
+    el("div",{class:"panel-h",style:"background:none;border:none;padding:0 0 9px"},"Never asked, anywhere"),
+    el("div",{style:"display:flex;gap:10px;align-items:flex-start"},
+      el("span",{html:I.x,style:"color:var(--danger-deep);margin-top:2px;flex:none"}),
+      el("div",{},
+        el("div",{style:"font-weight:700;font-size:14px",text:"“Whose fault was it?”"}),
+        el("p",{class:"tiny",style:"margin-top:5px;line-height:1.5",
+          html:"No such field exists in this form. Not hidden, not optional — <b style='color:var(--ink-2)'>absent</b>. The European Accident Statement's design principle is that it establishes agreed <i>facts</i> without either party admitting liability. A fault field at the roadside creates an admission a shaken driver is in no position to make, and it is worth money to the other side. Liability is determined later, by people whose job that is."})
+      ))
+  ));
+
+  if(comp){
+    box.append(el("div",{class:"card"},
+      el("div",{class:"panel-h",style:"background:none;border:none;padding:0 0 9px"},"GET /v1/incidents/{id}/requirements"),
+      el("pre",{class:"json",style:"max-height:250px;font-size:11px",
+        text:JSON.stringify({completeness:comp, next_actions:FakeApi.nextActions(FakeApi._raw.incidents[inc.id]||{draft:s.draft,completeness:comp})},null,1)}),
+      el("p",{class:"tiny",style:"margin-top:9px",text:"The driver's remaining list and the fleet manager's chase list are the same array. The API drives the prompting."})
+    ));
   }
-  inner.append(dn("A soft stop, not a submit button",
-    "There is no final “Submit” here because the report was <b>already filed</b> at second 42. This screen exists to give a driver permission to stop. The alternative — a form that never says you're finished — is how you get abandonment on the last screen and a claim with photographs but no witness."));
-  inner.append(el("div",{class:"sp28"}));
-  wrap.append(inner);
-  const dock=el("div",{class:"dock"},
-    el("button",{class:"btn btn-primary btn-lg","data-act":"go-fleet"},"See what dispatch sees →"),
-    el("button",{class:"btn btn-ghost","data-act":"goto","data-v":"gaps"},"Add something after all"));
-  return el("div",{style:"flex:1;display:flex;flex-direction:column;overflow:hidden"},wrap,dock);
+
+  return box;
 }
 
+/* ===== src/screens/export/index.js ===== */
+/* ==================================================================
+   §10 EAS EXPORT — the closing move
+   ================================================================== */
+function buildIncidentJson(){
+  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario], t=sc.telematics;
+  const inc=s.incident;
+  return {
+    schema:"fnol.incident/v1",
+    id: inc? inc.id : "inc_(unsaved)",
+    reference: s.reference || null,
+    state: inc? inc.state : "draft",
+    coverage_status: inc? inc.coverage_status : "in_force",
+    occurred_at: new Date().toISOString().slice(0,11)+d.occurredAt+":00+02:00",
+    reported_at: new Date().toISOString(),
+    reporting_channel: "driver_app",
+    detected_by: "telematics",
+    type: d.type,
+    location: { description:d.location, lat:d.lat, lon:d.lon, source:"telematics", country:"DE" },
+    vehicle: {
+      registration:d.vehicle, make_model:"DAF XF 480", drivable:d.drivable,
+      damage_points: d.impact? [d.impact] : [], fleet_id:"INS-FL-0087"
+    },
+    driver: {
+      // Driver linkage is a purpose-limited ASSOCIATION with its own retention
+      // clock, not a field on a monolithic person record. Costs nothing now,
+      // very expensive to retrofit.
+      association_id:"drv_assoc_"+(inc?inc.id.slice(4,10):"xxxxxx"),
+      display_name:t.driver, purpose:"claims_handling",
+      retention:"P7Y from claim closure", linked_profile:"external_ref_only"
+    },
+    injuries: d.injured===null ? null : {
+      present: d.injured,
+      severity_band: d.injurySeverity,
+      emergency_services_attended: d.injuryEmergency,
+      description: null,
+      description_omitted_reason: "GDPR Art. 9 — special category health data not collected at intake"
+    },
+    third_parties: sc.thirdParty && d.otherPlate ? [{
+      vehicle:{ plate:d.otherPlate, make_model:d.otherMake||null },
+      driver:{ name:d.otherDriver||null, phone:d.otherPhone||null },
+      insurer_name: d.otherInsurer||null, policy_number: d.otherPolicy||null
+    }] : [],
+    witnesses: d.witnessPresent && (d.witnessName||d.witnessPhone)
+      ? [{name:d.witnessName||null, phone:d.witnessPhone||null}] : [],
+    authority: { attended:d.policeAttended, reference:d.policeRef||null },
+    cargo: sc.type==="glass" ? null : {
+      laden:d.cargoLaden, description:d.cargoDesc||null,
+      trailer:d.trailer||null, hazardous_adr:d.hazardous
+    },
+    eas: sc.eas ? {
+      standard:"European Accident Statement (constat amiable / Europäischer Unfallbericht)",
+      circumstances_a: d.easA.slice().sort((a,b)=>a-b),
+      circumstances_b: d.easB.slice().sort((a,b)=>a-b),
+      point_of_impact: d.impact,
+      sketch_present: !!d.sketch,
+      signature_a_present: !!d.sigA,
+      signature_b_present: !!d.sigB,
+      liability_statement: "No admission of liability is recorded or requested by this document."
+    } : null,
+    fault: null,
+    fault_note: "Intentionally absent. No field in this product asks who was at fault.",
+    attachments: Object.keys(d.photos).filter(k=>!d.photos[k].skipped)
+      .map(k=>({slot:k, label:(PHOTO_SLOTS[k]||{}).label, captured_at:d.photos[k].at})),
+    skipped_deliberately: d.skipped,
+    completeness: inc ? inc.completeness : null,
+  };
+}
+
+function jsonHighlight(obj){
+  const raw=JSON.stringify(obj,null,2);
+  return esc(raw)
+    .replace(/&quot;([^&]*?)&quot;(\s*:)/g,'<span class="k">"$1"</span>$2')
+    .replace(/:\s&quot;(.*?)&quot;/g,': <span class="s">"$1"</span>')
+    .replace(/:\s(-?\d+\.?\d*)/g,': <span class="n">$1</span>')
+    .replace(/:\s(true|false|null)/g,': <span class="b">$1</span>');
+}
+
+function renderExport(){
+  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario], t=sc.telematics;
+  const wrap=el("div",{class:"export-shell"});
+
+  wrap.append(el("div",{class:"fl-head noprint"},
+    el("div",{},
+      el("h3",{style:"margin:0;font-size:18px",text:"Export · "+(s.reference||"draft")}),
+      el("p",{class:"tiny",style:"margin-top:5px;max-width:700px",
+        text:"Two outputs. One a European handler recognises without training, one a carrier system ingests without transcription."})),
+    el("div",{style:"display:flex;gap:8px"},
+      el("button",{class:"btn btn-sm btn-secondary","data-act":"print"},"Print / save as PDF"),
+      el("button",{class:"btn btn-sm btn-ghost","data-act":"close-export"},"Back"))
+  ));
+
+  /* ---- (a) the EAS-equivalent document ---- */
+  const doc=el("div",{class:"eas-doc"});
+  doc.append(el("div",{class:"eas-doc-head"},
+    el("div",{},
+      el("h2",{text:"European Accident Statement — equivalent"}),
+      el("p",{class:"sub",text:"Constat amiable européen d'accident automobile · Europäischer Unfallbericht"}),
+      el("p",{class:"sub",style:"margin-top:5px",
+        text:"Reference "+(s.reference||"—")+"  ·  "+d.occurredAt+" "+new Date().toLocaleDateString("de-DE")+"  ·  "+d.location})),
+    el("div",{class:"eas-fake-stamp",html:"DEMO ARTEFACT<br>generated by the insurer FNOL prototype<br>not a filed document"})
+  ));
+
+  const cols=el("div",{class:"eas-cols"});
+
+  // column A — blue, us
+  const A=el("div",{class:"eas-col A"});
+  A.append(el("h4",{text:"A · Vehicle A"}));
+  [["Insured / policyholder","the insurer GmbH (fleet)"],["Policy number","INS-FLEET-0087"],
+   ["Vehicle","DAF XF 480"],["Registration",d.vehicle],["Country","D"],
+   ["Driver",t.driver],["Licence no.","B4471-88213-DE"],
+   ["Point of impact", d.impact?IMPACT_LABEL[d.impact]:""],
+   ["Visible damage", d.impact?("Impact zone: "+IMPACT_LABEL[d.impact]):""],
+   ["Remarks", d.notes||""]
+  ].forEach(([k,v])=>A.append(easField(k,v)));
+  cols.append(A);
+
+  // middle — the 17 statements
+  const M=el("div",{class:"eas-col M"});
+  M.append(el("h4",{text:"12 · Circumstances"}));
+  const mt=el("table",{class:"eas-mid-tbl"});
+  EAS_STATEMENTS.forEach(st=>{
+    const onA=d.easA.includes(st.n), onB=d.easB.includes(st.n);
+    mt.append(el("tr",{},
+      el("td",{class:"b"},el("div",{class:"eas-box A"+(onA?" on":""),text:onA?"✕":""})),
+      el("td",{class:"n",text:st.n}),
+      el("td",{},st.en),
+      el("td",{class:"b"},el("div",{class:"eas-box B"+(onB?" on":""),text:onB?"✕":""}))
+    ));
+  });
+  mt.append(el("tr",{},
+    el("td",{class:"b",style:"font-weight:800;font-size:9px;text-align:center",text:d.easA.length}),
+    el("td",{class:"n"}),
+    el("td",{style:"font-size:8.5px;color:#64786f;letter-spacing:.05em",text:"BOXES MARKED"}),
+    el("td",{class:"b",style:"font-weight:800;font-size:9px;text-align:center",text:d.easB.length})));
+  M.append(mt);
+  cols.append(M);
+
+  // column B — yellow, them
+  const B=el("div",{class:"eas-col B"});
+  B.append(el("h4",{text:"B · Vehicle B"}));
+  [["Insured / policyholder",""],["Policy number",d.otherPolicy||""],
+   ["Vehicle",d.otherMake||""],["Registration",d.otherPlate||""],["Country", d.otherPlate?"D":""],
+   ["Driver",d.otherDriver||""],["Licence no.",""],
+   ["Insurer",d.otherInsurer||""],
+   ["Point of impact",""],["Remarks",""]
+  ].forEach(([k,v])=>B.append(easField(k,v)));
+  cols.append(B);
+  doc.append(cols);
+
+  // sketch + impact row
+  const sr=el("div",{class:"eas-sketchrow"});
+  sr.append(el("div",{},
+    el("h4",{text:"10 · Point of impact"}),
+    el("div",{class:"eas-imgbox"+(d.impact?"":" empty")},
+      d.impact ? el("div",{style:"padding:6px;height:100%",html:svgImpactPrint(d.impact)}) : "not marked")));
+  sr.append(el("div",{},
+    el("h4",{text:"13 · Sketch of the accident"}),
+    el("div",{class:"eas-imgbox"+(d.sketch?"":" empty")},
+      d.sketch ? el("img",{src:d.sketch,alt:"Accident sketch"}) : "not drawn")));
+  doc.append(sr);
+
+  // witnesses / authority strip
+  doc.append(el("div",{style:"border-top:1px solid #b9c6d6;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:10px"},
+    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"5 · Witnesses"),
+      el("div",{style:"margin-top:3px"}, d.witnessName||d.witnessPhone ? (d.witnessName||"—")+" · "+(d.witnessPhone||"—") : el("i",{style:"color:#546b62"},"none recorded"))),
+    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Police / authority"),
+      el("div",{style:"margin-top:3px"}, d.policeAttended===true ? ("attended · "+(d.policeRef||"reference pending")) : d.policeAttended===false ? "did not attend" : el("i",{style:"color:#546b62"},"not asked"))),
+    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Injuries"),
+      el("div",{style:"margin-top:3px"}, d.injured===true ? ("yes · band: "+(d.injurySeverity||"—")+" · emergency services "+(d.injuryEmergency?"attended":"not attended")) : d.injured===false ? "none reported" : el("i",{style:"color:#546b62"},"—")),
+      d.injured===true ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Injury description deliberately not collected — GDPR Art. 9. To be gathered by the adjuster under a proper basis.") : null)
+  ));
+
+  // signatures
+  const sig=el("div",{class:"eas-sigrow"});
+  sig.append(el("div",{},
+    el("h4",{style:"margin:0 0 7px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#2b6fd4"},"15 · Signature of driver A"),
+    el("div",{class:"eas-sig-line"}, d.sigA? el("img",{src:d.sigA,alt:"Signature A"}) : ""),
+    el("div",{style:"margin-top:4px;font-size:9px;color:#7d8f9c",text:t.driver})));
+  sig.append(el("div",{},
+    el("h4",{style:"margin:0 0 7px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#96700a"},"15 · Signature of driver B"),
+    el("div",{class:"eas-sig-line"}, d.sigB? el("img",{src:d.sigB,alt:"Signature B"}) : ""),
+    el("div",{style:"margin-top:4px;font-size:9px;color:#7d8f9c", text: d.otherDriver||(d.sigB?"signed":"not signed")})));
+  doc.append(sig);
+
+  // the no-liability statement — the legally load-bearing part
+  doc.append(el("div",{class:"eas-nofault"},
+    el("span",{style:"font-size:13px;line-height:1"},"⚖"),
+    el("div",{},
+      el("b",{},"This document records agreed facts. It is not an admission of liability by either party. "),
+      "No field in the capturing application asks, or has ever asked, who was at fault. Liability is determined by the insurers on the facts recorded above, and neither driver's signature here concedes anything.")
+  ));
+  wrap.append(doc);
+
+  /* ---- (b) incident.json + ACORD mapping ---- */
+  wrap.append(el("div",{class:"sp28 noprint"}));
+  const mapWrap=el("div",{class:"map-wrap noprint"});
+  mapWrap.append(el("div",{},
+    el("div",{class:"sect-h"},el("h3",{text:"incident.json"}),
+      el("span",{class:"sect-note",text:"our canonical schema"})),
+    el("pre",{class:"json",html:jsonHighlight(buildIncidentJson())})
+  ));
+  const mapCol=el("div",{});
+  mapCol.append(el("div",{class:"sect-h"},el("h3",{text:"ACORD mapping"}),
+    el("span",{class:"sect-note",text:"the carrier-exchange target, made explicit"})));
+  const mt2=el("table",{class:"map"});
+  mt2.append(el("thead",{},el("tr",{},el("th",{text:"our field"}),el("th",{text:"ACORD"}),el("th",{text:"meaning"}))));
+  const mtb=el("tbody",{});
+  ACORD_MAP.forEach(r=>mtb.append(el("tr",{},
+    el("td",{class:"f",text:r.f}), el("td",{class:"a",text:r.a}), el("td",{class:"e",text:r.e}))));
+  mt2.append(mtb);
+  mapCol.append(el("div",{class:"tbl-wrap"},mt2));
+  mapCol.append(el("div",{class:"sp16"}));
+  mapCol.append(dn("Why the mapping column is on the screen and not in a spreadsheet",
+    "The point of the EAS export is that <b>nobody transcribes anything</b>, and transcription at the liability stage is exactly where money leaks — a mistyped plate or a dropped circumstance number becomes a contested split three months later. Two fields have <b>no ACORD equivalent</b> and I have said so rather than forcing them: the EAS circumstance array and the point of impact travel as a structured extension, because European handlers read them natively and inventing a lossy ACORD mapping for them would be worse than carrying them cleanly."));
+  mapWrap.append(mapCol);
+  wrap.append(mapWrap);
+
+  return el("div",{class:"deskframe"},
+    el("div",{class:"desk-bar noprint"},
+      el("div",{class:"dots"},el("i"),el("i"),el("i")),
+      el("span",{class:"desk-title",text:"Export · EAS-equivalent + incident.json"})),
+    el("div",{class:"desk-body"}, wrap));
+}
+
+function easField(k,v){
+  return el("div",{class:"eas-f"},
+    el("div",{class:"fl",text:k}),
+    el("div",{class:"fv"+(v?"":" empty"),text:v||"not captured"}));
+}
+
+/* print-friendly (light) impact marker */
+function svgImpactPrint(sel){
+  const pts={front_left:[52,26],front:[82,20],front_right:[112,26],side_left:[40,74],side_right:[124,74],
+    rear_left:[52,126],rear:[82,134],rear_right:[112,126],roof:[82,74]};
+  const p=pts[sel]||[82,74];
+  return `<svg viewBox="0 0 164 156" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
+    <path d="M56 12 q0 -6 6 -6 h40 q6 0 6 6 v24 h-52 z" fill="#fff" stroke="#ffffff" stroke-width="1.4"/>
+    <rect x="50" y="38" width="64" height="102" rx="5" fill="#fff" stroke="#ffffff" stroke-width="1.4"/>
+    <path d="M50 62 h64 M50 90 h64 M50 116 h64" stroke="#465a53" stroke-width="1"/>
+    <rect x="42" y="44" width="9" height="17" rx="3" fill="#ffffff"/><rect x="113" y="44" width="9" height="17" rx="3" fill="#ffffff"/>
+    <rect x="42" y="106" width="9" height="17" rx="3" fill="#ffffff"/><rect x="113" y="106" width="9" height="17" rx="3" fill="#ffffff"/>
+    <path d="M${p[0]-9} ${p[1]-9} L${p[0]+9} ${p[1]+9} M${p[0]+9} ${p[1]-9} L${p[0]-9} ${p[1]+9}" stroke="#b8341c" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="${p[0]}" cy="${p[1]}" r="14" fill="none" stroke="#b8341c" stroke-width="1.6"/>
+  </svg>`;
+}
+
+/* ===== src/screens/fleet/index.js ===== */
 /* ==================================================================
    §8 FLEET MANAGER
    ================================================================== */
@@ -3020,6 +3217,7 @@ function fleetChase(){
   return box;
 }
 
+/* ===== src/screens/system/index.js ===== */
 /* ==================================================================
    §9 SYSTEM CONSOLE — the argument-carrier
    ================================================================== */
@@ -3332,252 +3530,7 @@ function sysFaked(){
   return box;
 }
 
-/* ==================================================================
-   §10 EAS EXPORT — the closing move
-   ================================================================== */
-function buildIncidentJson(){
-  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario], t=sc.telematics;
-  const inc=s.incident;
-  return {
-    schema:"reli.fnol.incident/v1",
-    id: inc? inc.id : "inc_(unsaved)",
-    reference: s.reference || null,
-    state: inc? inc.state : "draft",
-    coverage_status: inc? inc.coverage_status : "in_force",
-    occurred_at: new Date().toISOString().slice(0,11)+d.occurredAt+":00+02:00",
-    reported_at: new Date().toISOString(),
-    reporting_channel: "driver_app",
-    detected_by: "telematics",
-    type: d.type,
-    location: { description:d.location, lat:d.lat, lon:d.lon, source:"telematics", country:"DE" },
-    vehicle: {
-      registration:d.vehicle, make_model:"DAF XF 480", drivable:d.drivable,
-      damage_points: d.impact? [d.impact] : [], fleet_id:"INS-FL-0087"
-    },
-    driver: {
-      // Driver linkage is a purpose-limited ASSOCIATION with its own retention
-      // clock, not a field on a monolithic person record. Costs nothing now,
-      // very expensive to retrofit.
-      association_id:"drv_assoc_"+(inc?inc.id.slice(4,10):"xxxxxx"),
-      display_name:t.driver, purpose:"claims_handling",
-      retention:"P7Y from claim closure", linked_profile:"external_ref_only"
-    },
-    injuries: d.injured===null ? null : {
-      present: d.injured,
-      severity_band: d.injurySeverity,
-      emergency_services_attended: d.injuryEmergency,
-      description: null,
-      description_omitted_reason: "GDPR Art. 9 — special category health data not collected at intake"
-    },
-    third_parties: sc.thirdParty && d.otherPlate ? [{
-      vehicle:{ plate:d.otherPlate, make_model:d.otherMake||null },
-      driver:{ name:d.otherDriver||null, phone:d.otherPhone||null },
-      insurer_name: d.otherInsurer||null, policy_number: d.otherPolicy||null
-    }] : [],
-    witnesses: d.witnessPresent && (d.witnessName||d.witnessPhone)
-      ? [{name:d.witnessName||null, phone:d.witnessPhone||null}] : [],
-    authority: { attended:d.policeAttended, reference:d.policeRef||null },
-    cargo: sc.type==="glass" ? null : {
-      laden:d.cargoLaden, description:d.cargoDesc||null,
-      trailer:d.trailer||null, hazardous_adr:d.hazardous
-    },
-    eas: sc.eas ? {
-      standard:"European Accident Statement (constat amiable / Europäischer Unfallbericht)",
-      circumstances_a: d.easA.slice().sort((a,b)=>a-b),
-      circumstances_b: d.easB.slice().sort((a,b)=>a-b),
-      point_of_impact: d.impact,
-      sketch_present: !!d.sketch,
-      signature_a_present: !!d.sigA,
-      signature_b_present: !!d.sigB,
-      liability_statement: "No admission of liability is recorded or requested by this document."
-    } : null,
-    fault: null,
-    fault_note: "Intentionally absent. No field in this product asks who was at fault.",
-    attachments: Object.keys(d.photos).filter(k=>!d.photos[k].skipped)
-      .map(k=>({slot:k, label:(PHOTO_SLOTS[k]||{}).label, captured_at:d.photos[k].at})),
-    skipped_deliberately: d.skipped,
-    completeness: inc ? inc.completeness : null,
-  };
-}
-
-function jsonHighlight(obj){
-  const raw=JSON.stringify(obj,null,2);
-  return esc(raw)
-    .replace(/&quot;([^&]*?)&quot;(\s*:)/g,'<span class="k">"$1"</span>$2')
-    .replace(/:\s&quot;(.*?)&quot;/g,': <span class="s">"$1"</span>')
-    .replace(/:\s(-?\d+\.?\d*)/g,': <span class="n">$1</span>')
-    .replace(/:\s(true|false|null)/g,': <span class="b">$1</span>');
-}
-
-function renderExport(){
-  const s=Store.s, d=s.draft, sc=SCENARIOS[s.scenario], t=sc.telematics;
-  const wrap=el("div",{class:"export-shell"});
-
-  wrap.append(el("div",{class:"fl-head noprint"},
-    el("div",{},
-      el("h3",{style:"margin:0;font-size:18px",text:"Export · "+(s.reference||"draft")}),
-      el("p",{class:"tiny",style:"margin-top:5px;max-width:700px",
-        text:"Two outputs. One a European handler recognises without training, one a carrier system ingests without transcription."})),
-    el("div",{style:"display:flex;gap:8px"},
-      el("button",{class:"btn btn-sm btn-secondary","data-act":"print"},"Print / save as PDF"),
-      el("button",{class:"btn btn-sm btn-ghost","data-act":"close-export"},"Back"))
-  ));
-
-  /* ---- (a) the EAS-equivalent document ---- */
-  const doc=el("div",{class:"eas-doc"});
-  doc.append(el("div",{class:"eas-doc-head"},
-    el("div",{},
-      el("h2",{text:"European Accident Statement — equivalent"}),
-      el("p",{class:"sub",text:"Constat amiable européen d'accident automobile · Europäischer Unfallbericht"}),
-      el("p",{class:"sub",style:"margin-top:5px",
-        text:"Reference "+(s.reference||"—")+"  ·  "+d.occurredAt+" "+new Date().toLocaleDateString("de-DE")+"  ·  "+d.location})),
-    el("div",{class:"eas-fake-stamp",html:"DEMO ARTEFACT<br>generated by the insurer FNOL prototype<br>not a filed document"})
-  ));
-
-  const cols=el("div",{class:"eas-cols"});
-
-  // column A — blue, us
-  const A=el("div",{class:"eas-col A"});
-  A.append(el("h4",{text:"A · Vehicle A"}));
-  [["Insured / policyholder","the insurer GmbH (fleet)"],["Policy number","INS-FLEET-0087"],
-   ["Vehicle","DAF XF 480"],["Registration",d.vehicle],["Country","D"],
-   ["Driver",t.driver],["Licence no.","B4471-88213-DE"],
-   ["Point of impact", d.impact?IMPACT_LABEL[d.impact]:""],
-   ["Visible damage", d.impact?("Impact zone: "+IMPACT_LABEL[d.impact]):""],
-   ["Remarks", d.notes||""]
-  ].forEach(([k,v])=>A.append(easField(k,v)));
-  cols.append(A);
-
-  // middle — the 17 statements
-  const M=el("div",{class:"eas-col M"});
-  M.append(el("h4",{text:"12 · Circumstances"}));
-  const mt=el("table",{class:"eas-mid-tbl"});
-  EAS_STATEMENTS.forEach(st=>{
-    const onA=d.easA.includes(st.n), onB=d.easB.includes(st.n);
-    mt.append(el("tr",{},
-      el("td",{class:"b"},el("div",{class:"eas-box A"+(onA?" on":""),text:onA?"✕":""})),
-      el("td",{class:"n",text:st.n}),
-      el("td",{},st.en),
-      el("td",{class:"b"},el("div",{class:"eas-box B"+(onB?" on":""),text:onB?"✕":""}))
-    ));
-  });
-  mt.append(el("tr",{},
-    el("td",{class:"b",style:"font-weight:800;font-size:9px;text-align:center",text:d.easA.length}),
-    el("td",{class:"n"}),
-    el("td",{style:"font-size:8.5px;color:#64786f;letter-spacing:.05em",text:"BOXES MARKED"}),
-    el("td",{class:"b",style:"font-weight:800;font-size:9px;text-align:center",text:d.easB.length})));
-  M.append(mt);
-  cols.append(M);
-
-  // column B — yellow, them
-  const B=el("div",{class:"eas-col B"});
-  B.append(el("h4",{text:"B · Vehicle B"}));
-  [["Insured / policyholder",""],["Policy number",d.otherPolicy||""],
-   ["Vehicle",d.otherMake||""],["Registration",d.otherPlate||""],["Country", d.otherPlate?"D":""],
-   ["Driver",d.otherDriver||""],["Licence no.",""],
-   ["Insurer",d.otherInsurer||""],
-   ["Point of impact",""],["Remarks",""]
-  ].forEach(([k,v])=>B.append(easField(k,v)));
-  cols.append(B);
-  doc.append(cols);
-
-  // sketch + impact row
-  const sr=el("div",{class:"eas-sketchrow"});
-  sr.append(el("div",{},
-    el("h4",{text:"10 · Point of impact"}),
-    el("div",{class:"eas-imgbox"+(d.impact?"":" empty")},
-      d.impact ? el("div",{style:"padding:6px;height:100%",html:svgImpactPrint(d.impact)}) : "not marked")));
-  sr.append(el("div",{},
-    el("h4",{text:"13 · Sketch of the accident"}),
-    el("div",{class:"eas-imgbox"+(d.sketch?"":" empty")},
-      d.sketch ? el("img",{src:d.sketch,alt:"Accident sketch"}) : "not drawn")));
-  doc.append(sr);
-
-  // witnesses / authority strip
-  doc.append(el("div",{style:"border-top:1px solid #b9c6d6;padding:10px 14px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;font-size:10px"},
-    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"5 · Witnesses"),
-      el("div",{style:"margin-top:3px"}, d.witnessName||d.witnessPhone ? (d.witnessName||"—")+" · "+(d.witnessPhone||"—") : el("i",{style:"color:#546b62"},"none recorded"))),
-    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Police / authority"),
-      el("div",{style:"margin-top:3px"}, d.policeAttended===true ? ("attended · "+(d.policeRef||"reference pending")) : d.policeAttended===false ? "did not attend" : el("i",{style:"color:#546b62"},"not asked"))),
-    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Injuries"),
-      el("div",{style:"margin-top:3px"}, d.injured===true ? ("yes · band: "+(d.injurySeverity||"—")+" · emergency services "+(d.injuryEmergency?"attended":"not attended")) : d.injured===false ? "none reported" : el("i",{style:"color:#546b62"},"—")),
-      d.injured===true ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Injury description deliberately not collected — GDPR Art. 9. To be gathered by the adjuster under a proper basis.") : null)
-  ));
-
-  // signatures
-  const sig=el("div",{class:"eas-sigrow"});
-  sig.append(el("div",{},
-    el("h4",{style:"margin:0 0 7px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#2b6fd4"},"15 · Signature of driver A"),
-    el("div",{class:"eas-sig-line"}, d.sigA? el("img",{src:d.sigA,alt:"Signature A"}) : ""),
-    el("div",{style:"margin-top:4px;font-size:9px;color:#7d8f9c",text:t.driver})));
-  sig.append(el("div",{},
-    el("h4",{style:"margin:0 0 7px;font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#96700a"},"15 · Signature of driver B"),
-    el("div",{class:"eas-sig-line"}, d.sigB? el("img",{src:d.sigB,alt:"Signature B"}) : ""),
-    el("div",{style:"margin-top:4px;font-size:9px;color:#7d8f9c", text: d.otherDriver||(d.sigB?"signed":"not signed")})));
-  doc.append(sig);
-
-  // the no-liability statement — the legally load-bearing part
-  doc.append(el("div",{class:"eas-nofault"},
-    el("span",{style:"font-size:13px;line-height:1"},"⚖"),
-    el("div",{},
-      el("b",{},"This document records agreed facts. It is not an admission of liability by either party. "),
-      "No field in the capturing application asks, or has ever asked, who was at fault. Liability is determined by the insurers on the facts recorded above, and neither driver's signature here concedes anything.")
-  ));
-  wrap.append(doc);
-
-  /* ---- (b) incident.json + ACORD mapping ---- */
-  wrap.append(el("div",{class:"sp28 noprint"}));
-  const mapWrap=el("div",{class:"map-wrap noprint"});
-  mapWrap.append(el("div",{},
-    el("div",{class:"sect-h"},el("h3",{text:"incident.json"}),
-      el("span",{class:"sect-note",text:"our canonical schema"})),
-    el("pre",{class:"json",html:jsonHighlight(buildIncidentJson())})
-  ));
-  const mapCol=el("div",{});
-  mapCol.append(el("div",{class:"sect-h"},el("h3",{text:"ACORD mapping"}),
-    el("span",{class:"sect-note",text:"the carrier-exchange target, made explicit"})));
-  const mt2=el("table",{class:"map"});
-  mt2.append(el("thead",{},el("tr",{},el("th",{text:"our field"}),el("th",{text:"ACORD"}),el("th",{text:"meaning"}))));
-  const mtb=el("tbody",{});
-  ACORD_MAP.forEach(r=>mtb.append(el("tr",{},
-    el("td",{class:"f",text:r.f}), el("td",{class:"a",text:r.a}), el("td",{class:"e",text:r.e}))));
-  mt2.append(mtb);
-  mapCol.append(el("div",{class:"tbl-wrap"},mt2));
-  mapCol.append(el("div",{class:"sp16"}));
-  mapCol.append(dn("Why the mapping column is on the screen and not in a spreadsheet",
-    "The point of the EAS export is that <b>nobody transcribes anything</b>, and transcription at the liability stage is exactly where money leaks — a mistyped plate or a dropped circumstance number becomes a contested split three months later. Two fields have <b>no ACORD equivalent</b> and I have said so rather than forcing them: the EAS circumstance array and the point of impact travel as a structured extension, because European handlers read them natively and inventing a lossy ACORD mapping for them would be worse than carrying them cleanly."));
-  mapWrap.append(mapCol);
-  wrap.append(mapWrap);
-
-  return el("div",{class:"deskframe"},
-    el("div",{class:"desk-bar noprint"},
-      el("div",{class:"dots"},el("i"),el("i"),el("i")),
-      el("span",{class:"desk-title",text:"Export · EAS-equivalent + incident.json"})),
-    el("div",{class:"desk-body"}, wrap));
-}
-
-function easField(k,v){
-  return el("div",{class:"eas-f"},
-    el("div",{class:"fl",text:k}),
-    el("div",{class:"fv"+(v?"":" empty"),text:v||"not captured"}));
-}
-
-/* print-friendly (light) impact marker */
-function svgImpactPrint(sel){
-  const pts={front_left:[52,26],front:[82,20],front_right:[112,26],side_left:[40,74],side_right:[124,74],
-    rear_left:[52,126],rear:[82,134],rear_right:[112,126],roof:[82,74]};
-  const p=pts[sel]||[82,74];
-  return `<svg viewBox="0 0 164 156" width="100%" height="100%" preserveAspectRatio="xMidYMid meet">
-    <path d="M56 12 q0 -6 6 -6 h40 q6 0 6 6 v24 h-52 z" fill="#fff" stroke="#ffffff" stroke-width="1.4"/>
-    <rect x="50" y="38" width="64" height="102" rx="5" fill="#fff" stroke="#ffffff" stroke-width="1.4"/>
-    <path d="M50 62 h64 M50 90 h64 M50 116 h64" stroke="#465a53" stroke-width="1"/>
-    <rect x="42" y="44" width="9" height="17" rx="3" fill="#ffffff"/><rect x="113" y="44" width="9" height="17" rx="3" fill="#ffffff"/>
-    <rect x="42" y="106" width="9" height="17" rx="3" fill="#ffffff"/><rect x="113" y="106" width="9" height="17" rx="3" fill="#ffffff"/>
-    <path d="M${p[0]-9} ${p[1]-9} L${p[0]+9} ${p[1]+9} M${p[0]+9} ${p[1]-9} L${p[0]-9} ${p[1]+9}" stroke="#b8341c" stroke-width="3" stroke-linecap="round"/>
-    <circle cx="${p[0]}" cy="${p[1]}" r="14" fill="none" stroke="#b8341c" stroke-width="1.6"/>
-  </svg>`;
-}
-
+/* ===== src/core/render.js ===== */
 /* ==================================================================
    §11 ROOT RENDER
    ================================================================== */
@@ -3605,58 +3558,151 @@ function render(){
 
   mountCanvases();
 }
-Store.sub(render);
 
+/* ===== src/core/store.js ===== */
 /* ==================================================================
-   §12 CANVAS — sketch + two signature pads
+   §3 STORE — single state object, localStorage-backed, subscribe/render
    ================================================================== */
-function mountCanvases(){
-  const d=Store.s.draft;
-  setupPad("sketchCanvas","sketch","#0f5d84",3.2);
-  setupPad("sigA","sigA","#dbe7e1",2.4);
-  setupPad("sigB","sigB","#e8d3a4",2.4);
-}
-function setupPad(id, key, colour, width){
-  const c=document.getElementById(id); if(!c) return;
-  const ctx=c.getContext && c.getContext("2d");
-  if(!ctx) return;               // no 2D context (very old browser) — degrade quietly
-  ctx.clearRect(0,0,c.width,c.height);
-  const saved=Store.s.draft[key];
-  if(saved){ const im=new Image(); im.onload=()=>ctx.drawImage(im,0,0,c.width,c.height); im.src=saved; }
-  else if(id==="sketchCanvas"){
-    // faint guide: a road, so the driver knows what kind of drawing this is
-    ctx.strokeStyle="#c8d4de"; ctx.lineWidth=2; ctx.setLineDash([14,12]);
-    ctx.beginPath(); ctx.moveTo(0,210); ctx.lineTo(640,210); ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.fillStyle="#2a3644"; ctx.font="15px system-ui";
-    ctx.fillText("draw the road and both vehicles", 20, 34);
-  }
-  if(c.dataset.wired) return;
-  c.dataset.wired="1";
-  let drawing=false, last=null;
-  const pos=e=>{
-    const r=c.getBoundingClientRect();
-    const p=e.touches?e.touches[0]:e;
-    return {x:(p.clientX-r.left)*(c.width/r.width), y:(p.clientY-r.top)*(c.height/r.height)};
+const LS_KEY = "fnol.demo.v1";
+
+function freshDraft(scenId){
+  const sc = SCENARIOS[scenId] || SCENARIOS.collision;
+  const t  = sc.telematics;
+  return {
+    // --- Tier 1: the only six fields that block submission ---
+    vehicle:      t.vehicle,        vehicleConfirmed:false,
+    occurredAt:   t.time,           timeConfirmed:false,
+    location:     t.location,       lat:t.lat, lon:t.lon, locationConfirmed:false,
+    type:         t.inferred,       typeConfirmed:false,
+    injured:      null,             // true | false — the one real question
+    drivable:     null,             // true | false — drives the credit-hire clock
+    // --- injury detail: presence + band + emergency attended. NOT description. ---
+    injurySeverity:null, injuryEmergency:null, injuryCount:null,
+    // --- perishable gap-fill ---
+    witnessPresent:null, witnessName:"", witnessPhone:"",
+    otherPlate:"", otherMake:"", otherDriver:"", otherPhone:"", otherInsurer:"", otherPolicy:"",
+    photos:{}, // slot -> {at, skipped}
+    easA:[], easB:[], impact:null, sketch:null, sigA:null, sigB:null,
+    policeAttended:null, policeRef:"",
+    cargoLaden:null, cargoDesc:"", trailer:"", hazardous:null,
+    skipped:[],      // ids of things the driver chose to skip — logged, never nagged
+    notes:"",
   };
-  const start=e=>{ e.preventDefault(); drawing=true; last=pos(e);
-    ctx.strokeStyle=colour; ctx.lineWidth=width; ctx.lineCap="round"; ctx.lineJoin="round"; };
-  const move=e=>{
-    if(!drawing) return; e.preventDefault();
-    const p=pos(e);
-    ctx.beginPath(); ctx.moveTo(last.x,last.y); ctx.lineTo(p.x,p.y); ctx.stroke();
-    last=p;
-  };
-  const end=()=>{
-    if(!drawing) return; drawing=false;
-    try{ Store.s.draft[key]=c.toDataURL("image/png"); Store.s.lastSaved=Date.now(); Store.save(); }catch(e){}
-    if(key!=="sketch"){ const pad=c.closest(".sig-pad"); if(pad) pad.classList.add("signed"); }
-  };
-  c.addEventListener("mousedown",start); c.addEventListener("touchstart",start,{passive:false});
-  window.addEventListener("mousemove",move); c.addEventListener("touchmove",move,{passive:false});
-  window.addEventListener("mouseup",end);   c.addEventListener("touchend",end);
 }
 
+const Store = {
+  s:{
+    persona:"driver",              // driver | fleet | system
+    scenario:"collision",
+    lang:"en",
+    notes:false,                   // design-notes overlay
+    fail:{ tpa:false, offline:false, coverage:false },
+    screen:"s0",                   // driver flow position
+    navStack:[],                   // where the driver came from — every step is reversible
+    subScreen:null,
+    draft:freshDraft("collision"),
+    incident:null,                 // the server-side record once created
+    reference:null,
+    refLatencyMs:null,
+    startedAt:null,                // 90-second timer origin
+    stoppedAt:null,
+    tick:0,
+    log:[],                        // API call log
+    hooks:[],                      // webhook events
+    queue:[],                      // outbound queue (accept-then-forward)
+    incidents:[],                  // fleet list
+    mergeGroup:null,               // duplicate simulator result
+    exportOpen:false,
+    fleetTab:"list",
+    sysTab:"log",
+    detailOpen:false,
+    lastSaved:null,
+    easLangCol:"en",
+  },
+  subs:[],
+  sub(f){ this.subs.push(f); },
+  set(patch){
+    // any screen change pushes the screen we're leaving, so Back always works.
+    // NO_HISTORY screens are terminal//destructive resets that must not be re-entered backwards.
+    if(patch && patch.screen && patch.screen!==this.s.screen && !patch.__noHist){
+      // Every transition is recorded, s0 included — a mistap on the cold open
+      // must be as correctable as any other. Returning TO s0 resets the trail.
+      if(patch.screen==="s0") this.s.navStack=[];
+      else this.s.navStack=[...this.s.navStack, this.s.screen];
+    }
+    if(patch) delete patch.__noHist;
+    Object.assign(this.s,patch); this.save(); this.emit();
+  },
+  back(){
+    const st=[...this.s.navStack];
+    const prev=st.pop();
+    if(prev==null) return;
+    this.s.navStack=st;
+    this.set({screen:prev, __noHist:true});
+  },
+  patchDraft(patch){
+    Object.assign(this.s.draft,patch);
+    this.s.lastSaved=Date.now();          // persist on every keystroke
+    this.save(); this.emit();
+  },
+  emit(){ this.subs.forEach(f=>{ try{ f(); }catch(e){ console.error(e); } }); },
+  save(){
+    try{
+      const {persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
+             refLatencyMs,startedAt,stoppedAt,log,hooks,queue,incidents,mergeGroup,
+             fleetTab,sysTab,exportOpen,easLangCol} = this.s;
+      localStorage.setItem(LS_KEY, JSON.stringify({
+        persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
+        refLatencyMs,startedAt,stoppedAt,
+        log:log.slice(-140), hooks:hooks.slice(-80), queue, incidents, mergeGroup,
+        fleetTab,sysTab,exportOpen,easLangCol
+      }));
+    }catch(e){ /* quota or private mode — the demo still runs from memory */ }
+  },
+  load(){
+    try{
+      const raw=localStorage.getItem(LS_KEY); if(!raw) return;
+      const d=JSON.parse(raw);
+      if(d && typeof d==="object") Object.assign(this.s,d);
+      if(!this.s.draft) this.s.draft=freshDraft(this.s.scenario);
+      // sessions saved before back-navigation existed have no stack
+      if(!Array.isArray(this.s.navStack)) this.s.navStack=[];
+    }catch(e){}
+  },
+  reset(keepPersona){
+    const persona = keepPersona ? this.s.persona : "driver";
+    const scen = this.s.scenario, lang=this.s.lang, notes=this.s.notes;
+    localStorage.removeItem(LS_KEY);
+    this.s = Object.assign({}, {
+      persona, scenario:scen, lang, notes,
+      fail:{tpa:false,offline:false,coverage:false},
+      screen:"s0", subScreen:null, draft:freshDraft(scen),
+      incident:null, reference:null, refLatencyMs:null, startedAt:null, stoppedAt:null, tick:0,
+      log:[], hooks:[], queue:[], incidents:[], mergeGroup:null,
+      exportOpen:false, fleetTab:"list", sysTab:"log", detailOpen:false, lastSaved:null,
+      easLangCol:"en",
+    });
+    this.save(); this.emit();
+  }
+};
+
+/* --- log helpers --- */
+let logSeq=0;
+function logAdd(entry){
+  Store.s.log.push(Object.assign({id:++logSeq, t:clockT()}, entry));
+  if(Store.s.log.length>200) Store.s.log.splice(0,Store.s.log.length-200);
+  Store.save(); Store.emit();
+}
+function hookFire(name, payload){
+  Store.s.hooks.push({id:++logSeq, t:clockT(), name, payload:payload||{}});
+  if(Store.s.hooks.length>100) Store.s.hooks.splice(0,Store.s.hooks.length-100);
+  logAdd({m:"HOOK", p:"→ webhook  "+name, s:"200", ms:rnd(8,34), body:JSON.stringify(payload||{},null,1)});
+}
+
+/* domain.js can't import the store (cycle), so hand it the language getter. */
+setLangSource(() => Store.s.lang);
+
+/* ===== src/core/actions.js ===== */
 /* ==================================================================
    §13 ACTIONS — one delegated listener for the whole app
    ================================================================== */
@@ -3891,7 +3937,7 @@ const ACTIONS = {
     const items=row&&row.completeness? row.completeness.required_next:[];
     logAdd({m:"POST",p:"/v1/notifications",s:"202",ms:rnd(50,120),key:uuid(),
       meta:"chase message to driver · items ["+items.join(", ")+"] · deep-link resumes the flow with progress intact",
-      body:JSON.stringify({channel:"sms+push", incident:v, resume_deeplink:"reli://fnol/"+v, items},null,1)});
+      body:JSON.stringify({channel:"sms+push", incident:v, resume_deeplink:"fnol://fnol/"+v, items},null,1)});
     toast("Chase message queued — deep-link resumes exactly where they stopped.","ok",3400);
   },
 
@@ -3954,9 +4000,12 @@ document.addEventListener("input", e=>{
   if(!chip){ /* nothing to update */ }
 });
 
+/* ===== src/boot.js ===== */
 /* ==================================================================
    §14 BOOT
    ================================================================== */
+/* Subscribe the renderer before loading state, so the first emit paints. */
+Store.sub(render);
 Store.load();
 // the timer needs a heartbeat while it's running
 setInterval(()=>{
@@ -3986,6 +4035,13 @@ if(!localStorage.getItem(LS_KEY+".seen")){
   try{ localStorage.setItem(LS_KEY+".seen","1"); }catch(e){}
   setTimeout(()=>toast("Start on the Driver persona. Turn on Design notes to read the reasoning inline.","",6000),600);
 }
+
+/* ===== src/main.js ===== */
+/**
+ * Entry point. The build resolves this module graph depth-first and
+ * concatenates it into a single file, so the import order here is what
+ * determines the order of the emitted bundle.
+ */
 </script>
 </body>
 </html>

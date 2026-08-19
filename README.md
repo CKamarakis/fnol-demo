@@ -4,7 +4,7 @@ A working prototype of a **First Notice of Loss** flow for a connected truck fle
 
 Private study project. Not affiliated with, commissioned by, or representing any insurer, third-party administrator or vendor.
 
-**Open `prototype.html` in any browser. Double-click it. No install, no server, no network.**
+**Open `dist/prototype.html` in any browser. Double-click it. No install, no server, no network.**
 
 > **Nothing here touches a real system.** Every downstream response — claim registration, the coverage check, the telematics feed, recovery dispatch — is simulated in-browser. The System console inside the prototype carries a full inventory of what is faked, what genuinely works, and what is an honest limitation.
 
@@ -47,9 +47,27 @@ Plus three scenarios (glass / collision with injury / theft) showing the same fo
 
 The **European Accident Statement** (*constat amiable* / *Europäischer Unfallbericht*) is the structural anchor — the form both drivers complete and sign at the scene across the EU, designed per Directive 2009/103/EC. Its output is immediately usable by the other party's insurer, which matters because transcription at the liability stage is where money leaks. **ACORD**'s claims standards are the carrier-exchange mapping target, shown alongside the JSON export.
 
+## Project layout
+
+```
+src/          ES modules — core, data, components, screens, styles
+build/        zero-dependency build script (no npm install)
+tests/        smoke, navigation and integrity suites
+dist/         the built single-file artifact
+```
+
+```bash
+npm run build     # src/ -> dist/prototype.html
+npm run watch     # rebuild on change
+npm test          # all suites
+npm run verify    # build + test
+```
+
+See [CLAUDE.md](CLAUDE.md) for architecture, constraints and domain rules.
+
 ## Technical notes
 
-Single self-contained HTML file — vanilla JS, hand-written CSS, hand-authored inline SVG. Zero external requests by design: no CDN, no fonts, no map tiles, no analytics. It has to survive being emailed and reopened on someone else's laptop in three weeks.
+Built to a single self-contained HTML file — vanilla JS, hand-written CSS, hand-authored inline SVG. Zero external requests by design: no CDN, no fonts, no map tiles, no analytics. It has to survive being emailed and reopened on someone else's laptop in three weeks.
 
 Verified: no external requests, JS parses clean, no fault-attribution field, 112 reachable from every driver screen, back navigation covered by unit assertions.
 

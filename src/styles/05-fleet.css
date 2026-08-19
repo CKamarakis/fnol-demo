@@ -1,0 +1,67 @@
+/* ============================================================
+   5. FLEET VIEW
+   ============================================================ */
+.fl-head{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:18px}
+.fl-kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:12px;margin-bottom:20px}
+.kpi{background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--r-md);padding:14px 16px}
+.kpi .k-lbl{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.kpi .k-val{font-size:25px;font-weight:750;margin-top:5px;letter-spacing:-.02em}
+.kpi .k-sub{font-size:11.5px;color:var(--ink-3);margin-top:3px;font-family:var(--mono)}
+.kpi.good .k-val{color:var(--ok)}
+.kpi.warn .k-val{color:var(--warn)}
+
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+table.tbl th{
+  text-align:left;padding:9px 12px;font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+  color:var(--ink-3);font-weight:700;border-bottom:1px solid var(--line);white-space:nowrap;
+}
+table.tbl td{padding:12px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+table.tbl tr:hover td{background:#e7edf3}
+.tbl-wrap{border:1px solid var(--line);border-radius:var(--r-md);overflow-x:auto;background:var(--bg-raise)}
+.comp-bar{width:74px;height:6px;border-radius:3px;background:var(--line);overflow:hidden;display:inline-block;vertical-align:middle}
+.comp-bar i{display:block;height:100%;background:var(--accent)}
+.comp-bar i.hi{background:var(--ok)}
+.comp-bar i.lo{background:var(--warn)}
+.linkish{color:var(--accent);font-weight:650;text-decoration:underline;text-underline-offset:3px}
+.linkish:hover{filter:brightness(1.15)}
+
+.merge-card{background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;margin-top:14px}
+.merge-head{padding:13px 16px;background:var(--bg-raise-2);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.merge-cols{display:grid;grid-template-columns:repeat(3,1fr);gap:0}
+.merge-col{padding:14px 16px;border-right:1px solid var(--line-soft);font-size:12.5px}
+.merge-col:last-child{border-right:none}
+.merge-col.dup{background:#e7edf3}
+.merge-col h5{margin:0 0 9px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--ink-3);font-weight:700}
+.merge-col dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:4px 10px;font-family:var(--mono);font-size:11.5px}
+.merge-col dt{color:var(--ink-3)}
+.merge-col dd{margin:0;color:var(--ink-2)}
+.merge-foot{padding:13px 16px;border-top:1px solid var(--line);display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--bg-sunken)}
+.match-math{font-family:var(--mono);font-size:11.5px;color:var(--ink-3)}
+.match-math b{color:var(--ok)}
+.match-math b.no{color:var(--warn)}
+
+.chase{display:grid;gap:10px}
+.chase-row{display:flex;gap:14px;align-items:flex-start;padding:13px 15px;background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--r-md)}
+.chase-row .cr-main{flex:1;min-width:0}
+.chase-list{margin:8px 0 0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:6px}
+.chase-list li{
+  font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:6px;
+  background:var(--bg-raise-2);border:1px solid var(--line);color:var(--ink-2);
+}
+.chase-list li.perish{border-color:#e8d3a4;background:var(--warn-soft);color:#7d5008}
+
+/* section blocks */
+.sect{margin-bottom:26px}
+.sect-h{display:flex;align-items:center;gap:11px;margin-bottom:12px;flex-wrap:wrap}
+.sect-h h3{font-size:16px;font-weight:700;margin:0}
+.sect-h .sect-note{font-size:12.5px;color:var(--ink-3)}
+
+/* tabs */
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px;overflow-x:auto}
+.tabs button{
+  padding:10px 15px;font-size:13.5px;font-weight:650;color:var(--ink-3);
+  border-bottom:2px solid transparent;white-space:nowrap;
+}
+.tabs button:hover{color:var(--ink-2)}
+.tabs button[aria-pressed="true"]{color:var(--ink);border-bottom-color:var(--accent)}
+

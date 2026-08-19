@@ -1,0 +1,22 @@
+/* ============================================================
+   8. PRINT — EAS export must print to PDF cleanly
+   ============================================================ */
+@media print{
+  #chrome,#toast,.noprint{display:none!important}
+  html,body{overflow:visible!important;background:#fff!important;color:#000!important;height:auto!important}
+  #stage{position:static!important;inset:auto!important;overflow:visible!important;display:block!important}
+  .stage-pad{padding:0!important;display:block!important}
+  .deskframe{max-width:none;border:none;box-shadow:none;background:#fff;min-height:0}
+  .desk-bar{display:none}
+  .desk-body{padding:0;overflow:visible}
+  .eas-doc{box-shadow:none;border-radius:0;border:1px solid #000;font-size:9.5px}
+  .export-shell{max-width:none}
+  .map-wrap,pre.json,table.map,.sect.noprint{display:none!important}
+  @page{size:A4 portrait;margin:10mm}
+}
+
+/* small viewport safety for the phone frame */
+@media (max-width:460px){
+  .phone{width:100%;max-width:390px;height:82vh;border-radius:30px;box-shadow:none;border-color:var(--line)}
+  .phone-caption{width:100%}
+}

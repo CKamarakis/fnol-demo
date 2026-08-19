@@ -1,0 +1,56 @@
+/* ============================================================
+   1. DEMO CHROME  —  deliberately NOT product-styled.
+   Monospace, hazard-tape edge, muted. The founders must never
+   confuse the scaffolding with the thing being scaffolded.
+   ============================================================ */
+#chrome{
+  position:fixed;top:0;left:0;right:0;z-index:400;
+  background:#1d322c;
+  border-bottom:1px solid #2A453D;
+  font-family:var(--mono);font-size:11.5px;
+  user-select:none;
+}
+#chrome::before{
+  content:"";display:block;height:3px;
+  background:repeating-linear-gradient(135deg,#2A453D 0 8px,#EE6B54 8px 16px);
+}
+.chrome-row{display:flex;align-items:center;gap:10px;padding:7px 12px;flex-wrap:wrap}
+.chrome-row + .chrome-row{border-top:1px solid #2a453d}
+.chrome-tag{
+  color:#5d6b7d;letter-spacing:.14em;text-transform:uppercase;
+  font-size:9.5px;padding-right:4px;white-space:nowrap;flex:none;
+}
+.chrome-brand{color:#8fa3b8;font-weight:600;letter-spacing:.04em}
+.chrome-brand b{color:var(--accent)}
+.chrome-sep{width:1px;align-self:stretch;background:#c8d4de;margin:0 2px}
+.chrome-spacer{flex:1}
+.seg{display:flex;background:#e7edf3;border:1px solid #c8d4de;border-radius:7px;overflow:hidden}
+.seg button{
+  padding:6px 11px;color:#64786f;font-family:var(--mono);font-size:11.5px;
+  border-right:1px solid #1a222c;white-space:nowrap;transition:background .12s,color .12s;
+}
+.seg button:last-child{border-right:none}
+.seg button:hover{background:#eef3f7;color:#b9c8d8}
+.seg button[aria-pressed="true"]{background:var(--accent);color:#04121f;font-weight:700}
+.tog{
+  display:inline-flex;align-items:center;gap:6px;padding:5px 10px 5px 7px;
+  background:#e7edf3;border:1px solid #c8d4de;border-radius:7px;
+  color:#64786f;font-family:var(--mono);font-size:11.5px;white-space:nowrap;
+  transition:all .12s;
+}
+.tog:hover{border-color:#bccbd7;color:#b9c8d8}
+.tog .dot{width:8px;height:8px;border-radius:50%;background:#bccbd6;flex:none;transition:all .15s}
+.tog[aria-pressed="true"]{background:var(--danger-soft);border-color:#e0a89c;color:#b8341c}
+.tog[aria-pressed="true"] .dot{background:var(--danger);box-shadow:0 0 8px var(--danger)}
+.tog.note[aria-pressed="true"]{background:var(--note-soft);border-color:#553b85;color:#d9c1ff}
+.tog.note[aria-pressed="true"] .dot{background:var(--note);box-shadow:0 0 8px var(--note)}
+.tog.fire{border-color:#3a4a2c;color:#a9c98a}
+.tog.fire:hover{background:#e4ece7}
+.chrome-btn{
+  padding:5px 11px;background:#e7edf3;border:1px solid #c8d4de;border-radius:7px;
+  color:#64786f;font-family:var(--mono);font-size:11.5px;transition:all .12s;
+}
+.chrome-btn:hover{background:#eef3f7;color:#b9c8d8;border-color:#bccbd7}
+.chrome-btn.danger:hover{background:var(--danger-soft);border-color:#e0a89c;color:#b8341c}
+.chrome-hint{color:#4c5a6b;font-size:10.5px;font-style:italic}
+

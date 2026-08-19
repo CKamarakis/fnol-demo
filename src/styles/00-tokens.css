@@ -1,0 +1,57 @@
+/* ============================================================
+   0. TOKENS
+   ============================================================ */
+:root{
+  /* Light palette. Built on three colours:
+       #2A453D  deep green  — primary action, ink, structure
+       #F1F5F9  slate-50    — page ground
+       #EE6B54  coral       — emergency and alerts, used sparingly so it always means "urgent"
+     Contrast targets: body text >= 7:1, secondary >= 4.5:1, all controls >= 3:1. */
+  --bg:            #F1F5F9;
+  --bg-raise:      #ffffff;
+  --bg-raise-2:    #e7edf3;
+  --bg-sunken:     #dfe7ee;
+  --line:          #bccbd7;
+  --line-soft:     #dde5ec;
+  --ink:           #16241f;   /* 13.9:1 on --bg */
+  --ink-2:         #465a53;   /*  7.1:1 on --bg */
+  --ink-3:         #5d7168;   /*  4.9:1 on --bg */
+  --accent:        #2A453D;   /* deep green — primary action */
+  --accent-ink:    #ffffff;
+  --accent-soft:   #dbe7e1;
+  --ok:            #1f7a5a;
+  --ok-soft:       #d8efe5;
+  --warn:          #9a6410;
+  --warn-soft:     #fbeed5;
+  --danger:        #EE6B54;   /* coral — SURFACES ONLY (2.8:1 as text on --bg). Use --danger-deep for text. */
+  --danger-ink:    #ffffff;
+  --danger-deep:   #b8341c;   /* text-on-light variant, coral fails contrast as ink */
+  --danger-soft:   #fde5e0;
+  --eas-blue:      #2b6fd4;
+  --eas-blue-bg:   #eaf1fd;
+  --eas-yellow:    #c99a12;
+  --eas-yellow-bg: #fcf6e3;
+  --note:          #6b4bb8;   /* design-note annotations */
+  --note-soft:     #eae4f7;
+
+  --r-sm: 8px; --r-md: 14px; --r-lg: 20px; --r-xl: 28px;
+  --tap: 56px;                /* minimum touch target — adrenaline degrades fine motor control */
+  --mono: ui-monospace, "SF Mono", "Cascadia Mono", "Segoe UI Mono", Menlo, Consolas, monospace;
+  --sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:var(--sans); font-size:15px; line-height:1.45;
+  -webkit-font-smoothing:antialiased; overflow:hidden;
+}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;background:none;border:none;padding:0}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:4px}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-track{background:transparent}
+

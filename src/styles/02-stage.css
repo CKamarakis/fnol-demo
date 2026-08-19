@@ -1,0 +1,53 @@
+/* ============================================================
+   2. STAGE
+   ============================================================ */
+#stage{
+  position:fixed;top:var(--chrome-h,88px);left:0;right:0;bottom:0;
+  overflow:auto;display:flex;flex-direction:column;
+}
+.stage-pad{flex:1;display:flex;align-items:flex-start;justify-content:center;padding:26px 20px 60px}
+
+/* --- phone frame --- */
+.phone-wrap{display:flex;gap:30px;align-items:flex-start;flex-wrap:wrap;justify-content:center}
+.phone{
+  width:390px;height:844px;flex:none;position:relative;
+  background:var(--bg);border-radius:44px;
+  border:1px solid #2a3543;
+  box-shadow:0 0 0 9px #dbe2e9, 0 0 0 10px #2b3543, 0 24px 56px -24px #2a453d40;
+  overflow:hidden;display:flex;flex-direction:column;
+}
+.phone-notch{
+  position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:126px;height:27px;background:#e7edf3;border-radius:0 0 16px 16px;z-index:60;
+}
+.status-bar{
+  flex:none;height:44px;display:flex;align-items:flex-end;justify-content:space-between;
+  padding:0 24px 5px;font-size:12.5px;font-weight:600;color:var(--ink-2);z-index:55;
+}
+.status-bar .sb-right{display:flex;align-items:center;gap:5px}
+.screen{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
+.scroll{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.home-ind{flex:none;height:22px;display:flex;align-items:center;justify-content:center}
+.home-ind::after{content:"";width:134px;height:5px;border-radius:3px;background:#b3c2cc}
+
+.phone-caption{
+  width:390px;margin-top:14px;text-align:center;color:var(--ink-3);
+  font-family:var(--mono);font-size:10.5px;letter-spacing:.06em;
+}
+
+/* --- desktop / console frame --- */
+.deskframe{
+  width:100%;max-width:1180px;background:var(--bg-raise);
+  border:1px solid var(--line);border-radius:var(--r-lg);
+  overflow:hidden;box-shadow:0 24px 60px -24px #000;
+  display:flex;flex-direction:column;min-height:700px;
+}
+.desk-bar{
+  flex:none;display:flex;align-items:center;gap:9px;padding:11px 16px;
+  background:var(--bg-raise-2);border-bottom:1px solid var(--line);
+}
+.desk-bar .dots{display:flex;gap:6px}
+.desk-bar .dots i{width:11px;height:11px;border-radius:50%;background:#bccbd6;display:block}
+.desk-title{font-size:12.5px;color:var(--ink-3);font-family:var(--mono)}
+.desk-body{flex:1;padding:24px 26px 40px;overflow:auto}
+
