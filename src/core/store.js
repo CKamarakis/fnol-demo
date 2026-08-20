@@ -6,6 +6,16 @@ import { clockT, rnd } from './utils.js';
    ================================================================== */
 export const LS_KEY = "fnol.demo.v1";
 
+/**
+ * Screens the driver passes THROUGH rather than navigates to.
+ *
+ * They are never pushed onto the history and never show a Back control. The
+ * 112 screen is the case that matters: it is an interstitial on the way to
+ * the six questions, and a Back button above a safety instruction invites the
+ * driver to leave it.
+ */
+export const TRANSIENT = ["emg"];
+
 export function freshDraft(scenId){
   const sc = SCENARIOS[scenId] || SCENARIOS.collision;
   const t  = sc.telematics;
@@ -68,13 +78,18 @@ export const Store = {
   },
   getSnapshot(){ return this.version; },
   set(patch){
-    // any screen change pushes the screen we're leaving, so Back always works.
-    // NO_HISTORY screens are terminal//destructive resets that must not be re-entered backwards.
+    // Every screen change records where we came from, so Back always works.
     if(patch && patch.screen && patch.screen!==this.s.screen && !patch.__noHist){
-      // Every transition is recorded, s0 included — a mistap on the cold open
-      // must be as correctable as any other. Returning TO s0 resets the trail.
-      if(patch.screen==="s0") this.s.navStack=[];
-      else this.s.navStack=[...this.s.navStack, this.s.screen];
+      if(patch.screen==="s0"){
+        // Returning to the cold open is a fresh start; the trail resets.
+        this.s.navStack=[];
+      } else if(!TRANSIENT.includes(this.s.screen)){
+        this.s.navStack=[...this.s.navStack, this.s.screen];
+      }
+      // Leaving a transient screen pushes nothing: the driver continues from
+      // it rather than navigating through it, so Back must reach whatever came
+      // before — 112 is passed through on the way to the six questions, and
+      // Back from there belongs on the cold open, not on a safety instruction.
     }
     if(patch) delete patch.__noHist;
     Object.assign(this.s,patch); this.save(); this.emit();

@@ -201,6 +201,19 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   check(!d2.querySelector('#root [data-act="nav-back"]'),
     'no Back button above the safety instruction');
   check(hit('emg-continue'), 'can continue past the emergency screen');
+  await wait();
+
+  // The driver passes THROUGH 112 on the way to the six questions, so Back
+  // must reach the cold open. Landing back on a safety instruction they have
+  // already dealt with is confusing and slightly alarming.
+  const backLbl = d2.querySelector('#root .nav-lbl');
+  check(backLbl && !/emergency/i.test(backLbl.textContent),
+    'back does not point at the 112 screen',
+    backLbl ? 'label was ' + backLbl.textContent : 'no back control');
+  hit('nav-back');
+  await wait();
+  check(/is everyone okay/i.test(t2()),
+    'back after the safety route reaches the cold open');
   fresh.window.close();
 }
 

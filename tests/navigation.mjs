@@ -14,7 +14,9 @@ const St = {
   set(patch) {
     if (patch && patch.screen && patch.screen !== this.s.screen && !patch.__noHist) {
       if (patch.screen === 's0') this.s.navStack = [];
-      else this.s.navStack = [...this.s.navStack, this.s.screen];
+      else if (!TRANSIENT.includes(this.s.screen)) {
+        this.s.navStack = [...this.s.navStack, this.s.screen];
+      }
     }
     if (patch) delete patch.__noHist;
     Object.assign(this.s, patch); this.save(); this.emit();
@@ -28,7 +30,9 @@ const St = {
   },
 };
 
-const NO_BACK = ['s0', 'emg'];
+/** Screens the driver passes through rather than navigates to. */
+const TRANSIENT = ['emg'];
+const NO_BACK = ['s0', ...TRANSIENT];
 const backVisible = () => !NO_BACK.includes(St.s.screen) && St.s.navStack.length > 0;
 
 let failed = 0;
@@ -58,6 +62,18 @@ St.back(); is(St.s.screen, 's0', 'back on an empty stack is a no-op');
 // safety: never offer Back above a 112 instruction
 St.set({ screen: 'emg' });
 is(backVisible(), false, 'hidden on the emergency screen');
+
+// The injury route passes THROUGH 112 on the way to the six questions, so
+// Back from there must reach the cold open. Landing on a safety instruction
+// the driver already dismissed is both confusing and slightly alarming.
+St.set({ screen: 's0' });
+St.set({ screen: 'emg' });
+is(St.s.navStack, ['s0'], 'entering 112 records the cold open');
+St.set({ screen: 's1' });
+is(St.s.navStack, ['s0'], 'leaving 112 does not record it');
+is(backVisible(), true, 'back is offered after the safety route');
+St.back();
+is(St.s.screen, 's0', 'back from the six questions reaches the cold open, not 112');
 
 // going forward again after going back must re-push, or Back gets stuck
 St.set({ screen: 's0' }); St.set({ screen: 's1' }); St.set({ screen: 's2' });

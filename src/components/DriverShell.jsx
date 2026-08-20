@@ -1,6 +1,6 @@
 import { I, nowHM } from '../core/utils.js';
 import { STR, T } from '../data/domain.js';
-import { Store } from '../core/store.js';
+import { Store, TRANSIENT } from '../core/store.js';
 
 /* ==================================================================
    §7 DRIVER FLOW — the shell around every driver screen
@@ -76,9 +76,10 @@ export function langSelect(cur) {
 /**
  * Back bar — a mistap must always be correctable.
  *
- * Hidden in exactly two places: the cold open, where there is nothing behind
- * it, and the 112 screen, where a Back button above a safety instruction is
- * the wrong affordance — it invites the driver to leave.
+ * Hidden on the cold open, which has nothing behind it, and on TRANSIENT
+ * screens, which the driver passes through rather than visits. The 112 screen
+ * is the one that matters: a Back button above a safety instruction invites
+ * the driver to leave it.
  */
 export const SCREEN_TITLES = {
   s0: 'Incident', s0det: 'Details', dismiss: 'Dismiss', emg: 'Emergency',
@@ -87,7 +88,8 @@ export const SCREEN_TITLES = {
   police: 'Police', cargo: 'Cargo', otherins: 'Their insurer', done: 'Finished',
 };
 
-export const NO_BACK = ['s0', 'emg'];
+/** s0 has nothing behind it; TRANSIENT screens are passed through, not visited. */
+export const NO_BACK = ['s0', ...TRANSIENT];
 
 export function navBar() {
   const s = Store.s;
