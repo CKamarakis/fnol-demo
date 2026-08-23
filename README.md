@@ -36,7 +36,7 @@ If you have two minutes, in this order:
 Three panes, switchable from the top bar:
 
 | Pane | Shows |
-|---|---|
+| --- | --- |
 | **Driver** (phone frame) | The FNOL flow — telematics cold open, six blocking fields, perishability-ordered gap fill, EAS circumstances, guided photo set |
 | **Fleet manager** | Incident list with completeness and time-to-notification, duplicate merge queue, outstanding-information chase list |
 | **System** | Live API log with idempotency keys, queue state, webhook events, state machine, and the "what's faked" inventory |
@@ -74,9 +74,16 @@ Built to a single self-contained HTML file — React 18, hand-written CSS, hand-
 
 Verified: no external requests, JS parses clean, no fault-attribution field, 112 reachable from every driver screen, back navigation covered by unit assertions.
 
-## Status
+## Documentation
 
-Prototype complete. Still to come: decision log, field spec, API contract (`openapi.yaml`), UX-under-stress notes, metrics, and open questions.
+| Document | What it covers |
+| --- | --- |
+| [Decision log](docs/decision-log.md) | Twelve decisions, each with what would change my mind |
+| [Field spec](docs/field-spec.md) | Every field, its requirement level, and how fast it perishes |
+| [`openapi.yaml`](openapi.yaml) | The contract — checked against the implementation by `npm test` |
+| [Metrics](docs/metrics.md) | Nine numbers, each tied to a euro consequence |
+| [Open questions](docs/open-questions.md) | What I would need from the insurer and the partners, and the risks worth raising |
+| [What's faked](docs/whats-faked.md) | Every simulation named, and the shorter list of what genuinely works |
 
 ---
 
