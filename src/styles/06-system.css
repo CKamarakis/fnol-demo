@@ -72,3 +72,26 @@
 .faked li{margin-bottom:7px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
 .faked li b{color:var(--ink)}
 
+
+/* telematics tab */
+.sys-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:start}
+.panel-body{padding:12px 14px}
+.trig-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.trig-conf{font-family:var(--mono);font-size:12px;color:var(--ink-2);font-weight:700}
+.thr-row{
+  display:grid;grid-template-columns:120px 74px 1fr;gap:8px;align-items:baseline;
+  padding:6px 0;border-bottom:1px solid var(--line-soft);font-size:12px;
+}
+.thr-row:last-child{border-bottom:none}
+.thr-name{color:var(--ink-2);font-weight:650}
+.thr-val{font-family:var(--mono);color:var(--ink-3)}
+.thr-note{color:var(--ink-3);font-size:11px}
+.thr-row.breached{background:var(--danger-soft);margin:0 -6px;padding:6px;border-radius:6px}
+.thr-row.breached .thr-name,.thr-row.breached .thr-val{color:var(--danger-deep)}
+.spd-row{
+  display:flex;justify-content:space-between;gap:12px;padding:6px 0;
+  border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--ink-3);
+}
+.spd-row:last-of-type{border-bottom:none}
+.spd-row b{font-family:var(--mono);color:var(--ink);font-size:12px}
+@media (max-width:900px){ .sys-grid{grid-template-columns:1fr} }

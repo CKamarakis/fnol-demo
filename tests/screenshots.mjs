@@ -47,6 +47,7 @@ const SHOTS = [
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
   ['fleet', { persona: 'fleet' }],
   ['system', { persona: 'system' }],
+  ['system-telematics', { persona: 'system', sysTab: 'telematics', scenario: 'collision' }],
 ];
 
 mkdirSync(OUT, { recursive: true });

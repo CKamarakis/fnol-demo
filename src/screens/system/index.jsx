@@ -1,6 +1,7 @@
 import { el } from '../../core/dom.jsx';
 import { I, esc } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
+import { MAPON_FIXTURES, MAPON_THRESHOLDS, decelerationProfile } from '../../data/mapon.js';
 import { dn } from '../../components/DriverShell.jsx';
 
 /* ==================================================================
@@ -11,13 +12,14 @@ export function renderSystem(){
   const body=el("div",{class:"desk-body"});
 
   const tabs=el("div",{class:"tabs"});
-  [["log","API log"],["contract","Contract & errors"],["states","State machine"],["faked","What's faked"]]
+  [["log","API log"],["telematics","Telematics in"],["contract","Contract & errors"],["states","State machine"],["faked","What's faked"]]
     .forEach(([v,l])=>tabs.append(el("button",{"data-act":"sys-tab","data-v":v,"aria-pressed":String(s.sysTab===v)},l)));
   body.append(tabs);
 
   if(s.sysTab==="log")      body.append(sysLog());
   if(s.sysTab==="contract") body.append(sysContract());
   if(s.sysTab==="states")   body.append(sysStates());
+  if(s.sysTab==="telematics") body.append(sysTelematics());
   if(s.sysTab==="faked")    body.append(sysFaked());
 
   return el("div",{class:"deskframe"},
@@ -278,7 +280,8 @@ export function sysFaked(){
   const groups=[
     ["Simulated — stands in for a real system", [
       ["TPA forward","<code>POST /tpa/v2/claims</code> resolves locally. Latency, 502s and the backoff schedule are modelled. No endpoint exists."],
-      ["Telematics detection","The impact event, g-force, speed trace and dashcam clip are scripted per scenario. No device, no CAN bus."],
+      ["Telematics detection","Payloads use <b>Mapon's real field names, endpoints and thresholds</b> — see the Telematics tab — but the values are invented. No Mapon account was contacted, no device exists, no CAN bus was read. The deceleration figures are computed from the fixture route rather than written as text, so they are at least internally consistent."],
+      ["Crash detection itself","<b>Mapon documents none.</b> The trigger here is derived from a harsh-braking alert plus speed, ignition and movement — our inference, carrying a confidence score, not something the partner sends. Confirming whether the device firmware exposes an accelerometer event is the first question I would ask them."],
       ["Coverage check","A boolean from the toggle. A real check queries the policy schedule at date of loss."],
       ["Recovery dispatch","A message and an ETA. No provider is contacted."],
       ["Central plate register","Referenced in copy as the route from plate to insurer. Not called."],
@@ -316,3 +319,117 @@ export function sysFaked(){
 }
 
 
+
+/* ---------- Telematics in — what the partner actually sends ---------- */
+
+const NO_CRASH_API_NOTE =
+  'Mapon documents harsh-event thresholds, CAN bus data, ignition state and an alert stream. It ' +
+  'does <b>not</b> document a crash-detection endpoint &mdash; nothing in the API says &ldquo;this ' +
+  'was a collision&rdquo;. So the trigger is <b>derived</b>, not received: a harsh-braking alert ' +
+  'whose speed reaches zero and stays there, with the ignition off and no movement afterwards. ' +
+  'That inference is ours, it carries a confidence, and it is the entire reason the dismissal path ' +
+  'is a first-class button rather than a buried one. <b>This is the first thing I would want to ' +
+  'confirm with Mapon</b> — if the device firmware exposes an accelerometer event, one file changes.';
+
+function ThresholdRow({ name, t, breached }) {
+  return (
+    <div className={`thr-row${breached ? ' breached' : ''}`}>
+      <span className="thr-name">{name}</span>
+      <span className="thr-val">{t.value} {t.unit}</span>
+      <span className="thr-note">{t.note}</span>
+    </div>
+  );
+}
+
+export function sysTelematics() {
+  const scenario = Store.s.scenario;
+  const fx = MAPON_FIXTURES[scenario];
+  if (!fx) return el('div', {});
+
+  const decel = decelerationProfile(fx.route);
+  const conf = Math.round(fx.trigger.confidence * 100);
+
+  return (
+    <div className="sys-grid">
+      <div>
+        <div className="panel">
+          <div className="panel-h">
+            GET /unit/list.json &nbsp;·&nbsp; include=can,ignition,tachograph,device,drivers
+          </div>
+          <pre className="json" style={{ maxHeight: '340px' }}>
+            {JSON.stringify({ data: { units: [fx.unit] } }, null, 1)}
+          </pre>
+        </div>
+
+        <div className="panel" style={{ marginTop: '12px' }}>
+          <div className="panel-h">
+            GET /alert/list.json &nbsp;·&nbsp; {fx.alerts.length} alert(s)
+          </div>
+          <pre className="json" style={{ maxHeight: '200px' }}>
+            {fx.alerts.length
+              ? JSON.stringify({ data: fx.alerts }, null, 1)
+              : '// nothing fired.\n// A stone chip is below every threshold Mapon has,\n// which is why the driver-initiated path must exist.'}
+          </pre>
+        </div>
+      </div>
+
+      <div>
+        <div className="panel">
+          <div className="panel-h">Trigger — derived, not received</div>
+          <div className="panel-body">
+            <div className="trig-head">
+              <span className={`chip ${conf >= 70 ? 'ok' : conf >= 40 ? 'warn' : ''}`}>
+                {fx.trigger.classified_as.replace(/_/g, ' ')}
+              </span>
+              <span className="trig-conf">{conf}% confidence</span>
+            </div>
+            <p className="tiny" style={{ marginTop: '9px', lineHeight: 1.5 }}>
+              <b style={{ color: 'var(--ink-2)' }}>Inferred from:</b> {fx.trigger.basis}
+            </p>
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginTop: '12px' }}>
+          <div className="panel-h">Mapon's documented thresholds</div>
+          <div className="panel-body">
+            <ThresholdRow
+              name="Harsh braking"
+              t={MAPON_THRESHOLDS.harshBraking}
+              breached={decel.exceedsHarshBraking}
+            />
+            <ThresholdRow name="Harsh acceleration" t={MAPON_THRESHOLDS.harshAcceleration} />
+            <ThresholdRow name="Harsh cornering" t={MAPON_THRESHOLDS.harshCornering} />
+            <ThresholdRow name="Excessive idling" t={MAPON_THRESHOLDS.excessiveIdling} />
+          </div>
+        </div>
+
+        <div className="panel" style={{ marginTop: '12px' }}>
+          <div className="panel-h">Speed profile — computed from route/list</div>
+          <div className="panel-body">
+            <div className="spd-row">
+              <span>Stop</span>
+              <b>{decel.spanFrom} → {decel.spanTo} km/h in {decel.spanSeconds} s</b>
+            </div>
+            <div className="spd-row">
+              <span>Peak segment</span>
+              <b>{decel.from} → {decel.to} km/h in {decel.seconds} s</b>
+            </div>
+            <div className="spd-row">
+              <span>Peak deceleration</span>
+              <b>{decel.peakMs2} m/s² · {decel.peakG} g</b>
+            </div>
+            <p className="tiny" style={{ marginTop: '8px', lineHeight: 1.5 }}>
+              Both figures are computed from the route points, not stored as text. The span is what
+              a driver recognises; the peak is what breaches the threshold. Reporting the span as
+              the peak would overstate the force by about a third.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div style={{ gridColumn: '1 / -1' }}>
+        {dn('The gap in the partner API', NO_CRASH_API_NOTE)}
+      </div>
+    </div>
+  );
+}
