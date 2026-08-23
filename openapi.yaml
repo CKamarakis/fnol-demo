@@ -1,0 +1,718 @@
+openapi: 3.1.0
+
+info:
+  title: FNOL Intake API
+  version: 0.1.0
+  description: |
+    First Notice of Loss intake for a connected truck fleet.
+
+    This spec describes the contract implemented by the demo prototype in this
+    repository. It is not a running service — `src/core/FakeApi.js` implements
+    exactly these operations over a simulated transport, which is why the
+    shapes below are checkable rather than aspirational.
+
+    **Three properties are load-bearing and shape everything else.**
+
+    1. **Intake never fails on a downstream dependency.** The driver submits to
+       us; we forward to the third-party administrator afterwards. A TPA outage
+       produces a queued forward and a normal `201` to the driver, never an
+       error. See `503`-free responses throughout.
+
+    2. **Business-rule failures are flagged, not rejected.** A vehicle that is
+       not on the policy schedule still gets an incident, a reference and a
+       recovery dispatch. `coverage_status` becomes `disputed` and a human
+       reviews it. Auto-rejecting at the roadside would be an automated adverse
+       decision on an individual under GDPR Art. 22, and schedule data is stale
+       more often than drivers are dishonest.
+
+    3. **Six fields block. Nothing else.** `completeness.blocking` can only ever
+       contain those six. Everything else is chased asynchronously through
+       `required_next`, ordered by how fast it perishes.
+
+  contact:
+    name: Chris Kamarakis
+  license:
+    name: Private study project — not for production use
+
+servers:
+  - url: https://api.example.invalid/v1
+    description: Placeholder. No such service exists.
+
+tags:
+  - name: incidents
+    description: Create, complete and submit an incident report.
+  - name: attachments
+    description: Photographs, sketches and signatures.
+  - name: telematics
+    description: Events arriving from the fleet telematics partner.
+  - name: duplicates
+    description: One collision, several notifications.
+
+security:
+  - bearerAuth: []
+
+paths:
+  /incidents:
+    post:
+      tags: [incidents]
+      summary: Create an incident
+      description: |
+        Accepts, persists and acknowledges in one call. The claim reference is
+        issued by us and returned immediately — it does not wait on the TPA, and
+        offline it is generated on the device with no round trip at all.
+
+        **Idempotent.** Replaying the same `Idempotency-Key` returns `200` with
+        the original incident rather than creating a second one. A driver on a
+        flaky roadside connection tapping submit three times must not produce
+        three reserves, three files and a fraud flag.
+      operationId: createIncident
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IncidentCreate'
+      responses:
+        '201':
+          description: Incident created.
+          headers:
+            Location:
+              schema: { type: string }
+              description: Canonical URL of the new incident.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '200':
+          description: |
+            Idempotent replay. The key has been seen before; the original
+            incident is returned unchanged. Indistinguishable to the driver.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/AuthError'
+
+  /incidents/{id}:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    get:
+      tags: [incidents]
+      summary: Read an incident
+      operationId: getIncident
+      responses:
+        '200':
+          description: Current state, including completeness.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [incidents]
+      summary: Progressive completion
+      description: |
+        Applies a partial update. Called as the driver fills gaps, and safe to
+        replay — the client persists on every keystroke and syncs when
+        connectivity returns.
+      operationId: updateIncident
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/IncidentPatch' }
+      responses:
+        '200':
+          description: Updated, with recomputed completeness.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /incidents/{id}/attachments:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    post:
+      tags: [attachments]
+      summary: Attach media
+      description: |
+        Attachments are queued separately from field data. The report is a few
+        kilobytes and syncs first; photographs follow when there is bandwidth
+        for them. A driver in poor coverage gets their reference immediately
+        rather than waiting behind an upload.
+      operationId: addAttachment
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/AttachmentCreate' }
+      responses:
+        '201':
+          description: Attachment recorded.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Attachment' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /incidents/{id}/submit:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    post:
+      tags: [incidents]
+      summary: Transition draft to notified
+      description: |
+        Marks the report filed. Succeeds whenever the six blocking fields are
+        present; outstanding non-blocking items do not prevent it and are
+        returned in `required_next` instead.
+      operationId: submitIncident
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Submitted.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+        '409':
+          description: |
+            One or more of the six blocking fields is still missing. The body
+            names them; the client should not have offered submit yet.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /incidents/{id}/requirements:
+    parameters:
+      - $ref: '#/components/parameters/IncidentId'
+    get:
+      tags: [incidents]
+      summary: What is still outstanding
+      description: |
+        The same array drives the driver's remaining list and the fleet
+        manager's chase list. Neither is hardcoded in a UI — if they ever
+        disagree, one of them is reading something else.
+      operationId: getRequirements
+      responses:
+        '200':
+          description: Outstanding items, ordered by perishability.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Requirements' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /incidents/merge:
+    post:
+      tags: [duplicates]
+      summary: Merge duplicate notifications
+      description: |
+        One collision routinely produces three notifications: the telematics
+        detection, the driver's app report, and the fleet manager telephoning
+        the TPA. Matching runs on `(vehicle, time window, location radius)`.
+
+        Exact tuple matches merge automatically; near-matches go to a human
+        review queue. Getting this wrong inflates the loss ratio with duplicate
+        reserves and makes the fleet manager think you cannot count.
+      operationId: mergeIncidents
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [primary_id, merge_ids]
+              properties:
+                primary_id: { type: string, examples: ['inc_01J7Z9'] }
+                merge_ids:
+                  type: array
+                  items: { type: string }
+                  minItems: 1
+      responses:
+        '200':
+          description: Merged. Surviving incident returned.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Incident' }
+
+  /telematics-events/{eventId}/dismiss:
+    parameters:
+      - name: eventId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      tags: [telematics]
+      summary: Dismiss a false positive
+      description: |
+        Potholes, kerb strikes and hard braking will produce detections that are
+        not claims. Dismissal creates no incident, no reserve and no
+        notification to the fleet manager.
+
+        The dismissal is itself data: the reason is the training signal for the
+        detection threshold. Without it, false positives never improve — and
+        drivers who stop trusting the app stop opening it for the true
+        positives too.
+      operationId: dismissTelematicsEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reason]
+              properties:
+                reason:
+                  type: string
+                  enum: [pothole, kerb, hard_brake, load, other]
+                note: { type: string }
+      responses:
+        '200':
+          description: Dismissed. No incident was created.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  event_id: { type: string }
+                  dismissed: { type: boolean, const: true }
+                  reason: { type: string }
+                  incident_created: { type: boolean, const: false }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  parameters:
+    IncidentId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+      examples:
+        default: { value: inc_01J7Z9 }
+
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: |
+        Client-generated UUID, created before the first attempt and stable
+        across retries. Unique per logical operation, scoped per account, bound
+        to the request body, and stored durably server side.
+
+        Without this a driver tapping submit three times on a bad connection
+        creates three claims on one incident.
+      schema: { type: string, format: uuid }
+
+  responses:
+    ValidationError:
+      description: |
+        Malformed input. Field-level errors so the client can mark the offending
+        field and keep the driver where they are, rather than bouncing them.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    AuthError:
+      description: Token missing or expired. Client refreshes silently and retries.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    NotFound:
+      description: No such incident.
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+
+  schemas:
+    IncidentCreate:
+      type: object
+      required: [vehicle, occurred_at, location, type, injuries_present, vehicle_drivable]
+      description: |
+        The six blocking fields, and nothing else. Everything optional is
+        omitted here deliberately: this is the whole of what stands between a
+        driver on a hard shoulder and a filed report.
+      properties:
+        vehicle:
+          type: string
+          description: Registration or VIN. The single most load-bearing field — it decides whether cover exists at all.
+          examples: ['B-RL 4471']
+        occurred_at:
+          type: string
+          format: date-time
+          description: |
+            When it happened. Stored separately from `received_at`; the gap
+            between them is a compliance-relevant and leakage-relevant metric.
+        location:
+          $ref: '#/components/schemas/Location'
+        type:
+          type: string
+          enum: [collision, glass, theft, animal, single, cargo, other]
+        injuries_present:
+          type: boolean
+          description: |
+            The most important triage field in the form. Switches the claim from
+            short-tail to long-tail and changes reserving, legal exposure and
+            severity band.
+        vehicle_drivable:
+          type: boolean
+          description: |
+            The money field. Starts recovery, and starts — or does not start —
+            the credit hire clock. Answered at minute two instead of hour six.
+        injury_severity:
+          type: string
+          enum: [walking, needs_help, serious]
+          description: |
+            Severity band only. There is deliberately no free-text injury
+            description anywhere in this API — that is Art. 9 health data and
+            the loss adjuster gathers it later under a proper basis.
+        emergency_services_attended: { type: boolean }
+        telematics:
+          $ref: '#/components/schemas/TelematicsSource'
+        reported_by:
+          type: string
+          enum: [driver, telematics, fleet_manager, third_party]
+          default: driver
+
+    IncidentPatch:
+      type: object
+      description: Any subset of the non-blocking fields, applied progressively.
+      properties:
+        witness_present: { type: boolean }
+        witness_name: { type: string }
+        witness_phone: { type: string }
+        third_party_registration:
+          type: string
+          description: Without the plate you cannot subrogate. If nothing else about the other party is captured, capture this.
+        third_party_insurer: { type: string }
+        third_party_policy: { type: string }
+        police_attended: { type: boolean }
+        police_reference: { type: string }
+        eas_circumstances:
+          $ref: '#/components/schemas/EasCircumstances'
+        cargo_laden: { type: boolean }
+        cargo_description: { type: string }
+        trailer_registration: { type: string }
+        hazardous: { type: boolean }
+        skipped:
+          type: array
+          description: Items the driver chose to skip. A known gap, recorded rather than nagged about.
+          items: { type: string }
+
+    Incident:
+      type: object
+      properties:
+        incident_id: { type: string, examples: ['inc_01J7Z9'] }
+        claim_reference:
+          type: string
+          description: |
+            Human-readable and issued immediately — this is what the driver
+            shows a police officer or the other party. Issued by us, not the
+            TPA. If it can only come back from the TPA, then the TPA's uptime is
+            the driver's problem.
+          examples: ['INS-DE-2026-084217']
+        status: { $ref: '#/components/schemas/IncidentStatus' }
+        coverage_status:
+          type: string
+          enum: [pending, confirmed, disputed]
+          description: |
+            `disputed` never blocks intake. It raises a human review task while
+            the driver's experience continues unchanged.
+        occurred_at: { type: string, format: date-time }
+        received_at: { type: string, format: date-time }
+        reference_latency_ms:
+          type: integer
+          description: Time to issue the reference. Should be sub-second and independent of any downstream system.
+        completeness: { $ref: '#/components/schemas/Completeness' }
+        next_actions:
+          type: array
+          items: { $ref: '#/components/schemas/NextAction' }
+
+    IncidentStatus:
+      type: string
+      description: |
+        `information_required` is bidirectional, not terminal — claims routinely
+        bounce back and forth as facts emerge.
+      enum:
+        - draft
+        - notified
+        - acknowledged
+        - coverage_checked
+        - registered_with_tpa
+        - in_progress
+        - information_required
+        - settled
+        - closed
+        - duplicate_merged
+        - withdrawn
+        - coverage_disputed
+
+    Completeness:
+      type: object
+      description: |
+        Returned on every call so the client can drive its own prompting without
+        a second round trip.
+      properties:
+        score:
+          type: integer
+          minimum: 0
+          maximum: 100
+          description: Weighted — the six blocking fields are 50%, perishables 35%, the rest 15%.
+        blocking:
+          type: array
+          maxItems: 6
+          description: |
+            Can only ever contain the six. Empty means the report is filed;
+            everything else is chased asynchronously.
+          items:
+            type: string
+            enum: [vehicle, occurred_at, location, type, injuries_present, vehicle_drivable]
+        required_next:
+          type: array
+          description: Outstanding non-blocking items, ordered by how fast each perishes.
+          items: { type: string }
+        perishable:
+          type: array
+          description: |
+            The subset measured in minutes rather than days. A witness walks
+            away; the other party's insurer can be chased next week.
+          items: { type: string }
+
+    Requirements:
+      type: object
+      properties:
+        incident_id: { type: string }
+        completeness: { $ref: '#/components/schemas/Completeness' }
+        items:
+          type: array
+          items:
+            type: object
+            properties:
+              id: { type: string, examples: [witness] }
+              label: { type: string, examples: ['Anyone who saw it'] }
+              half_life:
+                type: string
+                enum: [minutes, hours, days, permanent]
+              window: { type: string, examples: ['gone in ~10 minutes'] }
+              why: { type: string }
+
+    Location:
+      type: object
+      required: [description]
+      properties:
+        description:
+          type: string
+          description: Full address including road position — the part a recovery driver actually needs.
+          examples: ['A2 near Magdeburg, km 74.3, eastbound, Saxony-Anhalt, Germany']
+        lat: { type: number, format: double }
+        lon: { type: number, format: double }
+        country: { type: string, examples: [DE] }
+        source:
+          type: string
+          enum: [telematics, driver, geocoded]
+        note:
+          type: string
+          description: Qualifier about the fix rather than the place, e.g. "last known position".
+
+    TelematicsSource:
+      type: object
+      description: |
+        Provenance for anything the vehicle supplied. Mapon is the partner; see
+        `src/data/mapon.js` for the mapping from their vocabulary to this one.
+      properties:
+        partner: { type: string, examples: [Mapon] }
+        unit_id: { type: integer }
+        device: { type: string }
+        trigger:
+          type: object
+          description: |
+            **Derived, not received.** Mapon documents harsh-event thresholds,
+            CAN data and an alert stream, but no crash-detection endpoint —
+            nothing in their API says "this was a collision". The classification
+            below is our inference and carries a confidence accordingly. This is
+            the first thing to confirm with the partner.
+          properties:
+            derived: { type: boolean, const: true }
+            basis: { type: string }
+            confidence: { type: number, minimum: 0, maximum: 1 }
+            classified_as:
+              type: string
+              enum: [probable_impact, possible_unauthorised_movement, driver_reported]
+        alert_types:
+          type: array
+          items: { type: string, examples: [harsh_braking] }
+        deceleration:
+          type: object
+          properties:
+            peak_ms2: { type: number }
+            peak_g: { type: number }
+            exceeds_harsh_braking: { type: boolean }
+
+    EasCircumstances:
+      type: object
+      description: |
+        The European Accident Statement, box 12. Seventeen fixed statements
+        ticked by both parties, plus point of impact and a sketch.
+
+        Adopted rather than invented for three reasons: every European handler
+        reads it without training, both drivers complete the same list in their
+        own language, and — the legally load-bearing part — it establishes
+        agreed facts **without either party admitting liability**.
+      properties:
+        column_a:
+          type: array
+          items: { type: integer, minimum: 1, maximum: 17 }
+        column_b:
+          type: array
+          items: { type: integer, minimum: 1, maximum: 17 }
+        point_of_impact:
+          type: string
+          enum: [front, front_left, front_right, side_left, side_right, rear, rear_left, rear_right, roof]
+        sketch: { type: string, contentEncoding: base64 }
+        signature_a: { type: string, contentEncoding: base64 }
+        signature_b: { type: string, contentEncoding: base64 }
+      # There is deliberately no `fault`, `liability` or `at_fault` property
+      # anywhere in this API. Not hidden, not optional — absent. An admission
+      # captured from an employee at the roadside is a liability you created,
+      # and it is worth money to the other side.
+
+    AttachmentCreate:
+      type: object
+      required: [slot]
+      properties:
+        slot:
+          type: string
+          description: |
+            Named slots, not an open upload. "Attach photos" produces four
+            pictures of the same dent; named slots produce the wide shot that
+            establishes position and the signage shot that establishes right of
+            way — the two an adjuster needs and a driver never thinks to take.
+          enum: [wide_scene, damage_close, other_vehicle_plate, signage_markings, their_documents, sketch, signature]
+        content_type: { type: string, examples: ['image/jpeg'] }
+        bytes: { type: integer }
+        captured_at: { type: string, format: date-time }
+        skipped:
+          type: boolean
+          description: A skipped slot is recorded as a known gap rather than a silent one.
+
+    Attachment:
+      allOf:
+        - $ref: '#/components/schemas/AttachmentCreate'
+        - type: object
+          properties:
+            attachment_id: { type: string }
+            incident_id: { type: string }
+
+    NextAction:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [recovery_dispatched, capture_photos, capture_witness, capture_plate, await_police_reference]
+        eta_minutes: { type: integer }
+        guided_set: { type: string, examples: [collision_standard] }
+
+    WebhookEvent:
+      type: object
+      required: [event, incident_id, occurred_at]
+      properties:
+        event:
+          type: string
+          examples: [incident.acknowledged]
+        event_id:
+          type: string
+          description: Stable per delivery attempt, so consumers can deduplicate at-least-once delivery.
+        incident_id: { type: string }
+        claim_reference: { type: string }
+        occurred_at: { type: string, format: date-time }
+        data:
+          type: object
+          additionalProperties: true
+
+    Error:
+      type: object
+      required: [category, message]
+      properties:
+        category:
+          type: string
+          description: |
+            Four categories, because the client must respond differently to
+            each. Auth refreshes silently; validation marks a field in place;
+            a business rule is accepted and flagged rather than rejected; a
+            transient failure is queued and acknowledged normally, invisible to
+            the driver.
+          enum: [auth, validation, business_rule, transient]
+        message: { type: string }
+        fields:
+          type: array
+          items:
+            type: object
+            properties:
+              field: { type: string }
+              message: { type: string }
+
+webhooks:
+  incidentAcknowledged:
+    post:
+      summary: incident.acknowledged
+      description: |
+        Signed payloads, at-least-once delivery, consumer-side idempotency
+        required. Both the TPA and the fleet's own systems consume these.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged by the consumer. }
+
+  incidentRegisteredWithTpa:
+    post:
+      summary: incident.registered_with_tpa
+      description: Fired only once the TPA claim id exists — not when the forward is queued.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged. }
+
+  incidentCoverageDisputed:
+    post:
+      summary: incident.coverage_disputed
+      description: Raises a human review task. The driver's experience is unchanged.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged. }
+
+  incidentDuplicateDetected:
+    post:
+      summary: incident.duplicate_detected
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged. }
+
+  telematicsFalsePositive:
+    post:
+      summary: telematics.false_positive
+      description: Calibration signal for the detection threshold.
+      requestBody:
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/WebhookEvent' }
+      responses:
+        '200': { description: Acknowledged. }
