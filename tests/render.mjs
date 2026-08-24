@@ -422,5 +422,83 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   d.window.close();
 }
 
+
+/**
+ * Domain rules, per screen.
+ *
+ * Not "does it render" — every screen already mounts. These are the promises
+ * the product makes that a refactor breaks silently and only a reviewer
+ * notices: a fault field appearing, an injury description field, a Skip
+ * missing from an optional screen.
+ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); }),
+  });
+  const doc = d.window.document;
+  await wait();
+  const hit = (a, v) => {
+    const n = doc.querySelector(v != null ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+
+  // --- the injury branch refuses to collect a diagnosis ---
+  hit('s0-fine'); await wait();
+  hit('set-injured', 'yes'); await wait();
+
+  // Answering yes routes to 112 first — that is the rule working, not a
+  // detour. The injury detail is on the far side of it.
+  check(/112/.test(t()), 'injury routes to 112 before any injury field');
+  hit('emg-continue'); await wait();
+
+  check(/severity|how bad/i.test(t()), 'injury asks for a severity band');
+  const inputs = [...doc.querySelectorAll('#root input, #root textarea')];
+  const freeTextInjury = inputs.some(i =>
+    /injur|wound|diagnos|medical/i.test(i.getAttribute('placeholder') || i.id || ''));
+  check(!freeTextInjury, 'no free-text field collects injury detail — Art. 9');
+  check(/deliberately not collected/i.test(t()),
+    'the refusal is visible, not silent — a missing field reads as an oversight');
+
+  // --- no fault attribution anywhere in the driver flow ---
+  hit('set-injured', 'no'); await wait();
+  hit('set-drivable', 'yes'); await wait();
+  hit('submit-tier1'); await wait(); await wait();
+  hit('go-gaps'); await wait();
+
+  const GAP_SCREENS = ['witness', 'otherv', 'photos', 'eas', 'police', 'otherins'];
+  for (const id of GAP_SCREENS) {
+    if (!hit('goto', id)) continue;
+    await wait();
+
+    // Every optional screen must offer a one-tap way out. A screen without one
+    // is a screen that can trap a driver who cannot answer it.
+    check(!!doc.querySelector('#root [data-act="gap-skip"]'),
+      `"${id}" offers a non-shaming skip`);
+
+    // The fault question must not appear as a control on any of them.
+    const faultControl = [...doc.querySelectorAll('#root button, #root select')]
+      .find(n => /whose fault|at fault|who was responsible|blame/i.test(n.textContent || ''));
+    check(!faultControl, `"${id}" asks nothing about fault`,
+      faultControl ? `found: "${faultControl.textContent.trim()}"` : '');
+
+    hit('nav-back'); await wait();
+  }
+
+  // --- the EAS screen carries both columns, or it is not the EAS ---
+  hit('goto', 'eas'); await wait();
+  check(doc.querySelectorAll('#root [data-act="eas-tick"][data-col="A"]').length >= 15,
+    'EAS column A has the full statement set');
+  check(doc.querySelectorAll('#root [data-act="eas-tick"][data-col="B"]').length >= 15,
+    'EAS column B is present — a one-sided form is not the EAS');
+
+  d.window.close();
+}
+
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');
 process.exit(failed ? 1 : 0);

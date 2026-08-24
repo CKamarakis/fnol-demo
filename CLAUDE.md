@@ -98,7 +98,11 @@ These are load-bearing. Breaking one silently defeats the purpose.
 3. **`data/domain.js` must not import the store.** The store needs `SCENARIOS`
    from it, and the cycle bites. The store injects a language getter via
    `setLangSource` instead.
-4. **Test by rendering, not by reading.** Refactors here produce bugs that
+4. **Documentation is tested, not remembered.** `tests/docs.mjs` asserts the
+   field spec lists every incident type the code offers, that CLAUDE.md names
+   only files that exist, and that every npm script is documented. Prose
+   drifts silently; this fails the build instead.
+5. **Test by rendering, not by reading.** Refactors here produce bugs that
    every static check passes clean: a missing side-effect import that disabled
    every click, and a dead statement after a `return` that left the Design
    notes toggle doing nothing while the demo still looked correct.

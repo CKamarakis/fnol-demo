@@ -14,6 +14,54 @@ framing rather than an industry standard — see
 
 ---
 
+## Incident types
+
+The answer to "what happened" is one value, because it routes the claim — one
+cause, one cover section, one workflow. Presented alphabetically, since a
+driver scanning a dropdown under pressure should not have to work out where a
+category sits. `other` is pinned last: it is a fallback rather than a choice,
+and selecting it asks what it actually was.
+
+| Value | Label | Notes |
+| --- | --- | --- |
+| `animal` | Animal | |
+| `cargo` | Cargo or load damage | Triggers CMR and cargo cover assessment. |
+| `collision` | Collision with another vehicle | The only type that opens the EAS section and the third-party flow. |
+| `fire` | Fire | |
+| `glass` | Glass or windscreen | Below every telematics threshold, so it is always driver-initiated. |
+| `single` | Single vehicle — no one else involved | |
+| `spill` | Spill or leak | Potential environmental liability. |
+| `theft` | Theft of the vehicle | Inverts the perishability order: the police reference is promoted above photographs, because no German insurer progresses a theft claim without one. |
+| `vandalism` | Vandalism | |
+| `weather` | Weather or flood | |
+| `other` | Other | Requires `type_other` — a free-text field, because "other" alone produces a claim nobody can route. |
+
+**Additional damage** (`also_damaged`) draws from the same list and repeats as
+many times as needed. A collision that also breaks glass and shifts a load is
+still one question — "what happened" — with an answer that takes three lines.
+The list is unfiltered: a control whose options move depending on what is
+already chosen is worse than one that permits an odd combination.
+
+---
+
+## Corrections
+
+Telematics is wrong often enough — GPS drift, clock skew, the wrong unit on a
+shared vehicle — that a driver must be able to fix a pre-filled value.
+
+What matters is that a correction is a **recorded disagreement, not an
+overwrite**:
+
+| Field | Holds |
+| --- | --- |
+| `reported` | What the vehicle sent, kept whatever the driver does |
+| `corrected` | Per field: the original value, the driver's value, and when |
+
+The row says so on screen — *"you corrected this · truck reported …"* — and the
+handler sees both values and knows which came from where.
+
+---
+
 ## Tier 1 — the six that block
 
 These, and only these, can prevent a report being filed. All six are answerable
@@ -21,7 +69,7 @@ in well under ninety seconds, and five of them are pre-filled from telematics so
 the driver confirms rather than types.
 
 | # | Field | Req | Half-life | Why it blocks |
-|---|---|---|---|---|
+| --- | --- | --- | --- | --- |
 | 1 | **Vehicle** — registration or VIN | M | permanent | The most load-bearing field in the form. Decides whether this vehicle was on the schedule at the time of loss, and therefore whether cover exists at all. |
 | 2 | **Date and time of incident** | M | permanent | Was the policy in force at that moment? Also starts the notification clock — France imposes a five-day deadline, and the gap between `occurred_at` and `received_at` is itself a leakage metric. |
 | 3 | **Location** — coordinates and full address | M | permanent | Determines jurisdiction, applicable law, which branch handles it, whether a Green Card applies, and where to send recovery. The full road position matters: "A2 near Magdeburg" is not enough to find a truck. |
@@ -41,7 +89,7 @@ of abandonment.
 Ordered by half-life. This is the sequence the driver actually sees.
 
 | Field | Req | Window | Why here |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | **Independent witness present?** | O, prominent | Gone in ~10 minutes | Highest value per character in the entire form. An independent witness routinely decides a contested liability case, and they are under **zero obligation to stay**. Asked first despite being optional. |
 | Witness name and phone | C | Gone in ~10 minutes | A number with no name still works. The name field must never block getting the number. |
 | **Other vehicle registration** | C→M | Gone when they drive off | **Without the plate you cannot subrogate.** If nothing else about the other party is captured, capture this. A German plate resolves to the keeper and, through the Zentralruf, to their insurer — which is why the insurer field sits at the bottom of this list rather than next to this one. |
@@ -51,7 +99,7 @@ Ordered by half-life. This is the sequence the driver actually sees.
 ## Perishable — hours to days
 
 | Field | Req | Window | Why here |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | Police attended? | M | hours | One question while the officer is still there. |
 | Police reference number | C→M | hours | Often decisive on liability. Retrievable next week with a phone call, which is why it sits below the witness — **except for theft**, where no German insurer progresses a claim without it and the scenario promotes it. |
 | Citation, breath test, arrest | C | hours | Bears on liability and on policy exclusions. Also a fraud signal. |
@@ -65,7 +113,7 @@ Ordered by half-life. This is the sequence the driver actually sees.
 ## Injuries — handled deliberately
 
 | Field | Req | Why |
-|---|---|---|
+| --- | --- | --- |
 | Anyone injured? | M | Tier 1. See above. |
 | Severity band — walking / needs help / serious | C | Enough to set a reserve band and route the claim. |
 | Emergency services attended? | C | Corroborates severity without capturing any medical detail. |
@@ -88,7 +136,7 @@ Never asked of the driver. This is the material advantage of a connected fleet:
 the form is not blank when it opens.
 
 | Field | Source | Notes |
-|---|---|---|
+| --- | --- | --- |
 | Precise location and timestamp | Mapon `unit/list`, `alert/list` | Full address including road position. |
 | Speed profile before the event | Mapon `route/list` | Computed into a deceleration figure, not stored as text. |
 | Peak deceleration in m/s² and g | derived | Compared against Mapon's documented 3.4 m/s harsh-braking threshold. |
