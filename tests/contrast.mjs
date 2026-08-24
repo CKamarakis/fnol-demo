@@ -105,5 +105,14 @@ check('toggle label', declared(chromeCss, '.tog'), chip);
 check('toggle (fire)', declared(chromeCss, '.tog.fire'), chip);
 check('chrome button', declared(chromeCss, '.chrome-btn'), chip);
 
+// --- design notes ---
+// These are on by default, so their body text is read constantly. It was left
+// at a dark-theme value after the light conversion and measured 1.22:1 —
+// present on screen, and effectively invisible.
+const notesCss = read('04-design-notes.css');
+const noteBg = token('note-soft');
+check('design note body', declared(notesCss, '.dn'), noteBg);
+check('design note label', declared(notesCss, '.dn .dn-tag'), noteBg);
+
 console.log(failed ? `\n${failed} contrast failure(s)` : '\nall contrast checks passed');
 process.exit(failed ? 1 : 0);

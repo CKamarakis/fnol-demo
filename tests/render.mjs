@@ -155,17 +155,24 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
  * nothing — the demo looked fine and made none of its points.
  */
 {
-  const before = document.body.className;
   const notesBtn = document.querySelector('[data-act="toggle-notes"]');
   check(!!notesBtn, 'design-notes toggle exists');
+
+  // Assert the toggle inverts state, not that it starts in a particular one —
+  // the default is a product decision that has already changed once.
+  const on = () => document.body.classList.contains('notes-on');
+  const start = on();
   notesBtn?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   await wait();
-  check(document.body.classList.contains('notes-on'),
-    'toggling design notes sets body.notes-on', `class was "${document.body.className}"`);
+  check(on() !== start, 'toggling design notes flips body.notes-on',
+    `class was "${document.body.className}"`);
   notesBtn?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
   await wait();
-  check(!document.body.classList.contains('notes-on'),
-    'toggling again removes body.notes-on');
+  check(on() === start, 'toggling again restores the previous state');
+
+  // The callouts carry the entire product argument, so a first-time viewer
+  // should see them without having to discover a control.
+  check(start === true, 'design notes are on by default');
 }
 
 /**

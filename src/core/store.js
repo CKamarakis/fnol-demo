@@ -46,7 +46,10 @@ export const Store = {
     persona:"driver",              // driver | fleet | system
     scenario:"collision",
     lang:"en",
-    notes:false,                   // design-notes overlay
+    notes:true,                    // design-notes overlay — ON by default: the
+                                   // callouts ARE the argument, and a first-time
+                                   // viewer reading the form without them is
+                                   // reading the least interesting half.
     fail:{ tpa:false, offline:false, coverage:false },
     screen:"s0",                   // driver flow position
     navStack:[],                   // where the driver came from — every step is reversible

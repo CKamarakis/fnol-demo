@@ -3,13 +3,13 @@
    ============================================================ */
 .dn{
   position:relative;margin:10px 0;padding:11px 13px 11px 14px;
-  background:var(--note-soft);border:1px solid #4a3670;border-left:3px solid var(--note);
-  border-radius:10px;font-size:12.5px;line-height:1.46;color:#dcc9ff;
+  background:var(--note-soft);border:1px solid #c3b3e6;border-left:3px solid var(--note);
+  border-radius:10px;font-size:12.5px;line-height:1.46;color:#3b2d5c;
 }
 .dn b{color:#4c2f96;font-weight:750}
 .dn .dn-tag{
   display:inline-block;font-family:var(--mono);font-size:9px;letter-spacing:.1em;
-  text-transform:uppercase;color:#b98bff;margin-bottom:4px;font-weight:700;
+  text-transform:uppercase;color:#5b3aa8;margin-bottom:4px;font-weight:700;
 }
 .dn code{font-family:var(--mono);font-size:11.5px;background:#2a453d1f;padding:1px 4px;border-radius:4px}
 body:not(.notes-on) .dn{display:none}

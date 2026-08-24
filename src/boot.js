@@ -32,6 +32,6 @@ window.addEventListener("resize", ()=>{
 // A one-time orientation for whoever opens this cold.
 if(!localStorage.getItem(LS_KEY+".seen")){
   try{ localStorage.setItem(LS_KEY+".seen","1"); }catch(e){}
-  setTimeout(()=>toast("Start on the Driver persona. Turn on Design notes to read the reasoning inline.","",6000),600);
+  setTimeout(()=>toast("Design notes are on — the callouts explain each decision. Toggle them off for a clean read.","",6000),600);
 }
 
