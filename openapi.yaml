@@ -29,10 +29,8 @@ info:
        contain those six. Everything else is chased asynchronously through
        `required_next`, ordered by how fast it perishes.
 
-  contact:
-    name: Chris Kamarakis
   license:
-    name: Private study project — not for production use
+    name: Proof of concept — not for production use
 
 servers:
   - url: https://api.example.invalid/v1

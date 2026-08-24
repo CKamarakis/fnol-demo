@@ -1,7 +1,7 @@
 # Documentation
 
-Private study project. No partner API was contacted; every downstream response
-in the prototype is simulated. Start with [what's faked](whats-faked.md) if you
+A proof-of-concept. No partner API was contacted; every downstream response in
+the prototype is simulated. Start with [what's faked](whats-faked.md) if you
 want to know where the demo stops and reality would begin.
 
 ## Read in this order
@@ -12,7 +12,7 @@ want to know where the demo stops and reality would begin.
 | [Field spec](field-spec.md) | Every field, its requirement level, and how fast it perishes. The half-life column is what drives the whole form order. |
 | [`openapi.yaml`](../openapi.yaml) | The contract, checkable. `tests/contract.mjs` asserts it matches the implementation rather than drifting from it. |
 | [Metrics](metrics.md) | Nine numbers, each tied to a euro consequence. Plus the three I would instrument in week one. |
-| [Open questions](open-questions.md) | What I would need from the insurer and the partners — and the risks I would raise before being asked. |
+| [Open questions](open-questions.md) | What would need answering before building this for real — and the risks worth raising unprompted. |
 | [What's faked](whats-faked.md) | Every simulation named, alongside the shorter list of what genuinely works. |
 
 ## How this gets built

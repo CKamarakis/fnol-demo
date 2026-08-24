@@ -74,4 +74,4 @@ anyway.
 
 The crash-detection gap is the clearest example: it is a limitation of the
 partner API, it is the reason the dismissal path is designed the way it is, and
-it is a better interview topic than anything that works.
+it is more interesting than anything that works.

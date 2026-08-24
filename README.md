@@ -1,8 +1,8 @@
 # FNOL — demo flow
 
-A working prototype of a **First Notice of Loss** flow for a connected truck fleet: the moment a driver reports a motor incident from the roadside, and everything that has to be true for that moment to go well.
+A proof-of-concept for a **First Notice of Loss** flow on a connected truck fleet: the moment a driver reports a motor incident from the roadside, and everything that has to be true for that moment to go well.
 
-Private study project. Not affiliated with, commissioned by, or representing any insurer, third-party administrator or vendor.
+A pet project. Not affiliated with, commissioned by, or representing any insurer, third-party administrator or vendor.
 
 **Open `dist/prototype.html` in any browser. Double-click it. No install, no server, no network.**
 
@@ -49,7 +49,7 @@ The **European Accident Statement** (*constat amiable* / *Europäischer Unfallbe
 
 ## Project layout
 
-```
+```text
 src/          React 18 source — core, data, components, screens, styles
 build/        esbuild bundler script
 tests/        render (jsdom), navigation and integrity suites
@@ -76,15 +76,12 @@ Verified: no external requests, JS parses clean, no fault-attribution field, 112
 
 ## Documentation
 
+
 | Document | What it covers |
 | --- | --- |
 | [Decision log](docs/decision-log.md) | Twelve decisions, each with what would change my mind |
 | [Field spec](docs/field-spec.md) | Every field, its requirement level, and how fast it perishes |
 | [`openapi.yaml`](openapi.yaml) | The contract — checked against the implementation by `npm test` |
 | [Metrics](docs/metrics.md) | Nine numbers, each tied to a euro consequence |
-| [Open questions](docs/open-questions.md) | What I would need from the insurer and the partners, and the risks worth raising |
+| [Open questions](docs/open-questions.md) | What would need answering before building this for real, and the risks worth raising |
 | [What's faked](docs/whats-faked.md) | Every simulation named, and the shorter list of what genuinely works |
-
----
-
-Chris Kamarakis · August 2026 · private study

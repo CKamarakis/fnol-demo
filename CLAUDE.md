@@ -5,9 +5,9 @@ Guidance for Claude Code when working in this repository.
 ## What this is
 
 A demo **First Notice of Loss** flow — the moment a truck driver reports a
-motor incident from the roadside. Private study project. Not affiliated with
-any insurer, third-party administrator or vendor, and no third-party brand
-names belong anywhere in the source (a test enforces this).
+motor incident from the roadside. A proof-of-concept pet project. Not
+affiliated with any insurer, third-party administrator or vendor, and no
+third-party brand names belong anywhere in the source (a test enforces this).
 
 The point of the artifact is not the code. It is a set of product arguments
 made watchable. When a change would weaken one of those arguments, say so
