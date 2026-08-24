@@ -39,36 +39,62 @@ const TYPE_LABELS = {
   theft: 'Vehicle stolen',
 };
 
+/**
+ * Everything that can be reported, alphabetical.
+ *
+ * One list, used by the main answer and by any additional damage. A driver
+ * scanning a dropdown under pressure should not have to learn where a category
+ * sits — alphabetical is the only order that needs no explanation. "Other"
+ * stays pinned to the end, because it is a fallback rather than a choice.
+ */
 const TYPE_OPTIONS = [
-  ['collision', 'Collision with another vehicle'],
-  ['glass', 'Glass / windscreen'],
-  ['theft', 'Vehicle stolen'],
   ['animal', 'Animal'],
+  ['cargo', 'Cargo or load damage'],
+  ['collision', 'Collision with another vehicle'],
+  ['fire', 'Fire'],
+  ['glass', 'Glass or windscreen'],
   ['single', 'Single vehicle — no one else involved'],
-  ['cargo', 'Cargo damage'],
+  ['spill', 'Spill or leak'],
+  ['theft', 'Theft of the vehicle'],
+  ['vandalism', 'Vandalism'],
+  ['weather', 'Weather or flood'],
   ['other', 'Other'],
 ];
 
-/* Damage that came with the main event. "What happened" stays one question
-   with one answer, because the answer routes the claim — one cause, one cover
-   section. But a collision can also set a load moving or break glass, and
-   asking twice would be the same question twice. */
-const ALSO_OPTIONS = [
-  ['glass', 'Glass broken'],
-  ['cargo', 'Load shifted or damaged'],
-  ['fire', 'Fire'],
-  ['spill', 'Spill or leak'],
-];
+const typeLabel = v => (TYPE_OPTIONS.find(o => o[0] === v) || [, v])[1];
 
-/** The row shows the whole answer: the cause, what it actually was if
-    "other", and anything else that got damaged. */
-function typeSummary(d){
+/** The row shows the whole answer: what happened, plus anything else damaged. */
+function typeSummary(d) {
   const base = d.type === 'other'
     ? (d.typeOther?.trim() || 'Other')
-    : (TYPE_LABELS[d.type] || d.type);
-  const also = (d.alsoDamaged || [])
-    .map(v => (ALSO_OPTIONS.find(o => o[0] === v) || [, v])[1].toLowerCase());
+    : (TYPE_LABELS[d.type] || typeLabel(d.type));
+  const also = (d.alsoDamaged || []).filter(Boolean).map(v => typeLabel(v).toLowerCase());
   return also.length ? `${base} · also ${also.join(', ')}` : base;
+}
+
+/**
+ * The one control both the main answer and the extras use.
+ *
+ * A native select rather than a list of buttons: eleven options as full-width
+ * rows pushed everything else off the screen, and a dropdown is the control a
+ * driver already knows.
+ */
+function TypeSelect({ id, act, value, index, placeholder }) {
+  return (
+    <div className="lang-wrap type-wrap">
+      <select
+        id={id}
+        className="lang-sel type-sel"
+        data-act={act}
+        data-v={index != null ? String(index) : undefined}
+        defaultValue={value || ''}
+      >
+        {placeholder && <option value="">{placeholder}</option>}
+        {TYPE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+      </select>
+      <span className="lang-chev" dangerouslySetInnerHTML={{ __html: I.chevD }} />
+    </div>
+  );
 }
 
 const SEVERITY_OPTIONS = [
@@ -271,15 +297,14 @@ export function scrTier1() {
 
           {s.subScreen === 'type' && (
             <div className="type-picker">
-              {TYPE_OPTIONS.map(([v, l]) => (
-                <Choice key={v} act="set-type" value={v} label={l} selected={d.type === v} />
-              ))}
+              <label className="lbl" htmlFor="type-main">What happened?</label>
+              <TypeSelect id="type-main" act="set-type" value={d.type} />
 
               {/* Picking "Other" without being able to say what it was leaves a
                   claim nobody can route. */}
               {d.type === 'other' && (
                 <div style={{ marginTop: '10px' }}>
-                  <label className="lbl" htmlFor="type-other">What happened?</label>
+                  <label className="lbl" htmlFor="type-other">What was it?</label>
                   <input
                     id="type-other"
                     className="inp"
@@ -291,26 +316,39 @@ export function scrTier1() {
                 </div>
               )}
 
-              {/* One question — "what happened" — with room for the damage that
-                  came with it. Asking a separate "any other damage?" question
-                  would be the same question twice. */}
+              {/* Still one question. A collision can also break glass and shift
+                  a load, so the answer takes as many lines as it needs rather
+                  than becoming a second question later in the flow. */}
               <div className="also-block">
-                <p className="lbl" style={{ marginBottom: '8px' }}>
-                  Anything else damaged? <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>Optional</span>
+                <p className="lbl">
+                  Anything else damaged?{' '}
+                  <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>Optional</span>
                 </p>
-                <div className="also-chips">
-                  {ALSO_OPTIONS.filter(([v]) => v !== d.type).map(([v, l]) => (
+
+                {(d.alsoDamaged || []).map((v, i) => (
+                  <div className="also-row" key={i}>
+                    <TypeSelect
+                      id={`type-also-${i}`}
+                      act="set-also"
+                      index={i}
+                      value={v}
+                      placeholder="Choose…"
+                    />
                     <button
-                      key={v}
-                      className={`also-chip${(d.alsoDamaged || []).includes(v) ? ' on' : ''}`}
-                      data-act="toggle-also"
-                      data-v={v}
-                      aria-pressed={String((d.alsoDamaged || []).includes(v))}
+                      className="also-remove"
+                      data-act="remove-also"
+                      data-v={String(i)}
+                      aria-label="Remove this one"
                     >
-                      {l}
+                      ×
                     </button>
-                  ))}
-                </div>
+                  </div>
+                ))}
+
+                <button className="also-add" data-act="add-also">
+                  <span aria-hidden="true">+</span>
+                  {(d.alsoDamaged || []).length ? 'Add another' : 'Add damage'}
+                </button>
               </div>
             </div>
           )}

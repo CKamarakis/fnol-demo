@@ -150,14 +150,28 @@ export const ACTIONS = {
     Store.patchDraft({typeConfirmed:!Store.s.draft.typeConfirmed});
     if(Store.s.subScreen==="type") Store.set({subScreen:null});
   },
-  "set-type": v => {
-    Store.patchDraft({type:v, typeConfirmed:true});
-    // "Other" needs saying what it was, so the picker stays open for the field.
-    Store.set({subScreen: v==="other" ? "type" : null});
+  "set-type": (v, node) => {
+    const next = node?.value || v;
+    Store.patchDraft({type:next, typeConfirmed:true});
+    // The picker stays open — the driver may still want to add damage to it.
   },
-  "toggle-also": v => {
-    const list = Store.s.draft.alsoDamaged || [];
-    Store.patchDraft({alsoDamaged: list.includes(v) ? list.filter(x=>x!==v) : [...list, v]});
+  /* Additional damage is a repeatable list rather than a fixed set of chips:
+     a collision can break glass AND shift a load AND start a fire, and we do
+     not know in advance how many lines that takes. */
+  "add-also": () => {
+    Store.patchDraft({alsoDamaged: [...(Store.s.draft.alsoDamaged || []), ""]});
+  },
+  "set-also": (v, node) => {
+    const i = Number(node?.getAttribute("data-v"));
+    const list = [...(Store.s.draft.alsoDamaged || [])];
+    if(Number.isNaN(i) || !list.length) return;
+    list[i] = node.value;
+    Store.patchDraft({alsoDamaged: list});
+  },
+  "remove-also": v => {
+    const i = Number(v);
+    const list = (Store.s.draft.alsoDamaged || []).filter((_, idx) => idx !== i);
+    Store.patchDraft({alsoDamaged: list});
   },
   "set-injured": v => {
     const yes = v==="yes";

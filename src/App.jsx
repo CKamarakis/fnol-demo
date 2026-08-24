@@ -54,5 +54,16 @@ export function App() {
   // the elements, this attaches the drawing behaviour after they exist.
   useEffect(() => { mountCanvases(); });
 
+  // A panel that opens below the fold is a panel the driver does not know is
+  // there. Anything that expands in place gets scrolled into view.
+  useEffect(() => {
+    const panel = document.querySelector('#root .type-picker, #root .frow-editor');
+    if (!panel) return;
+    const scroller = panel.closest('.scroll');
+    if (!scroller) return;
+    const gap = panel.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom;
+    if (gap > 0) scroller.scrollBy({ top: gap + 16, behavior: 'smooth' });
+  }, [s.subScreen, s.editing]);
+
   return <Pane />;
 }

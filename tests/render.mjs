@@ -357,5 +357,70 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   d.window.close();
 }
 
+
+/**
+ * "What happened" — one question, however many lines the answer needs.
+ *
+ * A collision can also break glass and shift a load. Asking that as a separate
+ * question later would be the same question twice, so the answer is a dropdown
+ * plus as many additional-damage dropdowns as the driver adds.
+ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); }),
+  });
+  const doc = d.window.document;
+  await wait();
+  const hit = (a, v) => {
+    const n = doc.querySelector(v != null ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    return true;
+  };
+  const pick = (sel, val) => {
+    const n = doc.querySelector(sel);
+    if (!n) return false;
+    n.value = val;
+    n.dispatchEvent(new d.window.Event('change', { bubbles: true }));
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+
+  hit('s0-fine'); await wait();
+  hit('edit-field', 'type'); await wait();
+
+  const main = doc.querySelector('#type-main');
+  check(!!main, 'what-happened is a dropdown, not a wall of buttons');
+  check(main?.options.length >= 10, 'the list covers the common causes', `${main?.options.length} options`);
+
+  const labels = [...(main?.options || [])].map(o => o.textContent);
+  const sorted = [...labels.slice(0, -1)].sort((a, b) => a.localeCompare(b));
+  check(JSON.stringify(labels.slice(0, -1)) === JSON.stringify(sorted),
+    'options are alphabetical — no order to learn under pressure');
+  check(labels[labels.length - 1] === 'Other',
+    'except Other, pinned last because it is a fallback');
+
+  // additional damage: add, choose, add another, remove
+  check(hit('add-also'), 'damage can be added');
+  await wait();
+  check(!!doc.querySelector('#type-also-0'), 'adding gives another dropdown');
+  pick('#type-also-0', 'glass'); await wait();
+  check(/also glass or windscreen/i.test(t()), 'the field summarises the whole answer');
+
+  hit('add-also'); await wait();
+  pick('#type-also-1', 'fire'); await wait();
+  check(/also glass or windscreen, fire/i.test(t()), 'more than one can be added');
+
+  check(hit('remove-also', '0'), 'an entry can be removed');
+  await wait();
+  check(/also fire/i.test(t()) && !/glass or windscreen,/i.test(t()),
+    'removing takes out the right one');
+
+  d.window.close();
+}
+
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');
 process.exit(failed ? 1 : 0);
