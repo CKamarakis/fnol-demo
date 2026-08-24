@@ -150,6 +150,62 @@ Product decisions with reasons. Do not change these without raising it first.
 - The demo chrome is deliberately styled unlike the product so it is never
   mistaken for it.
 
+## Design and copy rules
+
+> **Read [docs/working-agreement.md](docs/working-agreement.md) before your
+> first UI or copy change in a session.** The rules below are the enforceable
+> summary; that file carries the reasoning, the worked examples, the voice
+> table, and the list of what I cannot verify. It is short. Read it.
+
+Derived from what actually shipped broken.
+
+**Copy must not assert what the product cannot do.** Before writing a label,
+ask what the system actually does when the user acts on it. If the honest
+answer is smaller than the copy, the copy is wrong. "Recovery dispatched · ETA
+45 min" shipped, and an FNOL system does not run a recovery network. State the
+fact, promise nothing.
+
+**Every element earns its line.** A label that repeats identically on every
+instance carries no information — "FROM THE TRUCK" on all six rows was
+decoration. Counters name what they count: never "1 left".
+
+**Colour never carries meaning alone.** State is border + tick + label. Coral
+(`--danger`) is a surface colour and fails as text at 2.79:1; emergency text
+uses `--danger-deep`. Selection is a border and a tick on an *unchanged*
+ground — filling the surface is what produced a label at 1:1 against its own
+background.
+
+**Any colour change gets measured.** `tests/contrast.mjs` parses declared
+values out of the stylesheets and computes ratios, so it tests what ships.
+Extend it when a new surface appears; never restate a hex in the test.
+
+**One question, however many lines the answer needs.** "What happened" is
+thematically one question — a collision that also breaks glass does not become
+a second question later.
+
+**Consistency of gesture beats economy of controls.** Every pre-filled row
+confirms by tap and corrects by the same control.
+
+**Anything that expands in place scrolls itself into view.**
+
+Driver-facing voice: short sentences, no insurance jargon, no "please", no
+"are you sure?" — make it undoable instead. Skipping is fine and is recorded
+as a known gap, never framed as failure.
+
+## Working with Chris
+
+- **Ask only what changes the build.** Questions with an obvious default get
+  the default, stated plainly, not a dialog.
+- **Screenshot and check your own work before handing back.** `npm run shots`
+  drives real Chrome. jsdom proves it works; it has no layout engine, so it
+  cannot show misalignment, overflow or overlap.
+- **Say what you did not do, and why.** Quietly dropping an item is worse than
+  flagging that it needs a decision.
+- **Push back once, then build.** If Chris reaffirms, implement it fully.
+- **Use Write/Edit for anything with backticks, template literals, apostrophes
+  or regex.** Heredocs have silently corrupted files; a mangled template
+  literal shipped as `return also.length ?  : base;`.
+
 ## Before committing
 
 Run `npm run verify`. Both `dist/prototype.html` and `src/` are committed —

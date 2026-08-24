@@ -15,6 +15,13 @@ want to know where the demo stops and reality would begin.
 | [Open questions](open-questions.md) | What I would need from the insurer and the partners — and the risks I would raise before being asked. |
 | [What's faked](whats-faked.md) | Every simulation named, alongside the shorter list of what genuinely works. |
 
+## How this gets built
+
+| Document | What it covers |
+| --- | --- |
+| [Working agreement](working-agreement.md) | Design and copy rules, derived from what actually shipped broken. The enforceable summary lives in CLAUDE.md. |
+| [Prototype playbook](prototype-playbook.md) | The portable part — setup decisions, failure modes and the review loop, for the next prototype. |
+
 ## The short version
 
 Six fields block submission and nothing else does, because an abandoned FNOL is
