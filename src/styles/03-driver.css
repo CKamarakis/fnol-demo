@@ -443,13 +443,22 @@
 .emg-head-ic svg{width:34px;height:34px;display:block}
 
 /* section rule — marks where tracker data ends and the driver's answers begin */
-.sect-rule{
-  display:flex;align-items:center;gap:12px;
-  margin:24px 0 14px;
-  font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
-  color:var(--ink-3);
+.sect-rule{height:1px;background:var(--line);margin:24px 0 18px;border:none}
+
+/* "what happened" picker — one question, with room for its own detail */
+.type-picker{
+  margin-top:9px;padding:14px;
+  background:var(--bg-raise);border:1.5px solid var(--accent);
+  border-radius:var(--r-md);
 }
-.sect-rule::before,.sect-rule::after{
-  content:"";height:1px;background:var(--line);flex:1;
+.also-block{margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
+.also-chips{display:flex;flex-wrap:wrap;gap:8px}
+.also-chip{
+  padding:9px 13px;min-height:40px;
+  font-size:14px;font-weight:600;color:var(--ink-2);
+  background:var(--bg-raise);border:1.5px solid var(--line);border-radius:10px;
+  cursor:pointer;transition:all .12s;
 }
-.sect-rule span{flex:none}
+.also-chip:hover{border-color:#a9bcc9}
+.also-chip.on{border-color:var(--accent);border-width:2px;margin:-0.5px;color:var(--ink)}
+.also-chip:focus-visible{outline:2px solid var(--accent);outline-offset:2px}

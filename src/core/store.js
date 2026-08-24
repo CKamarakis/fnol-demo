@@ -25,6 +25,8 @@ export function freshDraft(scenId){
     occurredAt:   t.time,           timeConfirmed:false,
     location:     t.location,       lat:t.lat, lon:t.lon, locationConfirmed:false,
     type:         t.inferred,       typeConfirmed:false,
+    typeOther:    "",               // when type is "other", what it actually was
+    alsoDamaged:  [],               // damage that came with the main event
     // What the vehicle originally reported. Kept whatever the driver does, so a
     // correction is a recorded disagreement rather than an overwrite — the
     // handler can see both values and who changed which.

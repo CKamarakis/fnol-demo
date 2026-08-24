@@ -46,8 +46,30 @@ const TYPE_OPTIONS = [
   ['animal', 'Animal'],
   ['single', 'Single vehicle — no one else involved'],
   ['cargo', 'Cargo damage'],
-  ['other', 'Something else'],
+  ['other', 'Other'],
 ];
+
+/* Damage that came with the main event. "What happened" stays one question
+   with one answer, because the answer routes the claim — one cause, one cover
+   section. But a collision can also set a load moving or break glass, and
+   asking twice would be the same question twice. */
+const ALSO_OPTIONS = [
+  ['glass', 'Glass broken'],
+  ['cargo', 'Load shifted or damaged'],
+  ['fire', 'Fire'],
+  ['spill', 'Spill or leak'],
+];
+
+/** The row shows the whole answer: the cause, what it actually was if
+    "other", and anything else that got damaged. */
+function typeSummary(d){
+  const base = d.type === 'other'
+    ? (d.typeOther?.trim() || 'Other')
+    : (TYPE_LABELS[d.type] || d.type);
+  const also = (d.alsoDamaged || [])
+    .map(v => (ALSO_OPTIONS.find(o => o[0] === v) || [, v])[1].toLowerCase());
+  return also.length ? `${base} · also ${also.join(', ')}` : base;
+}
 
 const SEVERITY_OPTIONS = [
   ['walking', 'Walking and talking'],
@@ -238,7 +260,7 @@ export function scrTier1() {
           <div style={{ marginTop: '9px' }}>
             {fieldRow({
               ic: I.crash, label: 'What happened',
-              value: TYPE_LABELS[d.type] || d.type,
+              value: typeSummary(d),
               state: d.typeConfirmed ? 'confirmed' : 'pending',
               act: 'confirm-type', hint: 'tap to confirm',
               // corrected by picking from the list rather than typing, but
@@ -248,16 +270,54 @@ export function scrTier1() {
           </div>
 
           {s.subScreen === 'type' && (
-            <div style={{ marginTop: '9px' }}>
+            <div className="type-picker">
               {TYPE_OPTIONS.map(([v, l]) => (
                 <Choice key={v} act="set-type" value={v} label={l} selected={d.type === v} />
               ))}
+
+              {/* Picking "Other" without being able to say what it was leaves a
+                  claim nobody can route. */}
+              {d.type === 'other' && (
+                <div style={{ marginTop: '10px' }}>
+                  <label className="lbl" htmlFor="type-other">What happened?</label>
+                  <input
+                    id="type-other"
+                    className="inp"
+                    data-field="typeOther"
+                    defaultValue={d.typeOther || ''}
+                    placeholder="A few words is enough"
+                    autoComplete="off"
+                  />
+                </div>
+              )}
+
+              {/* One question — "what happened" — with room for the damage that
+                  came with it. Asking a separate "any other damage?" question
+                  would be the same question twice. */}
+              <div className="also-block">
+                <p className="lbl" style={{ marginBottom: '8px' }}>
+                  Anything else damaged? <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>Optional</span>
+                </p>
+                <div className="also-chips">
+                  {ALSO_OPTIONS.filter(([v]) => v !== d.type).map(([v, l]) => (
+                    <button
+                      key={v}
+                      className={`also-chip${(d.alsoDamaged || []).includes(v) ? ' on' : ''}`}
+                      data-act="toggle-also"
+                      data-v={v}
+                      aria-pressed={String((d.alsoDamaged || []).includes(v))}
+                    >
+                      {l}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           )}
 
           {/* Everything above came from the truck; everything below is the
               driver's own answer. The rule marks that change of source. */}
-          <div className="sect-rule"><span>Only you can answer these</span></div>
+          <div className="sect-rule" role="separator" />
 
           <div className="dn-anchor">
             <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
@@ -275,7 +335,7 @@ export function scrTier1() {
           <div className="sp20" />
           <div className="dn-anchor">
             <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-              6 · Can you drive it?
+              6 · Are you in a safe enough condition to drive?
             </p>
             <div className="grid2">
               <Choice act="set-drivable" value="yes" label="Yes" selected={d.drivable === true} />
@@ -291,7 +351,7 @@ export function scrTier1() {
                 />
                 <span>
                   No
-                  <span className="choice-sub">We alert dispatch straight away</span>
+                  <span className="choice-sub">We mark it off the road</span>
                 </span>
               </button>
             </div>

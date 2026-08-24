@@ -100,10 +100,10 @@ export function scrReference() {
                   />
                   <div>
                     <div style={{ fontWeight: 700, fontSize: '15.5px' }}>
-                      Dispatch notified · they arrange recovery
+                      Marked as off the road
                     </div>
                     <p className="tiny" style={{ marginTop: '4px' }}>
-                      Anja at dispatch has it and is arranging a truck. She will call you. Stay behind the barrier.
+                      Your fleet office can see this now. Stay behind the barrier.
                     </p>
                     <div className="chip warn" style={{ marginTop: '9px', fontSize: '10px' }}>
                       SIMULATED — no recovery provider was contacted

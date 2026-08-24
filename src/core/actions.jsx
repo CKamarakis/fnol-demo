@@ -150,7 +150,15 @@ export const ACTIONS = {
     Store.patchDraft({typeConfirmed:!Store.s.draft.typeConfirmed});
     if(Store.s.subScreen==="type") Store.set({subScreen:null});
   },
-  "set-type": v => { Store.patchDraft({type:v, typeConfirmed:true}); Store.set({subScreen:null}); },
+  "set-type": v => {
+    Store.patchDraft({type:v, typeConfirmed:true});
+    // "Other" needs saying what it was, so the picker stays open for the field.
+    Store.set({subScreen: v==="other" ? "type" : null});
+  },
+  "toggle-also": v => {
+    const list = Store.s.draft.alsoDamaged || [];
+    Store.patchDraft({alsoDamaged: list.includes(v) ? list.filter(x=>x!==v) : [...list, v]});
+  },
   "set-injured": v => {
     const yes = v==="yes";
     Store.patchDraft({injured:yes});
