@@ -103,6 +103,7 @@ const GAPS = [
   ['photos', /photo|scene/i],
   ['eas', /circumstance|tick|statement/i],
   ['police', /police/i],
+  ['cargo', /loaded|cargo|trailer/i],
   ['otherins', /insurer/i],
 ];
 for (const [id, expect] of GAPS) {
@@ -217,6 +218,77 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   fresh.window.close();
 }
 
+
+
+/**
+ * The two paths that end the flow, each in its own DOM.
+ *
+ * Dismissal and the soft stop are terminal, so walking to them inside the main
+ * sequence would strand every assertion after them. Both were untested until
+ * now, and dismissal is the one that must create nothing at all.
+ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const fresh = () => {
+    const d = new JSDOM(html, {
+      runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+      virtualConsole: new VirtualConsole()
+        .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); }),
+    });
+    const doc = d.window.document;
+    return {
+      doc,
+      hit: (a, v) => {
+        const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+        const n = doc.querySelector(sel);
+        if (!n) return false;
+        n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+        return true;
+      },
+      text: () => doc.querySelector('#root')?.textContent || '',
+      close: () => d.window.close(),
+    };
+  };
+
+  // --- false-positive dismissal: two taps, and no claim exists afterwards ---
+  {
+    const app = fresh();
+    await wait();
+    check(app.hit('s0-dismiss'), 'dismissal is reachable from the cold open');
+    await wait();
+    check(/what was it/i.test(app.text()), 'dismissal asks for a reason');
+    check(app.hit('dismiss-reason', 'pothole'), 'a reason can be given in one tap');
+    await wait();
+    check(!/INS-DE-\d{4}/.test(app.text()),
+      'dismissal creates no claim reference', 'a reference appeared after dismissing');
+    app.close();
+  }
+
+  // --- soft stop: the report is already filed, so there is no Submit ---
+  {
+    const app = fresh();
+    await wait();
+    app.hit('s0-fine'); await wait();
+    app.hit('set-drivable', 'yes'); await wait();
+    app.hit('submit-tier1'); await wait(); await wait();
+    check(app.hit('finish-now'), 'the driver can stop without completing the optional flow');
+    // finish-now submits through the API before transitioning, so one tick is
+    // not enough to see the resulting screen.
+    await wait(); await wait(); await wait();
+    check(/everything perishable|the rest can wait/i.test(app.text()),
+      'the soft stop gives permission to stop rather than demanding more');
+    check(/INS-DE-\d{4}/.test(app.text()), 'the reference is still shown at the soft stop');
+    // Check for a control, not for the word: the design note on this screen
+    // explains at length that there is no submit button, so a text match hits
+    // the explanation rather than the thing it is explaining.
+    const submitControl = [...app.doc.querySelectorAll('#root button')]
+      .find(b => /^\s*submit/i.test(b.textContent || ''));
+    check(!submitControl,
+      'no Submit control — the report was already filed at the reference screen',
+      submitControl ? `found: "${submitControl.textContent.trim()}"` : '');
+    app.close();
+  }
+}
 
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');
 process.exit(failed ? 1 : 0);
