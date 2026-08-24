@@ -11,17 +11,13 @@ export function scrEmergency() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="scroll">
         <div className="pad" style={{ paddingTop: '26px' }}>
-          <div
-            style={{
-              width: '72px', height: '72px', borderRadius: '22px',
-              background: 'var(--danger-soft)', border: '1px solid #e0a89c',
-              display: 'grid', placeItems: 'center', color: 'var(--danger-deep)',
-            }}
-            dangerouslySetInnerHTML={{ __html: WARNING_ICON }}
-          />
-
-          <div className="sp20" />
-          <h1 className="h1">{T('emgTitle')}</h1>
+          {/* Icon sits on the heading's baseline rather than in a chip above
+              it — one line reads as a single statement, and the chip was
+              adding weight to a screen that should feel calm. */}
+          <h1 className="h1 emg-head">
+            <span className="emg-head-ic" dangerouslySetInnerHTML={{ __html: WARNING_ICON }} />
+            {T('emgTitle')}
+          </h1>
           <p className="sub" style={{ fontSize: '17px', marginTop: '10px' }}>{T('emgBody')}</p>
           <div className="sp20" />
 

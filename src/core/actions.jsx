@@ -108,6 +108,34 @@ export const ACTIONS = {
   "emg-continue": () => Store.set({screen:"s1"}),
 
   /* ---- driver: Tier 1 ---- */
+  /* Open a row for correction. Telematics is wrong often enough — GPS drift,
+     clock skew, the wrong unit on a shared vehicle — that forcing a driver to
+     confirm something they can see is wrong is worse than letting them fix it. */
+  "edit-field": v => Store.set({editing: Store.s.editing===v ? null : v}),
+
+  "cancel-edit": () => Store.set({editing:null}),
+
+  "save-field": (v, node) => {
+    const input = document.querySelector('[data-editfield="'+v+'"]');
+    if(!input) return;
+    const next = input.value.trim();
+    const d = Store.s.draft;
+    const key = {location:"location", time:"occurredAt", vehicle:"vehicle"}[v] || v;
+    if(next && next !== d[key]){
+      const from = d[key];
+      Store.patchDraft({
+        [key]: next,
+        corrected: {...d.corrected, [key]:{from, to:next, at:new Date().toISOString()}},
+        // a corrected value still needs confirming, so the driver sees their own edit
+        [key==="location"?"locationConfirmed":key==="occurredAt"?"timeConfirmed":"vehicleConfirmed"]: true,
+      });
+      logAdd({m:"PATCH", p:"/v1/incidents/"+(Store.s.incident?.id||"draft"), s:"200", ms:rnd(30,80), key:uuid(),
+        meta:"driver corrected <b>"+key+"</b>: \""+from+"\" → \""+next+"\". Original telematics value retained for the handler."});
+      toast("Corrected. We kept what the truck reported too.","ok");
+    }
+    Store.set({editing:null});
+  },
+
   "confirm-vehicle":  () => Store.patchDraft({vehicleConfirmed:!Store.s.draft.vehicleConfirmed}),
   "confirm-time":     () => Store.patchDraft({timeConfirmed:!Store.s.draft.timeConfirmed}),
   "confirm-location": () => Store.patchDraft({locationConfirmed:!Store.s.draft.locationConfirmed}),

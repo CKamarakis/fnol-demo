@@ -70,8 +70,10 @@ const click = sel => {
 // walk the blocking path
 check(click('[data-act="s0-fine"]'), 'can answer "everyone\'s fine"');
 await wait();
-check(/6 of 6|nothing else blocks/i.test(text()) || document.querySelectorAll('.frow').length >= 4,
-  'tier-1 screen shows the six fields');
+check(document.querySelectorAll('.frow').length >= 4,
+  'tier-1 screen shows the pre-filled rows');
+check(/check what we already know/i.test(text()),
+  'tier-1 is framed as verification, not as a countdown');
 
 // back navigation must exist on screen two — a mistap has to be correctable
 check(!!document.querySelector('[data-act="nav-back"]'), 'back control is present on screen 2');
@@ -295,6 +297,64 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
       submitControl ? `found: "${submitControl.textContent.trim()}"` : '');
     app.close();
   }
+}
+
+
+/**
+ * Correcting a pre-filled value.
+ *
+ * Telematics is wrong often enough — GPS drift, clock skew, the wrong unit on
+ * a shared vehicle — that a driver must be able to fix it. What matters is
+ * that the correction is a recorded disagreement, not an overwrite: the
+ * handler needs both values and needs to know which came from where.
+ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); }),
+  });
+  const doc = d.window.document;
+  await wait();
+  const hit = (a, v) => {
+    const n = doc.querySelector(v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+
+  hit('s0-fine');
+  await wait();
+
+  check(!!doc.querySelector('[data-act="edit-field"]'),
+    'pre-filled rows offer a way to correct them');
+  check(hit('edit-field', 'location'), 'the correction editor opens');
+  await wait();
+
+  const input = doc.querySelector('[data-editfield="location"]');
+  check(!!input, 'the editor renders an input');
+  check(input?.value?.length > 10, 'the editor is pre-filled with the current value');
+
+  if (input) {
+    input.value = 'A2 km 76.1 westbound';
+    hit('save-field', 'location');
+    await wait(); await wait();
+    check(/76\.1/.test(t()), 'the corrected value replaces the reported one');
+    check(/truck reported/i.test(t()),
+      'the row states that the driver corrected it, and what the truck said');
+  }
+
+  // Tapping a confirmed row must unconfirm it — a mistap has to be reversible.
+  const before = doc.querySelectorAll('.frow.confirmed').length;
+  hit('confirm-vehicle'); await wait();
+  const after = doc.querySelectorAll('.frow.confirmed').length;
+  hit('confirm-vehicle'); await wait();
+  const back = doc.querySelectorAll('.frow.confirmed').length;
+  check(after !== before && back === before, 'confirming is reversible by tapping again');
+
+  d.window.close();
 }
 
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');

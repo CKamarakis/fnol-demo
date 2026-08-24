@@ -25,6 +25,11 @@ export function freshDraft(scenId){
     occurredAt:   t.time,           timeConfirmed:false,
     location:     t.location,       lat:t.lat, lon:t.lon, locationConfirmed:false,
     type:         t.inferred,       typeConfirmed:false,
+    // What the vehicle originally reported. Kept whatever the driver does, so a
+    // correction is a recorded disagreement rather than an overwrite — the
+    // handler can see both values and who changed which.
+    reported:     { vehicle:t.vehicle, occurredAt:t.time, location:t.location, type:t.inferred },
+    corrected:    {},   // field -> {from, to, at}
     injured:      null,             // true | false — the one real question
     drivable:     null,             // true | false — drives the credit-hire clock
     // --- injury detail: presence + band + emergency attended. NOT description. ---
@@ -53,6 +58,7 @@ export const Store = {
     fail:{ tpa:false, offline:false, coverage:false },
     screen:"s0",                   // driver flow position
     navStack:[],                   // where the driver came from — every step is reversible
+    editing:null,                  // which pre-filled row is open for correction
     subScreen:null,
     draft:freshDraft("collision"),
     incident:null,                 // the server-side record once created

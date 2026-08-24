@@ -399,3 +399,38 @@
 .s0-meta-ic{flex:none;color:var(--ink-3);display:flex;margin-top:1px}
 .s0-meta-ic svg{width:17px;height:17px}
 .s0-meta-note{color:var(--ink-3);font-style:italic}
+
+/* pre-filled row: confirm by tapping, correct via a separate control */
+.frow-wrap{margin-bottom:9px}
+.frow-wrap .frow{margin-bottom:0}
+/* The edit control shares the row's right column with the hint, stacked under
+   it. Absolute positioning or right padding both steal width from the value,
+   and the location string is long enough to wrap four ways when it loses any. */
+.frow-right{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.frow-edit{
+  padding:2px 0;
+  font-size:11.5px;font-weight:600;color:var(--ink-3);
+  background:none;border:none;cursor:pointer;white-space:nowrap;
+  text-decoration:underline;text-underline-offset:2px;
+}
+.frow-edit:hover{color:var(--accent);background:var(--bg-raise-2)}
+.frow-edit:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.frow-wrap.is-confirmed .frow-edit{color:var(--ink-3);opacity:.75}
+
+.frow-corrected{
+  display:block;margin-top:4px;font-size:11.5px;line-height:1.4;
+  color:var(--warn);font-style:italic;
+}
+
+.frow-editor{
+  margin:8px 0 12px;padding:14px;
+  background:var(--bg-raise);border:1px solid var(--accent);
+  border-radius:var(--r-md);
+}
+.frow-editor .lbl{display:block;margin-bottom:6px}
+.frow-editor .inp{width:100%}
+
+/* emergency heading — icon inline with the words, optically centred */
+.emg-head{display:flex;align-items:center;gap:12px}
+.emg-head-ic{flex:none;display:flex;color:var(--danger-deep)}
+.emg-head-ic svg{width:34px;height:34px;display:block}

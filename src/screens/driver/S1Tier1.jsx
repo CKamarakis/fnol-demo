@@ -1,7 +1,7 @@
 import { I } from '../../core/utils.js';
 import { SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
-import { dn, savedChip } from '../../components/DriverShell.jsx';
+import { dn } from '../../components/DriverShell.jsx';
 import { Choice } from '../../components/Choice.jsx';
 import { svgMap } from '../../components/svg.js';
 
@@ -55,24 +55,71 @@ const SEVERITY_OPTIONS = [
   ['serious', 'Serious'],
 ];
 
-export function fieldRow({ ic, label, value, pre, state, act, hint }) {
+/**
+ * One pre-filled row.
+ *
+ * Tapping the row confirms it, and tapping again unconfirms — a mistap has to
+ * be correctable. Editing is a separate control rather than the same gesture,
+ * so a driver checking values quickly cannot wipe one by accident.
+ *
+ * A corrected value keeps what the vehicle originally reported alongside it.
+ * The driver's correction wins on the form; the handler still sees both, and
+ * which is which.
+ */
+export function fieldRow({ ic, label, value, state, act, hint, editKey, corrected }) {
+  const confirmed = state === 'confirmed';
+
   return (
-    <button className={`frow ${state || ''}`} data-act={act}>
-      <span className="frow-ic" dangerouslySetInnerHTML={{ __html: ic }} />
-      <span className="frow-body">
-        <span className="frow-label">
-          {label}
-          {pre && ' '}
-          {pre && <span className="chip-pre">from the truck</span>}
+    <div className={`frow-wrap${confirmed ? ' is-confirmed' : ''}`}>
+      <button className={`frow ${state || ''}`} data-act={act}>
+        <span className="frow-ic" dangerouslySetInnerHTML={{ __html: ic }} />
+        <span className="frow-body">
+          <span className="frow-label">{label}</span>
+          <span className={`frow-value${value ? '' : ' empty'}`}>{value || '—'}</span>
+          {corrected && (
+            <span className="frow-corrected">
+              you corrected this · truck reported &ldquo;{corrected.from}&rdquo;
+            </span>
+          )}
         </span>
-        <span className={`frow-value${value ? '' : ' empty'}`}>{value || '—'}</span>
-      </span>
-      <span className="frow-right">
-        {state === 'confirmed'
-          ? <span className="tick" style={{ color: 'var(--ok)' }} dangerouslySetInnerHTML={{ __html: I.chk }} />
-          : <span className="tiny" style={{ fontSize: '11px' }}>{hint || ''}</span>}
-      </span>
-    </button>
+        <span className="frow-right">
+          {confirmed
+            ? <span className="tick" style={{ color: 'var(--ok)' }} dangerouslySetInnerHTML={{ __html: I.chk }} />
+            : <span className="tiny" style={{ fontSize: '11px' }}>{hint || ''}</span>}
+          {editKey && (
+            <span className="frow-edit" data-act="edit-field" data-v={editKey} role="button" tabIndex={0}>
+              Not right?
+            </span>
+          )}
+        </span>
+      </button>
+    </div>
+  );
+}
+
+/** Inline correction for one row. */
+function EditRow({ editKey, label, value, hint }) {
+  return (
+    <div className="frow-editor">
+      <label className="lbl" htmlFor={`edit-${editKey}`}>{label}</label>
+      <input
+        id={`edit-${editKey}`}
+        className="inp"
+        data-editfield={editKey}
+        defaultValue={value}
+        placeholder={hint}
+        autoComplete="off"
+      />
+      <p className="tiny" style={{ margin: '8px 0 10px', lineHeight: 1.45 }}>
+        What the truck reported is kept either way, so the handler can see both.
+      </p>
+      <div style={{ display: 'flex', gap: '8px' }}>
+        <button className="btn btn-primary btn-sm" data-act="save-field" data-v={editKey}>
+          Use my version
+        </button>
+        <button className="btn btn-ghost btn-sm" data-act="cancel-edit">Cancel</button>
+      </div>
+    </div>
   );
 }
 
@@ -114,11 +161,14 @@ export function scrTier1() {
   const d = s.draft;
   const sc = SCENARIOS[s.scenario];
 
+  // Count what the DRIVER has settled, not what arrived pre-filled. Counting
+  // pre-filled values made the screen open at "5 of 6", telling a driver they
+  // had completed five things before they had touched anything.
   const answered = [
-    d.vehicleConfirmed || d.vehicle,
-    d.timeConfirmed || d.occurredAt,
-    d.locationConfirmed || d.location,
-    d.typeConfirmed || d.type,
+    d.vehicleConfirmed,
+    d.timeConfirmed,
+    d.locationConfirmed,
+    d.typeConfirmed,
     d.injured !== null,
     d.drivable !== null,
   ].filter(Boolean).length;
@@ -130,10 +180,6 @@ export function scrTier1() {
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="scroll">
         <div className="pad" style={{ paddingTop: '16px' }}>
-          <div className="step-meta">
-            <span className="step-count">{answered} of 6 · nothing else blocks you</span>
-            {savedChip()}
-          </div>
           <h2 className="h2">{T('tier1')}</h2>
           <p className="sub" style={{ fontSize: '14.5px' }}>{T('tier1sub')}</p>
           <div className="sp16" />
@@ -143,25 +189,42 @@ export function scrTier1() {
           {dn('Two-tier mandatory — the whole argument in one screen', TIER1_NOTE)}
 
           {fieldRow({
-            ic: I.truck, label: '1 · Vehicle', value: d.vehicle, pre: true,
+            ic: I.truck, label: 'Vehicle', value: d.vehicle,
             state: d.vehicleConfirmed ? 'confirmed' : 'pending',
             act: 'confirm-vehicle', hint: 'tap to confirm',
+            editKey: 'vehicle', corrected: d.corrected?.vehicle,
           })}
+          {s.editing === 'vehicle' && (
+            <EditRow editKey="vehicle" label="Registration" value={d.vehicle} hint="B-RL 4471" />
+          )}
 
           {fieldRow({
-            ic: I.clock, label: '2 · Date & time',
-            value: `${d.occurredAt} · ${new Date().toLocaleDateString('de-DE')}`, pre: true,
+            ic: I.clock, label: 'Date & time',
+            value: `${d.occurredAt} · ${new Date().toLocaleDateString('de-DE')}`,
             state: d.timeConfirmed ? 'confirmed' : 'pending',
             act: 'confirm-time', hint: 'tap to confirm',
+            editKey: 'time', corrected: d.corrected?.occurredAt,
           })}
+          {s.editing === 'time' && (
+            <EditRow editKey="time" label="Time it happened" value={d.occurredAt} hint="14:32" />
+          )}
 
           <div style={{ marginTop: '9px' }}>
             {fieldRow({
-              ic: I.pin, label: '3 · Location', value: d.location, pre: true,
+              ic: I.pin, label: 'Location', value: d.location,
               state: d.locationConfirmed ? 'confirmed' : 'pending',
               act: 'confirm-location', hint: 'tap to confirm',
+              editKey: 'location', corrected: d.corrected?.location,
             })}
-            {!d.locationConfirmed && (
+            {s.editing === 'location' && (
+              <EditRow
+                editKey="location"
+                label="Where it happened"
+                value={d.location}
+                hint="Road, km marker, direction"
+              />
+            )}
+            {!d.locationConfirmed && s.editing !== 'location' && (
               <div
                 style={{
                   marginTop: '8px', borderRadius: '14px',
@@ -174,10 +237,11 @@ export function scrTier1() {
 
           <div style={{ marginTop: '9px' }}>
             {fieldRow({
-              ic: I.crash, label: '4 · What happened',
-              value: TYPE_LABELS[d.type] || d.type, pre: true,
+              ic: I.crash, label: 'What happened',
+              value: TYPE_LABELS[d.type] || d.type,
               state: d.typeConfirmed ? 'confirmed' : 'pending',
               act: 'confirm-type', hint: 'tap to confirm',
+              // type is corrected by picking from the list, not by typing
             })}
           </div>
 
@@ -241,13 +305,9 @@ export function scrTier1() {
           disabled={!ready || undefined}
           style={ready ? undefined : { opacity: 0.5 }}
         >
-          {ready ? T('submit') : `${6 - answered} left`}
+          {ready ? T('submit') : `${6 - answered} ${T('stillToCheck')}`}
         </button>
-        {!ready && (
-          <p className="tiny" style={{ textAlign: 'center', marginTop: '8px' }}>
-            Tap each line to confirm what the vehicle already told us.
-          </p>
-        )}
+
       </div>
     </div>
   );
