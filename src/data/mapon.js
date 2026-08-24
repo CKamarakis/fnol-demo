@@ -49,18 +49,20 @@ const UNIT = {
   fuel_tank: { total_vol: 900 },
   device: {
     id: 'TLT-2312',
-    serial_number: 'MPN-90412-DE',
-    imei: '356938035643809',
-    sim: '+371 2000 0000',
+    serial_number: 'DEMO-90412-DE',
+    imei: '000000000000001',        // deliberately invalid — fails a Luhn check
+    sim: '+00 000 000 0000',
     fw_version: '4.18.2',
   },
 };
 
+/* Invented. Not a person; the identifiers are deliberately malformed so they
+   cannot collide with a real driver, device or card. */
 const DRIVER = {
   driver_id: 20551,
   name: 'Marek',
   surname: 'Kowalczyk',
-  tacho_card_id: 'PL-9142-8837-2201',
+  tacho_card_id: 'DEMO-0000-0000-0000',
   card_inserted: '2026-08-19T06:10:04Z',
 };
 

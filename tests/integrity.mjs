@@ -61,6 +61,51 @@ check(!brands, 'no third-party brand names', brands && brands.join(', '));
   ];
 
   const BRANDS = /\bReli\b|\bRELI\b|\bDEKRA\b|reli[.:/]/;
+
+  /**
+   * Nothing personal, and no identifier that could belong to something real.
+   *
+   * An HTML comment in the shipped file carried a name and described the
+   * project as an interview artefact, and a fixture IMEI passed a Luhn check —
+   * a structurally valid identifier that could match a real device.
+   */
+  const PRIVATE = [
+    [/\bkamarakis\b/i, 'personal name'],
+    [/[\w.+-]+@[\w-]+\.[a-z]{2,}/i, 'email address'],
+    [/\bC:\\Users\\|\/Users\/[A-Z]/i, 'absolute path from a developer machine'],
+    [/gh[pousr]_[A-Za-z0-9]{20,}/, 'GitHub token'],
+    [/-----BEGIN [A-Z ]*PRIVATE KEY/, 'private key'],
+    [/interview artefact|private study/i, 'framing that names a hiring context'],
+  ];
+
+  const sourceFiles = [
+    join(ROOT, 'src', 'index.html'),
+    join(ROOT, 'src', 'data', 'mapon.js'),
+    join(ROOT, 'dist', 'prototype.html'),
+    ...docFiles,
+  ];
+
+  for (const [pattern, label] of PRIVATE) {
+    const hits = sourceFiles.filter(f => pattern.test(readFileSync(f, 'utf8')));
+    check(hits.length === 0, `no ${label} in shipped files`,
+      hits.map(f => f.slice(ROOT.length + 1)).join(', '));
+  }
+
+  // A demo IMEI that validates is one that could collide with a real device.
+  const mapon = readFileSync(join(ROOT, 'src', 'data', 'mapon.js'), 'utf8');
+  const imei = mapon.match(/imei:\s*'(\d{15})'/)?.[1];
+  if (imei) {
+    let sum = 0;
+    for (let i = 0; i < 14; i++) {
+      let v = Number(imei[i]);
+      if (i % 2 === 1) { v *= 2; if (v > 9) v -= 9; }
+      sum += v;
+    }
+    const expected = (10 - (sum % 10)) % 10;
+    check(expected !== Number(imei[14]),
+      'the fixture IMEI is deliberately invalid, so it cannot match a real device',
+      `${imei} passes a Luhn check`);
+  }
   const offenders = [];
   for (const f of docFiles) {
     const text = readFileSync(f, 'utf8');
