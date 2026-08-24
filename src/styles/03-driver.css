@@ -50,8 +50,9 @@
 .frow{
   display:flex;align-items:center;gap:13px;width:100%;
   min-height:var(--tap);padding:13px 15px;
-  background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--r-md);
-  text-align:left;transition:border-color .12s,background .12s;
+  background:var(--bg-raise);border:1.5px solid var(--line);border-radius:var(--r-md);
+  text-align:left;box-shadow:0 1px 2px #2a453d14;
+  transition:border-color .12s,background .12s,box-shadow .12s;
 }
 .frow:hover{border-color:#bccbd7}
 .frow + .frow{margin-top:9px}
@@ -61,7 +62,7 @@
 .frow-value{display:block;font-size:16.5px;font-weight:620;margin-top:3px;line-height:1.35;overflow-wrap:anywhere}
 .frow-value.empty{color:var(--ink-3);font-weight:500}
 .frow-right{flex:none;display:flex;align-items:center;gap:8px}
-.frow.confirmed{border-color:#d8efe5;background:linear-gradient(90deg,#0d2f2610,#ffffff00)}
+.frow.confirmed{border-color:var(--accent);border-width:2px;margin:-0.5px;background:var(--bg-raise);box-shadow:0 1px 3px #2a453d1f}
 .frow.confirmed .tick{color:var(--ok)}
 .frow.pending{border-color:#3a3a1e}
 .chip-pre{
@@ -74,11 +75,17 @@
   display:flex;align-items:center;gap:12px;width:100%;min-height:var(--tap);
   padding:15px 16px;background:var(--bg-raise);border:1.5px solid var(--line);
   border-radius:var(--r-md);text-align:left;font-size:16.5px;font-weight:600;
+  color:var(--ink);
+  box-shadow:0 1px 2px #2a453d14;      /* reads as pressable, not as a label */
   transition:all .12s;
 }
 .choice + .choice{margin-top:10px}
 .choice:hover{border-color:#a9bcc9;background:var(--bg-raise-2)}
-.choice[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:#dbe7e1}
+.choice[aria-pressed="true"]{
+  border-color:var(--accent);border-width:2px;margin:-0.5px;
+  background:var(--bg-raise);color:var(--ink);
+  box-shadow:0 1px 3px #2a453d1f;
+}
 .choice .cbox{
   flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line);
   display:grid;place-items:center;transition:all .12s;
@@ -434,3 +441,15 @@
 .emg-head{display:flex;align-items:center;gap:12px}
 .emg-head-ic{flex:none;display:flex;color:var(--danger-deep)}
 .emg-head-ic svg{width:34px;height:34px;display:block}
+
+/* section rule — marks where tracker data ends and the driver's answers begin */
+.sect-rule{
+  display:flex;align-items:center;gap:12px;
+  margin:24px 0 14px;
+  font-size:11.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;
+  color:var(--ink-3);
+}
+.sect-rule::before,.sect-rule::after{
+  content:"";height:1px;background:var(--line);flex:1;
+}
+.sect-rule span{flex:none}

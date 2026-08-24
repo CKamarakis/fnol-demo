@@ -111,7 +111,12 @@ export const ACTIONS = {
   /* Open a row for correction. Telematics is wrong often enough — GPS drift,
      clock skew, the wrong unit on a shared vehicle — that forcing a driver to
      confirm something they can see is wrong is worse than letting them fix it. */
-  "edit-field": v => Store.set({editing: Store.s.editing===v ? null : v}),
+  "edit-field": v => {
+    // 'type' is chosen from a list rather than typed, so its editor is the
+    // picker. Same entry point, different control.
+    if(v==="type"){ Store.set({subScreen: Store.s.subScreen==="type"?null:"type", editing:null}); return; }
+    Store.set({editing: Store.s.editing===v ? null : v, subScreen:null});
+  },
 
   "cancel-edit": () => Store.set({editing:null}),
 
@@ -140,8 +145,10 @@ export const ACTIONS = {
   "confirm-time":     () => Store.patchDraft({timeConfirmed:!Store.s.draft.timeConfirmed}),
   "confirm-location": () => Store.patchDraft({locationConfirmed:!Store.s.draft.locationConfirmed}),
   "confirm-type":     () => {
-    if(Store.s.draft.typeConfirmed){ Store.set({subScreen: Store.s.subScreen==="type"?null:"type"}); }
-    else Store.patchDraft({typeConfirmed:true});
+    // Confirm/unconfirm only. Changing the value goes through 'Not right?',
+    // like every other pre-filled row.
+    Store.patchDraft({typeConfirmed:!Store.s.draft.typeConfirmed});
+    if(Store.s.subScreen==="type") Store.set({subScreen:null});
   },
   "set-type": v => { Store.patchDraft({type:v, typeConfirmed:true}); Store.set({subScreen:null}); },
   "set-injured": v => {

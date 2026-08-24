@@ -72,7 +72,7 @@ check(click('[data-act="s0-fine"]'), 'can answer "everyone\'s fine"');
 await wait();
 check(document.querySelectorAll('.frow').length >= 4,
   'tier-1 screen shows the pre-filled rows');
-check(/check what we already know/i.test(text()),
+check(/verify the tracker/i.test(text()),
   'tier-1 is framed as verification, not as a countdown');
 
 // back navigation must exist on screen two — a mistap has to be correctable

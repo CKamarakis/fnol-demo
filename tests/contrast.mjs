@@ -114,5 +114,22 @@ const noteBg = token('note-soft');
 check('design note body', declared(notesCss, '.dn'), noteBg);
 check('design note label', declared(notesCss, '.dn .dn-tag'), noteBg);
 
+// --- selected controls ---
+// A selected choice once set color:#dbe7e1 on a #dbe7e1 background — exactly
+// 1:1 — so the buttons rendered as empty boxes. Selection is now carried by
+// the border and the tick with the label keeping normal ink, but this is the
+// bug class worth pinning: any rule that sets both must still be legible.
+const driverCss = read('03-driver.css');
+const selectedRule = driverCss.match(/\.choice\[aria-pressed="true"\]\{[^}]*\}/)?.[0] || '';
+const selBg = selectedRule.match(/background:\s*var\(--([a-z0-9-]+)\)/)?.[1];
+const selInk = selectedRule.match(/color:\s*var\(--([a-z0-9-]+)\)/)?.[1];
+
+if (selBg && selInk) {
+  check('selected choice label', token(selInk), token(selBg));
+} else {
+  console.error('FAIL  selected choice must set colour and background from tokens');
+  failed++;
+}
+
 console.log(failed ? `\n${failed} contrast failure(s)` : '\nall contrast checks passed');
 process.exit(failed ? 1 : 0);

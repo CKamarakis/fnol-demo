@@ -241,7 +241,9 @@ export function scrTier1() {
               value: TYPE_LABELS[d.type] || d.type,
               state: d.typeConfirmed ? 'confirmed' : 'pending',
               act: 'confirm-type', hint: 'tap to confirm',
-              // type is corrected by picking from the list, not by typing
+              // corrected by picking from the list rather than typing, but
+              // entered through the same 'Not right?' control as the others
+              editKey: 'type',
             })}
           </div>
 
@@ -253,8 +255,10 @@ export function scrTier1() {
             </div>
           )}
 
-          {/* 5 — the one question the vehicle cannot answer */}
-          <div className="sp20" />
+          {/* Everything above came from the truck; everything below is the
+              driver's own answer. The rule marks that change of source. */}
+          <div className="sect-rule"><span>Only you can answer these</span></div>
+
           <div className="dn-anchor">
             <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
               5 · Is anyone hurt?
@@ -287,7 +291,7 @@ export function scrTier1() {
                 />
                 <span>
                   No
-                  <span className="choice-sub">Recovery is dispatched now</span>
+                  <span className="choice-sub">We alert dispatch straight away</span>
                 </span>
               </button>
             </div>

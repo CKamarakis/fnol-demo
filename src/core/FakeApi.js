@@ -83,7 +83,8 @@ export const FakeApi = (function(){
     const a=[];
     const c=inc.completeness;
     if(c.blocking.length) a.push({action:"complete_tier1", fields:c.blocking});
-    if(inc.draft.drivable===false) a.push({action:"recovery_dispatched", eta_minutes:45, provider:"SIMULATED"});
+    // We notify; the fleet's own recovery arrangement does the dispatching.
+    if(inc.draft.drivable===false) a.push({action:"dispatch_notified", channel:"fleet_ops", provider:"SIMULATED"});
     if(c.perishable.length) a.push({action:"capture_perishable", items:c.perishable});
     if(inc.coverage_status==="disputed") a.push({action:"human_review", queue:"underwriting", reason:"vehicle_not_on_schedule", basis:"GDPR Art. 22 — no automated adverse decision"});
     if(inc.tpa_state==="queued") a.push({action:"await_tpa_forward", note:"driver-invisible"});
@@ -147,7 +148,7 @@ export const FakeApi = (function(){
       state:"acknowledged", tpa_state:"pending", coverage_status: coverageFail ? "disputed" : "in_force",
       created_at: clockT(), created_ms: Date.now(),
       attachments:[], events:[], channel:"driver_app",
-      recovery: draft.drivable===false ? {dispatched:true, eta_minutes:45} : null,
+      recovery: draft.drivable===false ? {dispatch_notified:true, arranged_by:"fleet"} : null,
     };
     inc.completeness = completeness(inc);
     store.incidents[id]=inc;
