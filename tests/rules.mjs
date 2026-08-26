@@ -286,6 +286,61 @@ async function boot(state) {
 }
 
 /* ================================================================== *
+ * RULE 10 · The six questions open with nothing answered.
+ *
+ * The counter exists to say how much is left, and it can only be honest if
+ * it counts what the DRIVER settled on this screen. The cold open used to
+ * write injured:false on "everyone's fine", so question 5 arrived already
+ * ticked and the screen opened at "5 still to check" — the driver was told
+ * they had completed something they had not been shown. The cold open asks
+ * about people and routes to 112; it does not fill in a claim field.
+ * ================================================================== */
+{
+  // Every route onto the six questions, including the safety detour.
+  const ROUTES = [
+    ['direct load', { persona: 'driver', screen: 's1', scenario: 'collision' }, null],
+    ['via "everyone\'s fine"', { persona: 'driver', screen: 's0', scenario: 'collision' }, ['s0-fine']],
+    ['via 112 then continue', { persona: 'driver', screen: 's0', scenario: 'collision' }, ['s0-hurt', 'emg-continue']],
+  ];
+
+  for (const [label, state, path] of ROUTES) {
+    const app = await boot(state);
+    for (const act of path || []) {
+      await app.click(`#root [data-act="${act}"]`);
+    }
+
+    check(/6\s+still to check/i.test(app.text()),
+      `${label}: the six questions open at six`,
+      app.text().match(/\d+\s+still to check/i)?.[0] || 'no counter found');
+
+    // Nothing anywhere on the screen may arrive pre-selected.
+    const pressed = [...app.doc.querySelectorAll('#root .choice[aria-pressed="true"]')]
+      .map(n => n.getAttribute('data-act') + '=' + n.getAttribute('data-v'));
+    check(pressed.length === 0,
+      `${label}: no answer is pre-selected`,
+      pressed.join(', '));
+
+    // And no submit control, because nothing has been answered.
+    check(!app.submit(), `${label}: submission is not available on arrival`);
+    app.close();
+  }
+
+  // Going back from 112 clears the routing signal rather than converting it
+  // into "no one is hurt" — a mistap says nothing about the claim field.
+  {
+    const app = await boot({ persona: 'driver', screen: 's0', scenario: 'collision' });
+    await app.click('#root [data-act="s0-hurt"]');
+    await app.click('#root [data-act="nav-back"]');
+    await app.click('#root [data-act="s0-fine"]');
+    const pressed = [...app.doc.querySelectorAll('#root .choice[aria-pressed="true"]')];
+    check(pressed.length === 0,
+      'after a 112 mistap, question 5 is still unanswered rather than flipped to "no one"',
+      pressed.map(n => n.getAttribute('data-v')).join(', '));
+    app.close();
+  }
+}
+
+/* ================================================================== *
  * RULE 8 · The counter says where, not just how many.
  *
  * "2 still to check" sat in the dock as a DISABLED button while the field it

@@ -109,14 +109,14 @@ export const Store = {
   },
   back(){
     // 112 is transient: it pushed nothing, so it pops nothing. Back from it
-    // returns to whichever screen routed there and clears the answer that did
-    // — going back from the safety route means "no one is hurt after all",
-    // and carrying a wrong injury flag into the six questions is worse than
-    // the mistap was.
+    // returns to whichever screen routed there and clears the answer that did.
+    // Cleared to UNANSWERED, not to "no one is hurt": the driver corrected a
+    // mistap, which says nothing about the claim field. Question 5 asks it
+    // properly, and it must arrive there with nothing pre-selected.
     if(TRANSIENT.includes(this.s.screen)){
       const from=this.s.emgFrom;
       if(!from) return;
-      this.s.draft.injured=false;
+      this.s.draft.injured=null;
       this.set({screen:from, emgFrom:null, __noHist:true});
       return;
     }

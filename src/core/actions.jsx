@@ -81,12 +81,20 @@ export const ACTIONS = {
   "toggle-detail": () => Store.set({detailOpen:!Store.s.detailOpen}),
   "s0-fine": () => {
     startTimerIfNeeded();
-    Store.patchDraft({injured:false});
+    /* The cold open asks about PEOPLE, not about the claim. It routes to 112 or
+       it does not; it does not fill in question 5. Writing injured:false here
+       carried a pre-selected answer onto the six questions and opened the
+       screen at "5 still to check" — the same defect the counter was written to
+       avoid, arriving from a different direction. The driver answers it on the
+       screen that asks it. */
     Store.set({screen:"s1"});
   },
   "s0-hurt": () => {
     startTimerIfNeeded();
-    Store.patchDraft({injured:true});
+    /* Deliberately records nothing. "Someone is hurt" here is a routing signal
+       to reach 112 — it is not the claim field, and the driver has not been
+       shown question 5 yet. Pre-filling it from a safety answer means the six
+       questions open with an answer the driver never gave on that screen. */
     // The very next screen is 112. No data collection before it.
     Store.set({screen:"emg", emgFrom:"s0"});
     logAdd({m:"SYS",p:"safety route",s:"—",sq:true,ms:0,
