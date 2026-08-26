@@ -37,7 +37,7 @@ export function freshDraft(scenId){
     drivable:     null,             // true | false — the VEHICLE; drives the credit-hire clock
     // --- injury detail: presence + band + emergency attended. NOT description. ---
     // ACORD 2 INJURED columns: severity band, who (PED/INS VEH/OTH VEH), help there.
-    injurySeverity:null, injuryEmergency:null, injuredParties:[],
+    injurySeverity:[], injuryEmergency:null, injuredParties:[],
     // --- perishable gap-fill ---
     witnessPresent:null, witnessName:"", witnessPhone:"",
     otherPlate:"", otherMake:"", otherDriver:"", otherPhone:"", otherInsurer:"", otherPolicy:"",

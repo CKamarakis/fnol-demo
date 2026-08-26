@@ -398,6 +398,31 @@ async function boot(state) {
   check(after.length === 1 && after[0] === 'other_vehicle',
     'injury: a party can be un-selected', `selected: ${after.join(', ')}`);
 
+  // Severity is multi-select for the same reason the party is. A walking
+  // driver and an unconscious passenger is one accident with two bands, and
+  // a single band would set the reserve from whichever was tapped.
+  const bands = [...app.doc.querySelectorAll('#root [data-act="toggle-severity"]')]
+    .map(n => n.getAttribute('data-v'));
+  check(bands.length >= 3, 'injury: every severity band is offered', bands.join(', '));
+  await app.click('#root [data-act="toggle-severity"][data-v="walking"]');
+  await app.click('#root [data-act="toggle-severity"][data-v="serious"]');
+  const bandsOn = [...app.doc.querySelectorAll('#root [data-act="toggle-severity"][aria-pressed="true"]')]
+    .map(n => n.getAttribute('data-v'));
+  check(bandsOn.length === 2,
+    'injury: more than one severity band can be true at once', bandsOn.join(', '));
+
+  // Who is asked before how bad: naming the people is what makes the
+  // severity question answerable.
+  const order = [...app.doc.querySelectorAll('#root [data-act^="toggle-"]')]
+    .map(n => n.getAttribute('data-act'));
+  check(order.indexOf('toggle-injured-party') < order.indexOf('toggle-severity'),
+    'injury: "who is hurt" is asked before "how bad"');
+
+  // No count field — a shaken driver should not be asked to be sure of a number.
+  check(![...app.doc.querySelectorAll('#root input')]
+    .some(i => /how many|count|number of/i.test(i.getAttribute('placeholder') || '')),
+    'injury: no casualty count is demanded');
+
   // Still no names and no diagnoses: which party, never who or what.
   const freeText = [...app.doc.querySelectorAll('#root input, #root textarea')]
     .some(i => /injur|wound|diagnos|medical|name/i.test(i.getAttribute('placeholder') || i.id || ''));

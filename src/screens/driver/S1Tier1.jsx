@@ -30,7 +30,14 @@ const WHO_HURT_NOTE =
   'is an <b>employer&rsquo;s liability</b> matter, and a pedestrian is neither. A single ' +
   '&ldquo;someone is hurt&rdquo; boolean cannot express any of it, and the handler has to phone ' +
   'back to ask. The same check settled the other direction: <b>no ACORD field asks whether the ' +
-  'driver is fit to keep driving</b>, so the question that asked it has gone.';
+  'driver is fit to keep driving</b>, so the question that asked it has gone.<br><br>' +
+  'Both questions here are <b>multi-select</b>, because the form is a table with one row per ' +
+  'person and a table does not force one answer onto a group. A driver walking about, a ' +
+  'passenger who needs help and someone unconscious is <i>one</i> accident with three bands, and ' +
+  'a single band would set the reserve from whichever the driver happened to tap. ' +
+  'No <b>count</b> field: asking a shaken person how many casualties there are invites a number ' +
+  'they should not be asked to be sure of, and the bands already tell the handler whether to ' +
+  'expect one ambulance or three.';
 
 const MONEY_FIELD_NOTE =
   '&ldquo;Can you drive it&rdquo; answered at minute 2 instead of hour 6 is the single ' +
@@ -190,23 +197,34 @@ function EditRow({ editKey, label, value, hint }) {
 function InjuryDetail({ d }) {
   return (
     <>
-      <div className="sp12" />
-      <p className="lbl">How bad — roughly?</p>
-      {SEVERITY_OPTIONS.map(([v, l]) => (
-        <Choice key={v} act="set-severity" value={v} label={l} selected={d.injurySeverity === v} />
-      ))}
-
       {/* ACORD 2's INJURED section is a table with one row per person, and its
           columns are PED / INS VEH / OTH VEH — which vehicle each injured
           party was in, or whether they were on foot. It routes the claim: an
           injured third party is a liability notification, an injured driver is
           an employer's-liability matter, and a pedestrian is neither. Asked as
-          a multi-select because more than one can be true. */}
+          a multi-select because more than one can be true.
+
+          Who before how bad: the driver is looking at people, and naming them
+          is what makes the severity question answerable. */}
       <div className="sp12" />
       <p className="lbl">Who is hurt? Tap all that apply.</p>
       {WHO_HURT_OPTIONS.map(([v, l]) => (
         <Choice key={v} act="toggle-injured-party" value={v} label={l}
           selected={(d.injuredParties || []).includes(v)} />
+      ))}
+
+      {/* Also multi-select, and for the same reason. A single band forces one
+          answer onto a group — a walking driver and an unconscious passenger
+          collapse to whichever the driver picks, and the reserve is set from
+          the wrong one. Tapping every band that applies is honest and is still
+          one tap per band. No count: "how many" invites a number a shaken
+          driver should not be asked to be sure of, and the bands already tell
+          the handler whether to send one ambulance or three. */}
+      <div className="sp12" />
+      <p className="lbl">How bad — roughly? Tap all that apply.</p>
+      {SEVERITY_OPTIONS.map(([v, l]) => (
+        <Choice key={v} act="toggle-severity" value={v} label={l}
+          selected={(d.injurySeverity || []).includes(v)} />
       ))}
 
       <div className="sp12" />

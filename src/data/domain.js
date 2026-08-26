@@ -208,7 +208,7 @@ export const ACORD_MAP = [
   {f:"vehicle.where_can_be_seen",        a:"ACORD 3 · WHERE CAN VEH BE SEEN", e:"Where the appraiser will find the vehicle. Asked with the photographs, not in the blocking six."},
   {f:"driver.name",                      a:"ACORD 3 · 33",    e:"Driver name"},
   {f:"driver.licence_number",            a:"ACORD 3 · 34",    e:"Driver's licence number"},
-  {f:"injuries[].severity_band",         a:"ACORD 4 · 43",    e:"Injury description (band only — see Art. 9 note)"},
+  {f:"injuries[].severity_bands",        a:"ACORD 4 · 43",    e:"Injury description, as bands rather than text (see Art. 9 note). Plural: a group of casualties is rarely one band, and collapsing them sets the reserve from the wrong person."},
   {f:"injuries[].parties",               a:"ACORD 4 · PED / INS VEH / OTH VEH", e:"Which party was hurt. Decides whether this is also a liability notification."},
   {f:"injuries[].emergency_attended",    a:"ACORD 4 · 45",    e:"Ambulance / emergency services attended"},
   {f:"third_parties[].vehicle.plate",    a:"ACORD 5 · 51",    e:"Other vehicle plate"},

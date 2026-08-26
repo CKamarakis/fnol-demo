@@ -230,7 +230,12 @@ export const ACTIONS = {
        this screen too — one tap away, where it always is. */
     Store.patchDraft({injured:yes});
   },
-  "set-severity":  v => Store.patchDraft({injurySeverity:v}),
+  /* Multi-select: a group of casualties is rarely one band, and collapsing
+     them to one sets the reserve from the wrong person. */
+  "toggle-severity": v => {
+    const cur = Store.s.draft.injurySeverity || [];
+    Store.patchDraft({injurySeverity: cur.includes(v) ? cur.filter(x=>x!==v) : [...cur, v]});
+  },
   /* Which party, not who. More than one can be true — an injured driver and an
      injured third party is one of the commonest shapes a motor claim takes,
      and they route to different places. */

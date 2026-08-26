@@ -11,6 +11,10 @@ const WHO_HURT_LABELS = {
   other_vehicle:"someone in the other vehicle", pedestrian:"a pedestrian or cyclist",
 };
 
+const SEVERITY_LABELS = {
+  walking:"walking and talking", needs_help:"needs help but conscious", serious:"serious",
+};
+
 /* ==================================================================
    §10 EAS EXPORT — the closing move
    ================================================================== */
@@ -50,7 +54,10 @@ export function buildIncidentJson(){
     },
     injuries: d.injured===null ? null : {
       present: d.injured,
-      severity_band: d.injurySeverity,
+      // Bands, plural. A group of casualties is rarely one band, and choosing
+      // the worst would understate the count while choosing the mildest would
+      // understate the reserve. Every band present is listed.
+      severity_bands: d.injurySeverity || [],
       // ACORD 2 INJURED columns PED / INS VEH / OTH VEH. Which party, never who:
       // it decides whether this is also a liability notification.
       parties: d.injuredParties || [],
@@ -193,7 +200,7 @@ export function renderExport(){
     el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Police / authority"),
       el("div",{style:"margin-top:3px"}, d.policeAttended===true ? ("attended · "+(d.policeRef||"reference pending")) : d.policeAttended===false ? "did not attend" : el("i",{style:"color:#546b62"},"not asked"))),
     el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Injuries"),
-      el("div",{style:"margin-top:3px"}, d.injured===true ? ("yes · band: "+(d.injurySeverity||"—")+" · emergency services "+(d.injuryEmergency?"attended":"not attended")) : d.injured===false ? "none reported" : el("i",{style:"color:#546b62"},"—")),
+      el("div",{style:"margin-top:3px"}, d.injured===true ? ("yes · bands: "+((d.injurySeverity||[]).map(b=>SEVERITY_LABELS[b]||b).join(", ")||"—")+" · emergency services "+(d.injuryEmergency?"attended":"not attended")) : d.injured===false ? "none reported" : el("i",{style:"color:#546b62"},"—")),
       d.injured===true ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Injury description deliberately not collected — GDPR Art. 9. To be gathered by the adjuster under a proper basis.") : null),
     el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Who was hurt"),
       el("div",{style:"margin-top:3px"}, d.injured===true
