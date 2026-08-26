@@ -314,10 +314,10 @@
   font-size:11.5px;font-weight:700;font-family:var(--mono);letter-spacing:.04em;
   border:1px solid var(--line);color:var(--ink-2);background:var(--bg-raise-2);white-space:nowrap;
 }
-.chip.ok{background:var(--ok-soft);color:#7fe6bd;border-color:#d8efe5}
+.chip.ok{background:var(--ok);color:#ffffff;border-color:var(--ok)}
 .chip.warn{background:var(--warn-soft);color:#7d5008;border-color:#e8d3a4}
 .chip.danger{background:var(--danger-soft);color:#b8341c;border-color:#e0a89c}
-.chip.info{background:var(--accent-soft);color:#a5cffb;border-color:#c3d6cd}
+.chip.info{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .chip.note{background:var(--note-soft);color:#5b3aa8;border-color:#4a3670}
 .chip.plain{background:transparent}
 .chipset{display:flex;flex-wrap:wrap;gap:8px}

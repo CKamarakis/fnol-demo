@@ -198,12 +198,20 @@ export const ACTIONS = {
      the driver keeps the freedom to answer in any order. */
   "goto-unanswered": () => {
     const d = Store.s.draft;
+    /* The injury question is answered in up to three taps, so the seek has to
+       land on the part that is actually missing. Sending a driver back to
+       "is anyone hurt?" when they have already said yes reads as the app
+       having lost their answer. */
+    const noParty = d.injured===true && !(d.injuredParties||[]).length;
+    const noBand  = d.injured===true && !(d.injurySeverity||[]).length;
     const first = [
       [!d.vehicleConfirmed,  'confirm-vehicle'],
       [!d.timeConfirmed,     'confirm-time'],
       [!d.locationConfirmed, 'confirm-location'],
       [!d.typeConfirmed,     'confirm-type'],
       [d.injured===null,     'set-injured'],
+      [noParty,              'toggle-injured-party'],
+      [noBand,               'toggle-severity'],
       [d.drivable===null,    'set-drivable'],
     ].find(([outstanding]) => outstanding);
     if(!first) return;
@@ -211,8 +219,12 @@ export const ACTIONS = {
     const node = document.querySelector('#root [data-act="'+first[1]+'"]');
     if(!node) return;
     // Centred rather than top-aligned: the question above it is the label, and
-    // scrolling the answer to the very top hides what it is asking.
-    node.scrollIntoView({behavior:"smooth", block:"center"});
+    // scrolling the answer to the very top hides what it is asking. Guarded
+    // because a DOM without a layout engine has no scrollIntoView, and the
+    // flash below is still worth doing when the scroll cannot happen.
+    if(typeof node.scrollIntoView === "function"){
+      node.scrollIntoView({behavior:"smooth", block:"center"});
+    }
     // A pulse, because a silent scroll on a small screen is easy to miss.
     const target = node.closest('.frow-wrap') || node.closest('.dn-anchor') || node;
     target.classList.remove('seek-flash');
@@ -228,7 +240,13 @@ export const ACTIONS = {
        emergency screen and have already decided whether to call. Serving it
        again treats a claims field as if it were news, and the 112 rail is on
        this screen too — one tap away, where it always is. */
-    Store.patchDraft({injured:yes});
+    /* Answering "no one" clears the detail. A driver who taps yes, names a
+       party, then corrects to no one would otherwise ship a report saying
+       nobody was hurt with an injured party attached — and the detail is
+       hidden at that point, so they could not see it to remove it. */
+    Store.patchDraft(yes
+      ? {injured:true}
+      : {injured:false, injuredParties:[], injurySeverity:[], injuryEmergency:null});
   },
   /* Multi-select: a group of casualties is rarely one band, and collapsing
      them to one sets the reserve from the wrong person. */

@@ -131,5 +131,21 @@ if (selBg && selInk) {
   failed++;
 }
 
+// --- status chips in the fleet table ---
+// State and Coverage are read at a glance across a whole table. Two of these
+// kept a dark-theme ink after the light conversion — #7fe6bd on --ok-soft
+// measured 1.4:1, a pill with no legible word in it. Every chip variant is
+// pinned here, resolving var() through the tokens so it tests what ships.
+const colour = v => (v.startsWith('var(') ? token(v.slice(6, -1)) : v);
+const chipVariant = name => {
+  const rule = driverCss.match(new RegExp(`\\.chip\\.${name}\\{([^}]*)\\}`))?.[1];
+  if (!rule) throw new Error(`.chip.${name} not found`);
+  const fg = rule.match(/color:\s*(#[0-9a-fA-F]{6}|var\(--[a-z0-9-]+\))/)?.[1];
+  const bg = rule.match(/background:\s*(#[0-9a-fA-F]{6}|var\(--[a-z0-9-]+\))/)?.[1];
+  if (!fg || !bg) throw new Error(`.chip.${name} must set colour and background`);
+  check(`chip · ${name}`, colour(fg), colour(bg));
+};
+['ok', 'warn', 'danger', 'info', 'note'].forEach(chipVariant);
+
 console.log(failed ? `\n${failed} contrast failure(s)` : '\nall contrast checks passed');
 process.exit(failed ? 1 : 0);

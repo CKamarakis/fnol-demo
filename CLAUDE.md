@@ -151,6 +151,15 @@ Product decisions with reasons. Do not change these without raising it first.
   unused field is still a field a driver reads at the roadside. Question 6
   stays, asking about the *vehicle* ("Can the vehicle still be driven?"), which
   is ACORD 3 · 38 and drives the reserve and the credit-hire clock.
+- **"Yes, someone is hurt" is not a complete answer.** Injury counts as
+  settled by "no one", or by yes **plus at least one party and one severity
+  band**. Which party decides whether the claim is also a liability
+  notification; the band decides the reserve — a bare yes leaves the handler
+  phoning back for both, which is the call this product exists to avoid. This
+  is a completeness rule for one of the six, **not a seventh blocking field**;
+  the count stays six. "No one" remains a single tap, because the common case
+  must not get slower to protect the rare one, and correcting to "no one"
+  clears the detail behind it.
 - **Injury records which party, never who.** ACORD 2's INJURED section is a
   table whose columns are PED / INS VEH / OTH VEH. That is the fact the flow
   collects — driver, our passenger, other vehicle, pedestrian — because it

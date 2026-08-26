@@ -252,17 +252,31 @@ export function scrTier1() {
   // Count what the DRIVER has settled, not what arrived pre-filled. Counting
   // pre-filled values made the screen open at "5 of 6", telling a driver they
   // had completed five things before they had touched anything.
+  /* "Yes, someone is hurt" is not an answer on its own — it is the start of
+     one. Which party decides whether this is also a liability notification,
+     and the band decides the reserve; a bare yes leaves the handler phoning
+     back for both. So the injury question counts as settled when the driver
+     says no one is hurt, or says yes AND names at least one party and one
+     band. "No one" stays a single tap, because the common case must not get
+     slower to protect the rare one.
+     This is still ONE of the six. It is a completeness rule for a single
+     question, not a seventh blocking field. */
+  const injuryAnswered = d.injured === false
+    || (d.injured === true
+        && (d.injuredParties || []).length > 0
+        && (d.injurySeverity || []).length > 0);
+
   const answered = [
     d.vehicleConfirmed,
     d.timeConfirmed,
     d.locationConfirmed,
     d.typeConfirmed,
-    d.injured !== null,
+    injuryAnswered,
     d.drivable !== null,
   ].filter(Boolean).length;
 
   const ready = d.vehicleConfirmed && d.timeConfirmed && d.locationConfirmed
-    && d.typeConfirmed && d.injured !== null && d.drivable !== null;
+    && d.typeConfirmed && injuryAnswered && d.drivable !== null;
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>

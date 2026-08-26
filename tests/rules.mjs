@@ -364,6 +364,109 @@ async function boot(state) {
 }
 
 /* ================================================================== *
+ * RULE 13 · "Yes, someone is hurt" is not a complete answer.
+ *
+ * Which party decides whether this is also a liability notification; the band
+ * decides the reserve. A bare yes leaves the handler phoning back for both,
+ * which is exactly the call this product exists to avoid. So the injury
+ * question is settled by "no one", or by yes plus at least one party and one
+ * band. Still ONE of the six — a completeness rule for a single question,
+ * not a seventh blocking field.
+ * ================================================================== */
+{
+  const answerRest = async app => {
+    for (const a of ['confirm-vehicle', 'confirm-time', 'confirm-location',
+      'confirm-type', 'set-drivable']) {
+      await app.click(`#root [data-act="${a}"]`);
+    }
+  };
+
+  // "No one" stays a single tap. The common case must not get slower to
+  // protect the rare one.
+  {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+    await answerRest(app);
+    await app.click('#root [data-act="set-injured"][data-v="no"]');
+    check(!!app.submit(), 'injury gate: "no one" alone completes the question');
+    app.close();
+  }
+
+  // Yes, with each half missing in turn.
+  for (const [label, extra] of [
+    ['nothing else', []],
+    ['a party but no band', ['toggle-injured-party|driver']],
+    ['a band but no party', ['toggle-severity|serious']],
+  ]) {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+    await answerRest(app);
+    await app.click('#root [data-act="set-injured"][data-v="yes"]');
+    for (const step of extra) {
+      const [act, v] = step.split('|');
+      await app.click(`#root [data-act="${act}"][data-v="${v}"]`);
+    }
+    check(!app.submit(), `injury gate: "yes" with ${label} does not complete it`);
+    check(/1\s+still to check/i.test(app.text()),
+      `injury gate: the counter still shows one outstanding with ${label}`,
+      app.text().match(/\d+\s+still to check/i)?.[0] || 'no counter');
+    app.close();
+  }
+
+  // Both halves present.
+  {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+    await answerRest(app);
+    await app.click('#root [data-act="set-injured"][data-v="yes"]');
+    await app.click('#root [data-act="toggle-injured-party"][data-v="driver"]');
+    await app.click('#root [data-act="toggle-severity"][data-v="serious"]');
+    check(!!app.submit(), 'injury gate: one party and one band completes it');
+    app.close();
+  }
+
+  // The seek must land on the missing half, not back on "is anyone hurt?".
+  // Being sent back to a question you already answered reads as lost data.
+  {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+    await answerRest(app);
+    await app.click('#root [data-act="set-injured"][data-v="yes"]');
+    let target = null;
+    app.window.Element.prototype.scrollIntoView = function () {
+      target = this.getAttribute('data-act');
+    };
+    await app.click('#root [data-act="goto-unanswered"]');
+    check(target === 'toggle-injured-party',
+      'injury gate: the counter jumps to the missing detail, not back to the yes/no',
+      `jumped to "${target}"`);
+
+    await app.click('#root [data-act="toggle-injured-party"][data-v="driver"]');
+    await app.click('#root [data-act="goto-unanswered"]');
+    check(target === 'toggle-severity',
+      'injury gate: then to the band once the party is named',
+      `jumped to "${target}"`);
+    app.close();
+  }
+
+  // Correcting to "no one" clears the detail. Otherwise a report saying nobody
+  // was hurt ships with an injured party attached — and the detail is hidden
+  // at that point, so the driver cannot see it to remove it.
+  {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+    await answerRest(app);
+    await app.click('#root [data-act="set-injured"][data-v="yes"]');
+    await app.click('#root [data-act="toggle-injured-party"][data-v="driver"]');
+    await app.click('#root [data-act="toggle-severity"][data-v="serious"]');
+    await app.click('#root [data-act="set-injured"][data-v="no"]');
+
+    const stored = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1') || '{}');
+    check((stored.draft?.injuredParties || []).length === 0
+      && (stored.draft?.injurySeverity || []).length === 0,
+      'injury gate: correcting to "no one" clears the detail behind it',
+      `parties=${JSON.stringify(stored.draft?.injuredParties)} bands=${JSON.stringify(stored.draft?.injurySeverity)}`);
+    check(!!app.submit(), 'injury gate: and the question is complete again');
+    app.close();
+  }
+}
+
+/* ================================================================== *
  * RULE 11 · The injury section collects what ACORD 2 actually asks for.
  *
  * The form's INJURED section is a table with one row per person, and its
