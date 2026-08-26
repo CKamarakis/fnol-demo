@@ -406,15 +406,20 @@ export function scrTier1() {
       </div>
 
       <div className="dock">
-        <button
-          className={`btn ${ready ? 'btn-primary' : 'btn-secondary'} btn-lg`}
-          data-act="submit-tier1"
-          disabled={!ready || undefined}
-          style={ready ? undefined : { opacity: 0.5 }}
-        >
-          {ready ? T('submit') : `${6 - answered} ${T('stillToCheck')}`}
-        </button>
-
+        {/* Two different controls wearing one slot. Submitting is impossible
+            until six are answered, but the counter that says so was a disabled
+            button — it named a number and refused to be tapped, while the field
+            it counted was somewhere up the scroll. Unanswered, it is a live
+            control that goes and finds the next one. */}
+        {ready ? (
+          <button className="btn btn-primary btn-lg" data-act="submit-tier1">
+            {T('submit')}
+          </button>
+        ) : (
+          <button className="btn btn-secondary btn-lg btn-seek" data-act="goto-unanswered">
+            {`${6 - answered} ${T('stillToCheck')} · ${T('seekHint')}`}
+          </button>
+        )}
       </div>
     </div>
   );

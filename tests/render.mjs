@@ -78,9 +78,14 @@ check(/verify the tracker/i.test(text()),
 // back navigation must exist on screen two — a mistap has to be correctable
 check(!!document.querySelector('[data-act="nav-back"]'), 'back control is present on screen 2');
 
-// answer the two real questions, then submit
-click('[data-act="set-drivable"][data-v="yes"]') || click('[data-act="set-drivable"]');
-await wait();
+// Answer all six, then submit. The pre-filled rows still need confirming —
+// the submit control does not exist until every one of the six is answered,
+// which is the blocking rule doing its job.
+for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location',
+  'confirm-type', 'set-injured', 'set-drivable']) {
+  click(`[data-act="${act}"]`);
+  await wait();
+}
 const submitted = click('[data-act="submit-tier1"]') || click('[data-act="s1-submit"]');
 await wait(); await wait();
 
@@ -302,7 +307,11 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
     const app = fresh();
     await wait();
     app.hit('s0-fine'); await wait();
-    app.hit('set-drivable', 'yes'); await wait();
+    // All six, because submit does not exist until they are answered.
+    for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location',
+      'confirm-type', 'set-injured', 'set-drivable']) {
+      app.hit(act); await wait();
+    }
     app.hit('submit-tier1'); await wait(); await wait();
     check(app.hit('finish-now'), 'the driver can stop without completing the optional flow');
     // finish-now submits through the API before transitioning, so one tick is
@@ -494,6 +503,9 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
     'the refusal is stated, not silent — a missing field reads as an oversight');
 
   // --- no fault attribution anywhere in the driver flow ---
+  // All six: the pre-filled rows still need confirming before submit exists.
+  for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location',
+    'confirm-type']) { hit(act); await wait(); }
   hit('set-injured', 'no'); await wait();
   hit('set-drivable', 'yes'); await wait();
   hit('submit-tier1'); await wait(); await wait();

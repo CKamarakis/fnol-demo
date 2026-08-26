@@ -48,13 +48,31 @@
 }
 .dock .btn + .btn{margin-top:8px}
 
+
+/* Where the jump lands. Border and a brief wash — never colour alone, and it
+   fades rather than latching, because the driver has to answer it, not admire
+   it. Respects reduced-motion by simply not animating. */
+@keyframes seek-flash{
+  0%   {box-shadow:0 0 0 0 var(--accent-soft); border-radius:var(--r-md)}
+  18%  {box-shadow:0 0 0 5px var(--accent-soft)}
+  100% {box-shadow:0 0 0 0 transparent}
+}
+.seek-flash{animation:seek-flash 1.3s ease-out}
+.seek-flash .frow{border-color:var(--accent)}
+@media (prefers-reduced-motion:reduce){
+  .seek-flash{animation:none}
+}
+
 /* cards */
 .card{background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--r-md);padding:16px}
 .card-quiet{background:var(--bg-raise);border:1px solid var(--line-soft);border-radius:var(--r-md);padding:14px}
 
 /* field rows — the "confirm, don't type" pattern */
+/* Top-aligned, not centred: a row whose value wraps to three lines (the
+   location string does) pushed its icon halfway down the card, away from the
+   label it belongs to. The icon marks the field, so it sits on the label. */
 .frow{
-  display:flex;align-items:center;gap:13px;width:100%;
+  display:flex;align-items:flex-start;gap:13px;width:100%;
   min-height:var(--tap);padding:13px 15px;
   background:var(--bg-raise);border:1.5px solid var(--line);border-radius:var(--r-md);
   text-align:left;box-shadow:0 1px 2px #2a453d14;
@@ -62,12 +80,12 @@
 }
 .frow:hover{border-color:#bccbd7}
 .frow + .frow{margin-top:9px}
-.frow-ic{flex:none;width:26px;height:26px;display:grid;place-items:center;color:var(--ink-3)}
+.frow-ic{flex:none;width:26px;height:26px;display:grid;place-items:center;color:var(--ink-3);margin-top:-2px}
 .frow-body{flex:1;min-width:0}
 .frow-label{display:block;font-size:12px;color:var(--ink-3);letter-spacing:.03em;text-transform:uppercase;font-weight:650}
 .frow-value{display:block;font-size:16.5px;font-weight:620;margin-top:3px;line-height:1.35;overflow-wrap:anywhere}
 .frow-value.empty{color:var(--ink-3);font-weight:500}
-.frow-right{flex:none;display:flex;align-items:center;gap:8px}
+.frow-right{flex:none;display:flex;align-items:center;gap:8px;margin-top:-1px}
 .frow.confirmed{border-color:var(--accent);border-width:2px;margin:-0.5px;background:var(--bg-raise);box-shadow:0 1px 3px #2a453d1f}
 .frow.confirmed .tick{color:var(--ok)}
 .frow.pending{border-color:#3a3a1e}
@@ -424,6 +442,13 @@
 .dock .btn-primary,
 .dock .btn-secondary,
 .dock .btn-danger{min-height:var(--tap);padding:11px 16px;font-size:15.5px;font-weight:650}
+
+/* Declared after the dock sizing above, which shares its specificity and would
+   otherwise flatten the two stacked lines back onto one. */
+/* The counter doubles as "take me there": one line, sized down so the extra
+   words fit, and it stays a normal single-line button. */
+.dock .btn.btn-seek{font-size:14px;font-weight:600}
+.dock .btn.btn-seek:hover{background:#dbe7e1}
 
 /* The handset is a companion to the label, not a second focal point. The
    filled glyph carries at this size where the outline version did not — its

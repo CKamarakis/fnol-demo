@@ -74,10 +74,12 @@ async function boot(state) {
 {
   const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
 
-  const submit = app.submit();
-  check(!!submit, 'six-field rule: the submit control exists');
-  check(submit?.hasAttribute('disabled'),
-    'six-field rule: submission is blocked before anything is answered');
+  // Blocking is expressed by the control's ABSENCE: unanswered, the dock
+  // carries the counter instead, which is a live seek control.
+  check(!app.submit(),
+    'six-field rule: there is no submit control before anything is answered');
+  check(!!app.doc.querySelector('#root [data-act="goto-unanswered"]'),
+    'six-field rule: the dock carries the counter instead');
 
   // The counter names how many remain. It is the user-visible statement of
   // the rule, so it is the thing to assert against.
@@ -106,13 +108,13 @@ async function boot(state) {
       check(new RegExp(`${expected}\\s+still to check`, 'i').test(app.text()),
         `six-field rule: answering "${label}" leaves ${expected}`,
         app.text().match(/\d+\s+still to check/i)?.[0] || 'counter gone');
-      check(app.submit()?.hasAttribute('disabled'),
+      check(!app.submit(),
         `six-field rule: still blocked with ${expected} unanswered`);
     }
   }
 
   // And the sixth answer releases it — no seventh gate.
-  check(!app.submit()?.hasAttribute('disabled'),
+  check(!!app.submit(),
     'six-field rule: the sixth answer unblocks submission — there is no seventh gate');
   check(!/still to check/i.test(app.text()),
     'six-field rule: nothing else is outstanding once six are answered');
@@ -121,7 +123,7 @@ async function boot(state) {
   // deliberately not part of the gate.
   check(!!app.doc.querySelector('#root [data-act="set-driver-fit"]'),
     'six-field rule: the driver-fitness question is asked');
-  check(!app.submit()?.hasAttribute('disabled'),
+  check(!!app.submit(),
     'six-field rule: driver fitness does NOT block — it is a welfare answer');
 
   app.close();
@@ -149,7 +151,7 @@ async function boot(state) {
     'confirm-type', 'set-injured', 'set-drivable']) {
     await app.click(`#root [data-act="${act}"]`);
   }
-  check(!app.submit()?.hasAttribute('disabled'),
+  check(!!app.submit(),
     'offline: the six questions can still be completed');
 
   await app.click('#root [data-act="submit-tier1"]');
@@ -279,6 +281,84 @@ async function boot(state) {
     const phone = app.doc.querySelector('#root .phone')?.textContent || '';
     check(!/whose fault|who was at fault|at fault\?|blame/i.test(phone),
       `no-fault rule: "${screen}" asks nothing about fault`);
+    app.close();
+  }
+}
+
+/* ================================================================== *
+ * RULE 8 · The counter says where, not just how many.
+ *
+ * "2 still to check" sat in the dock as a DISABLED button while the field it
+ * counted was somewhere up the scroll. It named a number and refused to be
+ * tapped. Unanswered, it is now a live control that finds the next one.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+
+  const seek = app.doc.querySelector('#root [data-act="goto-unanswered"]');
+  check(!!seek, 'seek: the counter is a live control, not a disabled label');
+  check(!seek?.hasAttribute('disabled'), 'seek: the counter can actually be tapped');
+  check(/still to check/i.test(seek?.textContent || ''),
+    'seek: the counter still names what it counts');
+
+  // jsdom has no scrolling, so the call itself is the observable behaviour.
+  let scrolledTo = null;
+  app.window.Element.prototype.scrollIntoView = function () {
+    scrolledTo = this.getAttribute('data-act');
+  };
+
+  await app.click(seek);
+  check(scrolledTo === 'confirm-vehicle',
+    'seek: jumps to the first unanswered field',
+    `scrolled to "${scrolledTo}"`);
+  check(!!app.doc.querySelector('.seek-flash'),
+    'seek: the destination is marked, so a silent scroll is not missed');
+
+  // Answering one advances the target rather than re-serving the same field.
+  await app.click('#root [data-act="confirm-vehicle"]');
+  await app.click('#root [data-act="goto-unanswered"]');
+  check(scrolledTo === 'confirm-time',
+    'seek: advances to the next outstanding field once one is answered',
+    `scrolled to "${scrolledTo}"`);
+
+  // Walk the rest; the last answer must swap the control for a real submit.
+  for (const act of ['confirm-time', 'confirm-location', 'confirm-type',
+    'set-injured', 'set-drivable']) {
+    await app.click(`#root [data-act="${act}"]`);
+  }
+  check(!app.doc.querySelector('#root [data-act="goto-unanswered"]'),
+    'seek: the counter is gone once nothing is outstanding');
+  check(!!app.doc.querySelector('#root [data-act="submit-tier1"]'),
+    'seek: submitting replaces it');
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 9 · Every answer shows that it was taken.
+ *
+ * Selection is border + tick + label, never colour alone. "No one" on the
+ * injury question is the one a driver taps most and the one most worth being
+ * sure about.
+ * ================================================================== */
+{
+  for (const [act, value, label] of [
+    ['set-injured', 'no', 'No one'],
+    ['set-injured', 'yes', 'Yes'],
+    ['set-drivable', 'no', 'vehicle not drivable'],
+    ['set-driver-fit', 'no', 'driver not fit'],
+  ]) {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+    const btn = app.doc.querySelector(`#root [data-act="${act}"][data-v="${value}"]`);
+    check(!!btn, `answer state: "${label}" is offered`);
+    if (btn) {
+      await app.click(btn);
+      const again = app.doc.querySelector(`#root [data-act="${act}"][data-v="${value}"]`);
+      check(again?.getAttribute('aria-pressed') === 'true',
+        `answer state: "${label}" reads as selected to a screen reader`);
+      // The tick is the non-colour half of the affordance.
+      check((again?.querySelector('.cbox')?.innerHTML || '').length > 0,
+        `answer state: "${label}" shows a tick, not just a colour`);
+    }
     app.close();
   }
 }

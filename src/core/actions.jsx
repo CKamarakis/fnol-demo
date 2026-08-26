@@ -183,6 +183,36 @@ export const ACTIONS = {
     const list = (Store.s.draft.alsoDamaged || []).filter((_, idx) => idx !== i);
     Store.patchDraft({alsoDamaged: list});
   },
+  /* The counter is the only thing telling a driver they are not finished, and
+     it sits in the dock while the unanswered field is somewhere up the scroll.
+     Naming a count without saying where is a small cruelty on a hard shoulder,
+     so tapping it goes and finds the first one. It is a lookup, not a wizard:
+     the driver keeps the freedom to answer in any order. */
+  "goto-unanswered": () => {
+    const d = Store.s.draft;
+    const first = [
+      [!d.vehicleConfirmed,  'confirm-vehicle'],
+      [!d.timeConfirmed,     'confirm-time'],
+      [!d.locationConfirmed, 'confirm-location'],
+      [!d.typeConfirmed,     'confirm-type'],
+      [d.injured===null,     'set-injured'],
+      [d.drivable===null,    'set-drivable'],
+    ].find(([outstanding]) => outstanding);
+    if(!first) return;
+
+    const node = document.querySelector('#root [data-act="'+first[1]+'"]');
+    if(!node) return;
+    // Centred rather than top-aligned: the question above it is the label, and
+    // scrolling the answer to the very top hides what it is asking.
+    node.scrollIntoView({behavior:"smooth", block:"center"});
+    // A pulse, because a silent scroll on a small screen is easy to miss.
+    const target = node.closest('.frow-wrap') || node.closest('.dn-anchor') || node;
+    target.classList.remove('seek-flash');
+    void target.offsetWidth;              // restart the animation if it is mid-run
+    target.classList.add('seek-flash');
+    setTimeout(()=>target.classList.remove('seek-flash'), 1400);
+  },
+
   "set-injured": v => {
     const yes = v==="yes";
     /* No 112 interrupt here. The driver reached this screen by answering the
