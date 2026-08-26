@@ -30,7 +30,11 @@ window.addEventListener("resize", ()=>{
 
 
 // A one-time orientation for whoever opens this cold.
-if(!localStorage.getItem(LS_KEY+".seen")){
+// The read needs the guard as much as the write: a hardened browser throws on
+// access itself, and an orientation toast is not worth a blank screen.
+let seen=true;
+try{ seen = !!localStorage.getItem(LS_KEY+".seen"); }catch(e){ seen=true; }
+if(!seen){
   try{ localStorage.setItem(LS_KEY+".seen","1"); }catch(e){}
   setTimeout(()=>toast("Design notes are on — the callouts explain each decision. Toggle them off for a clean read.","",6000),600);
 }
