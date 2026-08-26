@@ -1,6 +1,6 @@
 import { $, el } from '../../core/dom.jsx';
 import { I, esc } from '../../core/utils.js';
-import { ACORD_MAP, EAS_STATEMENTS, PHOTO_SLOTS, SCENARIOS } from '../../data/domain.js';
+import { ACORD_MAP, ACORD_OMITTED, EAS_STATEMENTS, PHOTO_SLOTS, SCENARIOS } from '../../data/domain.js';
 import { IMPACT_LABEL } from '../../components/svg.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
@@ -30,7 +30,14 @@ export function buildIncidentJson(){
     type: d.type,
     location: { description:d.location, lat:d.lat, lon:d.lon, source:"telematics", country:"DE" },
     vehicle: {
-      registration:d.vehicle, make_model:"DAF XF 480", drivable:d.drivable,
+      registration:d.vehicle,
+      // ACORD 2 VIN. Read from the telematics unit, not typed at a roadside:
+      // plates get reassigned and mistyped, and the VIN is what an appraiser
+      // and a salvage buyer key on.
+      vin: d.vin || null,
+      make_model:"DAF XF 480", drivable:d.drivable,
+      damage_description: d.damageDesc || null,     // ACORD 2 DESCRIBE DAMAGE
+      where_can_be_seen: d.whereSeen || null,       // ACORD 2 WHERE CAN VEH BE SEEN
       damage_points: d.impact? [d.impact] : [], fleet_id:"INS-FL-0087"
     },
     driver: {
@@ -54,6 +61,10 @@ export function buildIncidentJson(){
     third_parties: sc.thirdParty && d.otherPlate ? [{
       vehicle:{ plate:d.otherPlate, make_model:d.otherMake||null },
       driver:{ name:d.otherDriver||null, phone:d.otherPhone||null },
+      // ACORD 2 OTHER VEH/PROP INS?. Distinct from the policy number being
+      // blank: an uninsured other party routes to the national guarantee fund,
+      // and "nobody looked" is not the same answer as "nobody is insured".
+      insured: d.otherInsured,
       insurer_name: d.otherInsurer||null, policy_number: d.otherPolicy||null
     }] : [],
     witnesses: d.witnessPresent && (d.witnessName||d.witnessPhone)
@@ -232,6 +243,20 @@ export function renderExport(){
     el("td",{class:"f",text:r.f}), el("td",{class:"a",text:r.a}), el("td",{class:"e",text:r.e}))));
   mt2.append(mtb);
   mapCol.append(el("div",{class:"tbl-wrap"},mt2));
+
+  /* The omissions, stated. A gap nobody explains reads as an oversight, and
+     the whole argument of this flow is which fields it refuses to ask for. */
+  mapCol.append(el("div",{class:"sp16"}));
+  mapCol.append(el("div",{class:"sect-h"},el("h3",{text:"On the form, deliberately not asked"}),
+    el("span",{class:"sect-note",text:"each one is a decision, not a gap"})));
+  const om=el("table",{class:"map"});
+  om.append(el("thead",{},el("tr",{},el("th",{text:"ACORD field"}),el("th",{text:"why not"}))));
+  const omb=el("tbody",{});
+  ACORD_OMITTED.forEach(r=>omb.append(el("tr",{},
+    el("td",{class:"a",style:"white-space:normal",text:r.a}), el("td",{class:"e",text:r.e}))));
+  om.append(omb);
+  mapCol.append(el("div",{class:"tbl-wrap"},om));
+
   mapCol.append(el("div",{class:"sp16"}));
   mapCol.append(dn("Why the mapping column is on the screen and not in a spreadsheet",
     "The point of the EAS export is that <b>nobody transcribes anything</b>, and transcription at the liability stage is exactly where money leaks — a mistyped plate or a dropped circumstance number becomes a contested split three months later. Two fields have <b>no ACORD equivalent</b> and I have said so rather than forcing them: the EAS circumstance array and the point of impact travel as a structured extension, because European handlers read them natively and inventing a lossy ACORD mapping for them would be worse than carrying them cleanly."));

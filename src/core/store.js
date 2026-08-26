@@ -22,6 +22,7 @@ export function freshDraft(scenId){
   return {
     // --- Tier 1: the only six fields that block submission ---
     vehicle:      t.vehicle,        vehicleConfirmed:false,
+    vin:          t.vin || "",      // ACORD 2 VIN — from the unit, never typed
     occurredAt:   t.time,           timeConfirmed:false,
     location:     t.location,       lat:t.lat, lon:t.lon, locationConfirmed:false,
     type:         t.inferred,       typeConfirmed:false,
@@ -40,6 +41,8 @@ export function freshDraft(scenId){
     // --- perishable gap-fill ---
     witnessPresent:null, witnessName:"", witnessPhone:"",
     otherPlate:"", otherMake:"", otherDriver:"", otherPhone:"", otherInsurer:"", otherPolicy:"",
+    otherInsured:null,              // ACORD 2 OTHER VEH/PROP INS? — uninsured routes differently
+    damageDesc:"", whereSeen:"",    // ACORD 2 DESCRIBE DAMAGE / WHERE CAN VEH BE SEEN
     photos:{}, // slot -> {at, skipped}
     easA:[], easB:[], impact:null, sketch:null, sigA:null, sigB:null,
     policeAttended:null, policeRef:"",

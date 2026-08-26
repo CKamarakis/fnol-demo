@@ -43,6 +43,10 @@ const UNIT = {
   make: 'DAF',
   model: 'XF 480 FT',
   number: 'B-RL 4471',
+  // ACORD 2 asks for VIN alongside the plate. Plates get reassigned and
+  // mistyped; the VIN is what an appraiser and a salvage buyer key on. The
+  // unit knows it, so the driver never types 17 characters at a roadside.
+  vin: 'XLRTEH4300G123456',
   vehicle_title: 'B-RL 4471 · DAF XF 480',
   fuel_type: 'D',
   avg_fuel_consumption: { norm: 28.4, measurement: 'l/100km' },
@@ -298,6 +302,7 @@ export function fromMapon(fixture, { locationNote } = {}) {
     time: fmtTime(at),
     date: fmtDate(at),
     vehicle: unit.number,
+    vin: unit.vin,
     driver: unit.drivers.length ? `${unit.drivers[0].name} ${unit.drivers[0].surname[0]}.` : '—',
     clip: video.available ? `${String(video.duration_s).padStart(2, '0')}s` : 'unavailable',
 

@@ -52,6 +52,8 @@ const SHOTS = [
   // the app and wrong for a screenshot meant to show the finished screen.
   ['driver-emg', { persona:'driver', screen:'emg', scenario:'collision', emgFrom:'s0' }],
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
+  ['driver-photos', { persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'], notes: false }],
+  ['driver-otherins', { persona: 'driver', screen: 'otherins', scenario: 'collision', navStack: ['s0'], notes: false }],
   ['fleet', { persona: 'fleet' }],
   ['system', { persona: 'system' }],
   ['system-telematics', { persona: 'system', sysTab: 'telematics', scenario: 'collision' }],

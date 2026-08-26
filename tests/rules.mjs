@@ -286,6 +286,84 @@ async function boot(state) {
 }
 
 /* ================================================================== *
+ * RULE 12 · The ACORD fields we said we collect, we actually collect.
+ *
+ * The mapping table is a claim made to an integration lead. Every row has to
+ * correspond to something the flow can really produce, or the table is
+ * marketing. These are the fields added after auditing the form itself.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+
+  check(!app.doc.querySelector('#root [data-field="vin"]'),
+    'ACORD VIN: never asked of the driver');
+
+  // The CTA says what it does.
+  for (const a of ['confirm-vehicle', 'confirm-time', 'confirm-location',
+    'confirm-type', 'set-injured', 'set-drivable']) {
+    await app.click(`#root [data-act="${a}"]`);
+  }
+
+  // VIN is read from the telematics unit, never typed: 17 characters on a hard
+  // shoulder is how you get a wrong VIN rather than no VIN. Read after an
+  // answer, because the draft is only persisted once something changes it.
+  const stored = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1') || '{}');
+  check(/^[A-HJ-NPR-Z0-9]{17}$/.test(stored.draft?.vin || ''),
+    'ACORD VIN: present and 17 characters, from the unit',
+    `vin was ${JSON.stringify(stored.draft?.vin)}`);
+  check(/^\s*Confirm\s*$/.test(app.doc.querySelector('#root .dock .btn')?.textContent || ''),
+    'the CTA reads "Confirm"',
+    JSON.stringify(app.doc.querySelector('#root .dock .btn')?.textContent));
+  app.close();
+}
+
+/* DESCRIBE DAMAGE and WHERE CAN VEH BE SEEN sit with the photographs — the
+   driver is already looking at the damage, and an appraiser needs somewhere
+   to go before they need a paragraph. Neither blocks. */
+{
+  const app = await boot({
+    persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'],
+  });
+  check(!!app.doc.querySelector('#root [data-field="damageDesc"]'),
+    'ACORD DESCRIBE DAMAGE is collected');
+  check(!!app.doc.querySelector('#root [data-field="whereSeen"]'),
+    'ACORD WHERE CAN VEH BE SEEN is collected');
+  check(!!app.doc.querySelector('#root [data-act="gap-skip"]'),
+    'both stay skippable — they are not blocking fields');
+  app.close();
+}
+
+/* OTHER VEH/PROP INS? is a question of its own. A blank policy number cannot
+   distinguish "nobody is insured" from "nobody looked", and an uninsured
+   party routes to the guarantee fund rather than to another insurer. */
+{
+  const app = await boot({
+    persona: 'driver', screen: 'otherins', scenario: 'collision', navStack: ['s0'],
+  });
+  check(!!app.doc.querySelector('#root [data-act="set-other-insured"]'),
+    'ACORD OTHER VEH/PROP INS? is asked');
+  await app.click('#root [data-act="set-other-insured"][data-v="yes"]');
+  const stored = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1') || '{}');
+  check(stored.draft?.otherInsured === true,
+    'ACORD OTHER VEH/PROP INS? is recorded separately from the policy number');
+  app.close();
+}
+
+/* The omissions are stated rather than left as holes. "The restraint has to be
+   visible or it reads as an oversight" applies to the field list too. */
+{
+  const app = await boot({ persona: 'fleet', exportOpen: true });
+  const omitted = readFileSync(join(ROOT, 'src', 'data', 'domain.js'), 'utf8');
+  check(/ACORD_OMITTED/.test(omitted),
+    'the fields ACORD asks for and this flow refuses are enumerated');
+  for (const must of ['Art. 9', 'ESTIMATE AMT', 'PURPOSE OF USE', 'licence']) {
+    check(omitted.includes(must),
+      `the omission list names "${must}"`);
+  }
+  app.close();
+}
+
+/* ================================================================== *
  * RULE 11 · The injury section collects what ACORD 2 actually asks for.
  *
  * The form's INJURED section is a table with one row per person, and its

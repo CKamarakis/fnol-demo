@@ -139,6 +139,11 @@ Product decisions with reasons. Do not change these without raising it first.
 - **Six fields block submission, and only six**: vehicle, date/time, location,
   incident type, anyone injured, vehicle drivable. Everything else is chased
   asynchronously. An abandoned FNOL is worse than an incomplete one.
+- **The field list is audited against ACORD 2, in both directions.**
+  `ACORD_MAP` in `data/domain.js` says what we carry and where it lands;
+  `ACORD_OMITTED` says what the form asks for that we refuse, and why. Adding a
+  field means checking the form first. Removing one means saying so in the
+  omissions list — a gap nobody explains reads as an oversight.
 - **A field earns its place by being on the standard, not by sounding useful.**
   "Do you feel able to drive?" was added, then removed: ACORD 2 asks for driver
   identity and for injuries, and **no field on the form asks whether the driver

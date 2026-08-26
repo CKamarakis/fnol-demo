@@ -2,7 +2,7 @@ import { I } from '../../core/utils.js';
 import { PHOTO_SLOTS, SCENARIOS } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
-import { gapShell } from './GapsHub.jsx';
+import { gapShell, textField } from './GapsHub.jsx';
 import { svgSilhouette } from '../../components/svg.js';
 
 /* ---------- guided photo set ---------- */
@@ -63,6 +63,17 @@ export function scrPhotos() {
           skipped slot is a known gap, an unnamed pile of photos is not.
         </p>
       </div>
+
+      {/* ACORD 2 · DESCRIBE DAMAGE and WHERE CAN VEH BE SEEN. Both belong on
+          this screen rather than in the blocking six: the driver is already
+          looking at the damage, and an appraiser needs somewhere to go before
+          they need a paragraph about it. Typed, not tapped — no list of damage
+          types survives contact with a real truck. */}
+      <div className="sp16" />
+      {textField('What is damaged? A sentence is plenty', 'damageDesc',
+        'Nearside wing and step, windscreen cracked')}
+      {textField('Where will the truck be?', 'whereSeen',
+        'Depot Berlin-Süd, or the hard shoulder until recovery')}
 
       {s.fail.offline && (
         <>

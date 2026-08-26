@@ -240,6 +240,10 @@ export const ACTIONS = {
   },
   "set-emergency": v => Store.patchDraft({injuryEmergency:v==="yes"}),
   "set-drivable":  v => Store.patchDraft({drivable:v==="yes"}),
+  /* "Not sure" is recorded as not-insured rather than as unanswered: an
+     uninsured other party routes to the national guarantee fund, and a handler
+     needs to know the driver looked and could not tell. */
+  "set-other-insured": v => Store.patchDraft({otherInsured:v==="yes"}),
 
   "submit-tier1": async () => {
     const s=Store.s;
