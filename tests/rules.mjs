@@ -418,6 +418,36 @@ async function boot(state) {
   check(order.indexOf('toggle-injured-party') < order.indexOf('toggle-severity'),
     'injury: "who is hurt" is asked before "how bad"');
 
+  // Round means pick one, square means pick any number. A driver should not
+  // have to read the label to learn whether a second tap replaces their first
+  // answer or adds to it.
+  const multiBox = app.doc.querySelector('#root [data-act="toggle-injured-party"] .cbox');
+  const singleBox = app.doc.querySelector('#root [data-act="set-injured"] .cbox');
+  check(multiBox && !multiBox.classList.contains('round'),
+    'multi-select shows a square box, not a radio');
+  check(singleBox && singleBox.classList.contains('round'),
+    'single-select keeps the round box');
+  check(app.doc.querySelector('#root [data-act="toggle-severity"]')?.getAttribute('role') === 'checkbox',
+    'multi-select announces itself as a checkbox to a screen reader');
+
+  /* Selecting must not move the row. The old rule thickened the border to 2px
+     and compensated with margin:-0.5px, so every selected row crept upward and
+     in a list of four the shifts accumulated until rows overlapped. jsdom has
+     no layout engine, so the CSS is asserted directly: nothing in a selected
+     state may change border-width or margin. */
+  const css = readFileSync(join(ROOT, 'src', 'styles', '03-driver.css'), 'utf8');
+  const selectedRules = [...css.matchAll(/\.(?:choice\[aria-pressed="true"\]|frow\.confirmed)\s*\{([^}]*)\}/g)]
+    .map(m => m[1]);
+  check(selectedRules.length >= 2, 'both selected-state rules are present');
+  for (const body of selectedRules) {
+    check(!/border-width/.test(body),
+      'a selected row does not change its border width — that is what moved it',
+      body.replace(/\s+/g, ' ').slice(0, 90));
+    check(!/margin/.test(body),
+      'a selected row does not compensate with a negative margin',
+      body.replace(/\s+/g, ' ').slice(0, 90));
+  }
+
   // No count field — a shaken driver should not be asked to be sure of a number.
   check(![...app.doc.querySelectorAll('#root input')]
     .some(i => /how many|count|number of/i.test(i.getAttribute('placeholder') || '')),

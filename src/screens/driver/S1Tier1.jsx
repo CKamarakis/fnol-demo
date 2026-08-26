@@ -209,7 +209,7 @@ function InjuryDetail({ d }) {
       <div className="sp12" />
       <p className="lbl">Who is hurt? Tap all that apply.</p>
       {WHO_HURT_OPTIONS.map(([v, l]) => (
-        <Choice key={v} act="toggle-injured-party" value={v} label={l}
+        <Choice key={v} act="toggle-injured-party" value={v} label={l} multi
           selected={(d.injuredParties || []).includes(v)} />
       ))}
 
@@ -223,7 +223,7 @@ function InjuryDetail({ d }) {
       <div className="sp12" />
       <p className="lbl">How bad — roughly? Tap all that apply.</p>
       {SEVERITY_OPTIONS.map(([v, l]) => (
-        <Choice key={v} act="toggle-severity" value={v} label={l}
+        <Choice key={v} act="toggle-severity" value={v} label={l} multi
           selected={(d.injurySeverity || []).includes(v)} />
       ))}
 

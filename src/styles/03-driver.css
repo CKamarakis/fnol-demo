@@ -86,7 +86,12 @@
 .frow-value{display:block;font-size:16.5px;font-weight:620;margin-top:3px;line-height:1.35;overflow-wrap:anywhere}
 .frow-value.empty{color:var(--ink-3);font-weight:500}
 .frow-right{flex:none;display:flex;align-items:center;gap:8px;margin-top:-1px}
-.frow.confirmed{border-color:var(--accent);border-width:2px;margin:-0.5px;background:var(--bg-raise);box-shadow:0 1px 3px #2a453d1f}
+/* Same fix as .choice: confirming must not move the row. Four rows confirmed
+   in sequence each crept half a pixel upward. */
+.frow.confirmed{
+  border-color:var(--accent);background:var(--bg-raise);
+  box-shadow:inset 0 0 0 1px var(--accent), 0 1px 3px #2a453d1f;
+}
 .frow.confirmed .tick{color:var(--ok)}
 .frow.pending{border-color:#3a3a1e}
 .chip-pre{
@@ -105,17 +110,27 @@
 }
 .choice + .choice{margin-top:10px}
 .choice:hover{border-color:#a9bcc9;background:var(--bg-raise-2)}
+/* Selecting must not move the row. The old rule thickened the border to 2px
+   and pulled the box back with margin:-0.5px to compensate — which shifted
+   every selected row half a pixel up, and in a list of four the shifts
+   accumulated until the rows overlapped. The border width never changes now;
+   only its colour does, and the weight comes from an inset shadow that costs
+   no layout. */
 .choice[aria-pressed="true"]{
-  border-color:var(--accent);border-width:2px;margin:-0.5px;
+  border-color:var(--accent);
+  box-shadow:inset 0 0 0 1px var(--accent), 0 1px 3px #2a453d1f;
   background:var(--bg-raise);color:var(--ink);
-  box-shadow:0 1px 3px #2a453d1f;
 }
 .choice .cbox{
   flex:none;width:26px;height:26px;border-radius:8px;border:2px solid var(--line);
   display:grid;place-items:center;transition:all .12s;
 }
 .choice[aria-pressed="true"] .cbox{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+/* Round = pick one. Square = pick any number. The convention is not ours to
+   invent, and a driver should not have to read the label to find out whether
+   a second tap replaces their first answer or adds to it. */
 .choice .cbox.round{border-radius:50%}
+.choice .cbox:not(.round){border-radius:7px}
 .choice-sub{display:block;font-size:13px;font-weight:500;color:var(--ink-3);margin-top:2px}
 
 /* two-up */

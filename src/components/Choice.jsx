@@ -8,15 +8,28 @@ import { I } from '../core/utils.js';
  * everywhere. A driver learning the control once should not have to relearn
  * it three screens later.
  */
-export function Choice({ act, value, label, selected, children }) {
+/**
+ * `multi` squares the tick box. Round means "pick one", square means "pick any
+ * number" — the convention every phone keyboard and settings screen already
+ * teaches. Without it, a driver has to read the label to learn whether a
+ * second tap replaces their first answer or adds to it, and on the injury
+ * questions that is the difference between reporting one casualty and three.
+ * The role follows the shape, so screen readers get the same distinction.
+ */
+export function Choice({ act, value, label, selected, multi, children }) {
   return (
     <button
       className="choice"
       data-act={act}
       data-v={value}
+      role={multi ? 'checkbox' : undefined}
+      aria-checked={multi ? String(!!selected) : undefined}
       aria-pressed={String(!!selected)}
     >
-      <span className="cbox round" dangerouslySetInnerHTML={{ __html: selected ? I.chkS : '' }} />
+      <span
+        className={`cbox${multi ? '' : ' round'}`}
+        dangerouslySetInnerHTML={{ __html: selected ? I.chkS : '' }}
+      />
       <span>{label ?? children}</span>
     </button>
   );
