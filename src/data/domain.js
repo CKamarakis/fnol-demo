@@ -38,7 +38,7 @@ export const EAS_STATEMENTS = [
    render having to sort it. English is the source text, not the first entry. */
 export const STR = {
   de:{
-    lang:"Deutsch", detected:"Wir haben einen Unfall erkannt", ok:"Sind alle wohlauf?",
+    lang:"Deutsch", detected:"Erkannt", ok:"Sind alle wohlauf?",
     fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall — etwas anderes melden",
     already:"Was der Lkw gemeldet hat", today:"heute",
     call112:"112 anrufen", emgCta:"Notruf 112", emgTitle:"Sicherheit zuerst", emgSub:"Der Schaden ist jetzt nicht wichtig.",
@@ -52,7 +52,7 @@ export const STR = {
     blockPath:"Pflichtangaben", elapsed:"vergangen",
   },
   en:{
-    lang:"English", detected:"We detected an incident", ok:"Is everyone okay?",
+    lang:"English", detected:"Detected", ok:"Is everyone okay?",
     fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident — report something else",
     already:"Reported information", today:"today",
     call112:"Call 112", emgCta:"Emergency 112", emgTitle:"Safety first", emgSub:"Nothing about the claim matters yet.",
@@ -69,7 +69,7 @@ export const STR = {
      the German ones, and the European Accident Statement is a French document
      to begin with — the constat amiable. */
   fr:{
-    lang:"Français", detected:"Nous avons détecté un accident", ok:"Tout le monde va bien ?",
+    lang:"Français", detected:"Détecté", ok:"Tout le monde va bien ?",
     fine:"Tout le monde va bien", hurt:"Quelqu'un est blessé", dismiss:"Pas un accident — signaler autre chose",
     already:"Informations transmises", today:"aujourd'hui",
     call112:"Appeler le 112", emgCta:"Urgence 112", emgTitle:"La sécurité d'abord", emgSub:"Le sinistre n'a aucune importance pour l'instant.",
@@ -83,7 +83,7 @@ export const STR = {
     blockPath:"Champs obligatoires", elapsed:"écoulé",
   },
   nl:{
-    lang:"Nederlands", detected:"We hebben een incident gedetecteerd", ok:"Is iedereen in orde?",
+    lang:"Nederlands", detected:"Gedetecteerd", ok:"Is iedereen in orde?",
     fine:"Iedereen is in orde", hurt:"Er is iemand gewond", dismiss:"Geen incident — iets anders melden",
     already:"Doorgegeven gegevens", today:"vandaag",
     call112:"Bel 112", emgCta:"Noodgeval 112", emgTitle:"Veiligheid eerst", emgSub:"De schade doet er nu even niet toe.",
@@ -97,7 +97,7 @@ export const STR = {
     blockPath:"Verplichte velden", elapsed:"verstreken",
   },
   pl:{
-    lang:"Polski", detected:"Wykryliśmy zdarzenie", ok:"Czy wszyscy są cali?",
+    lang:"Polski", detected:"Wykryto", ok:"Czy wszyscy są cali?",
     fine:"Wszystko w porządku", hurt:"Ktoś jest ranny", dismiss:"To nie zdarzenie — zgłoś co innego",
     already:"Co zgłosiła ciężarówka", today:"dzisiaj",
     call112:"Zadzwoń 112", emgCta:"Alarmowy 112", emgTitle:"Najpierw bezpieczeństwo", emgSub:"Szkoda może poczekać.",
@@ -132,8 +132,13 @@ export const SCENARIOS = {
     },
     /* The headline splits: a kicker naming what the system did, then the
        subject it did it to. "Detected" is the system's claim and stays small;
-       the damage is what the driver needs to read first. */
-    kicker:"Detected", headline:"Windscreen damage",
+       the damage is what the driver needs to read first. The kicker comes from
+       T('detected'); the subject is per-language here, so every language gets
+       the same two-part shape rather than one long sentence. */
+    headline:{
+      de:"Scheibenschaden", en:"Windscreen damage", fr:"Bris de pare-brise",
+      nl:"Ruitschade", pl:"Uszkodzenie szyby",
+    },
     perishable:["photos"],
     note:"Single-vehicle glass. No EAS — there is no other party to agree facts with. Eight fields, two screens, done.",
   },
@@ -145,7 +150,10 @@ export const SCENARIOS = {
       ...fromMapon(MAPON_FIXTURES.collision),
       inferred:"collision",
     },
-    kicker:"Detected", headline:"Possible collision",
+    headline:{
+      de:"Möglicher Unfall", en:"Possible collision", fr:"Collision possible",
+      nl:"Mogelijke aanrijding", pl:"Możliwa kolizja",
+    },
     perishable:["witness","otherPlate","photos","eas","police"],
     note:"The full shape. Roughly 41 capturable fields — six of them block. The other 35 are ordered by how fast they evaporate.",
   },
@@ -160,7 +168,11 @@ export const SCENARIOS = {
       clip:"unavailable — unit offline",
       inferred:"theft",
     },
-    kicker:"Detected", headline:"Vehicle telemetry lost",
+    headline:{
+      de:"Keine Fahrzeugdaten mehr", en:"Vehicle telemetry lost",
+      fr:"Perte des données du véhicule", nl:"Voertuiggegevens verloren",
+      pl:"Utracono dane pojazdu",
+    },
     perishable:["police","photos"],
     note:"Theft inverts the ordering. No damage photos exist. The police reference is promoted to near-blocking because no German insurer will progress a theft claim without one, and location falls back to the last telematics ping.",
   },

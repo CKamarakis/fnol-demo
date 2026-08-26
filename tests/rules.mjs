@@ -284,6 +284,56 @@ async function boot(state) {
 }
 
 /* ================================================================== *
+ * RULE 7 · Every language gets the same design, not just English.
+ *
+ * The cold open's headline is deliberately two parts: a small kicker naming
+ * what the system did, then the subject in full size. That split was built
+ * for English only, so the other four rendered one long sentence in the
+ * kicker slot and no headline at all — a different design for anyone not
+ * reading English, on the screen that opens the product.
+ * ================================================================== */
+{
+  const LANGS = ['de', 'en', 'fr', 'nl', 'pl'];
+  const SCENARIOS_TO_CHECK = ['glass', 'collision', 'theft'];
+
+  for (const lang of LANGS) {
+    for (const scenario of SCENARIOS_TO_CHECK) {
+      const app = await boot({ persona: 'driver', screen: 's0', scenario, lang });
+
+      const kicker = app.doc.querySelector('#root .s0-kicker')?.textContent?.trim() || '';
+      const headline = app.doc.querySelector('#root .h1')?.textContent?.trim() || '';
+
+      check(kicker.length > 0 && headline.length > 0,
+        `${lang}/${scenario}: renders both a kicker and a headline`,
+        `kicker="${kicker}" headline="${headline}"`);
+
+      // The kicker names the system's action. A whole sentence there means the
+      // split was skipped and the headline slot went empty.
+      check(kicker.split(/\s+/).length <= 2,
+        `${lang}/${scenario}: the kicker is a label, not a sentence`,
+        `kicker was "${kicker}"`);
+
+      // Untranslated scenarios used to collapse the layout entirely.
+      check(headline.length > 3,
+        `${lang}/${scenario}: the headline names the incident`,
+        `headline was "${headline}"`);
+
+      // jsdom has no layout engine, so overflow cannot be measured here. What
+      // CAN be checked is the cause: a single unbreakable word wider than the
+      // handset. German compounds one noun out of three, and
+      // "Windschutzscheibenschaden" ran off the right edge of the phone.
+      const longestWord = headline.split(/[\s—-]+/)
+        .reduce((a, w) => (w.length > a.length ? w : a), '');
+      check(longestWord.length <= 20,
+        `${lang}/${scenario}: no single word is too wide for the handset`,
+        `longest word was "${longestWord}" (${longestWord.length} chars)`);
+
+      app.close();
+    }
+  }
+}
+
+/* ================================================================== *
  * RULE 6 · The display panes render and respond.
  *
  * interactive.mjs walks the driver screens; these three are built with the

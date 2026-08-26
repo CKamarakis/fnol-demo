@@ -44,6 +44,8 @@ const SHOTS = [
   ['driver-cold-open', { persona: 'driver', screen: 's0' }],
   ['driver-notes-on', { persona: 'driver', screen: 's0', notes: true }],
   ['driver-glass', { persona: 'driver', screen: 's0', scenario: 'glass' }],
+  ['driver-de', { persona: 'driver', screen: 's0', scenario: 'glass', lang: 'de' }],
+  ['driver-pl', { persona: 'driver', screen: 's0', scenario: 'theft', lang: 'pl' }],
   ['driver-theft', { persona: 'driver', screen: 's0', scenario: 'theft' }],
   // emgFrom is what the 112 screen's Back control points at. A deep link
   // that omits it renders the screen without a back bar, which is correct in

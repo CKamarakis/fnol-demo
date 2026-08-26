@@ -69,10 +69,13 @@ export function scrS0() {
               short enough to sit beside it — the switch stays on screen one,
               never buried in settings. */}
           <div className="s0-top">
-            <div className="s0-kicker">{s.lang === 'en' ? sc.kicker : T('detected')}</div>
+            <div className="s0-kicker">{T('detected')}</div>
             {langSelect(s.lang)}
           </div>
-          {s.lang === 'en' && <h1 className="h1">{sc.headline}</h1>}
+          {/* Same two-part shape in every language. Falling back to English for
+              a scenario that has not been translated keeps the layout intact —
+              a missing headline used to leave the kicker standing alone. */}
+          <h1 className="h1">{sc.headline[s.lang] || sc.headline.en}</h1>
           <div className="s0-meta">
             <div className="s0-meta-row">
               <span className="s0-meta-ic" dangerouslySetInnerHTML={{ __html: I.pin }} />
