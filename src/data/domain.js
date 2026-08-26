@@ -31,10 +31,26 @@ export const EAS_STATEMENTS = [
   {n:17, en:"had not observed a right-of-way or red light sign",        de:"hatte Vorfahrt oder Rotlicht missachtet",           pl:"nie ustąpił pierwszeństwa lub przejechał na czerwonym"},
 ];
 
-/* Minimal i18n. Three languages, real strings on the load-bearing screens.
+/* Minimal i18n. Five languages, real strings on the load-bearing screens.
    Cross-border freight means the driver may be Polish in Germany —
    the language switch is on screen one, not buried in settings. */
+/* Ordered by language code, so the dropdown reads alphabetically without the
+   render having to sort it. English is the source text, not the first entry. */
 export const STR = {
+  de:{
+    lang:"Deutsch", detected:"Wir haben einen Unfall erkannt", ok:"Sind alle wohlauf?",
+    fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall — etwas anderes melden",
+    already:"Was der Lkw gemeldet hat", today:"heute",
+    call112:"112 anrufen", emgCta:"Notruf 112", emgTitle:"Sicherheit zuerst", emgSub:"Der Schaden ist jetzt nicht wichtig.",
+    emgBody:"Wenn jemand verletzt ist, rufen Sie jetzt den Notruf. Diese Meldung wartet auf Sie — nichts geht verloren.",
+    emgCalled:"Angerufen — weiter", emgNoNeed:"Kein Rettungswagen nötig — weiter",
+    tier1:"Daten des Trackers prüfen", tier1sub:"Tippen Sie jeden Punkt an, um ihn zu bestätigen oder zu korrigieren.",
+    stillToCheck:"noch zu prüfen", allChecked:"Alles geprüft",
+    submit:"Meldung absenden", six:"6 von 6 · mehr blockiert Sie nicht",
+    refTitle:"Erfasst. Schadennummer vergeben.", saved:"Gespeichert",
+    skip:"Überspringen — später erledigen", contin:"Weiter", perish:"Was verschwindet, wenn wir warten",
+    blockPath:"Pflichtangaben", elapsed:"vergangen",
+  },
   en:{
     lang:"English", detected:"We detected an incident", ok:"Is everyone okay?",
     fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident — report something else",
@@ -49,19 +65,36 @@ export const STR = {
     skip:"Skip — I'll do this later", contin:"Continue", perish:"Things that disappear if we wait",
     blockPath:"Blocking path", elapsed:"elapsed",
   },
-  de:{
-    lang:"Deutsch", detected:"Wir haben einen Unfall erkannt", ok:"Sind alle wohlauf?",
-    fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall — etwas anderes melden",
-    already:"Was der Lkw gemeldet hat", today:"heute",
-    call112:"112 anrufen", emgCta:"Notruf 112", emgTitle:"Sicherheit zuerst", emgSub:"Der Schaden ist jetzt nicht wichtig.",
-    emgBody:"Wenn jemand verletzt ist, rufen Sie jetzt den Notruf. Diese Meldung wartet auf Sie — nichts geht verloren.",
-    emgCalled:"Angerufen — weiter", emgNoNeed:"Kein Rettungswagen nötig — weiter",
-    tier1:"Daten des Trackers prüfen", tier1sub:"Tippen Sie jeden Punkt an, um ihn zu bestätigen oder zu korrigieren.",
-    stillToCheck:"noch zu prüfen", allChecked:"Alles geprüft",
-    submit:"Meldung absenden", six:"6 von 6 · mehr blockiert Sie nicht",
-    refTitle:"Erfasst. Schadennummer vergeben.", saved:"Gespeichert",
-    skip:"Überspringen — später erledigen", contin:"Weiter", perish:"Was verschwindet, wenn wir warten",
-    blockPath:"Pflichtangaben", elapsed:"vergangen",
+  /* French and Dutch: the Benelux and France corridors carry the same trucks as
+     the German ones, and the European Accident Statement is a French document
+     to begin with — the constat amiable. */
+  fr:{
+    lang:"Français", detected:"Nous avons détecté un accident", ok:"Tout le monde va bien ?",
+    fine:"Tout le monde va bien", hurt:"Quelqu'un est blessé", dismiss:"Pas un accident — signaler autre chose",
+    already:"Informations transmises", today:"aujourd'hui",
+    call112:"Appeler le 112", emgCta:"Urgence 112", emgTitle:"La sécurité d'abord", emgSub:"Le sinistre n'a aucune importance pour l'instant.",
+    emgBody:"Si quelqu'un est blessé, appelez les secours maintenant. Cette déclaration vous attendra — rien de ce que vous avez saisi n'est perdu.",
+    emgCalled:"J'ai appelé — continuer", emgNoNeed:"Pas besoin d'ambulance — continuer",
+    tier1:"Vérifier les données du boîtier", tier1sub:"Touchez chaque élément pour confirmer ou corriger sa valeur.",
+    stillToCheck:"encore à vérifier", allChecked:"Tout est vérifié",
+    submit:"Envoyer la déclaration", six:"6 sur 6 · rien d'autre ne vous bloque",
+    refTitle:"Déclaration reçue. Référence attribuée.", saved:"Enregistré",
+    skip:"Passer — je le ferai plus tard", contin:"Continuer", perish:"Ce qui disparaît si nous attendons",
+    blockPath:"Champs obligatoires", elapsed:"écoulé",
+  },
+  nl:{
+    lang:"Nederlands", detected:"We hebben een incident gedetecteerd", ok:"Is iedereen in orde?",
+    fine:"Iedereen is in orde", hurt:"Er is iemand gewond", dismiss:"Geen incident — iets anders melden",
+    already:"Doorgegeven gegevens", today:"vandaag",
+    call112:"Bel 112", emgCta:"Noodgeval 112", emgTitle:"Veiligheid eerst", emgSub:"De schade doet er nu even niet toe.",
+    emgBody:"Als er iemand gewond is, bel dan nu het alarmnummer. Deze melding wacht op u — niets van wat u hebt ingevuld gaat verloren.",
+    emgCalled:"Ik heb gebeld — verder", emgNoNeed:"Geen ambulance nodig — verder",
+    tier1:"Gegevens van de tracker controleren", tier1sub:"Tik op elk item om de waarde te bevestigen of te corrigeren.",
+    stillToCheck:"nog te controleren", allChecked:"Alles gecontroleerd",
+    submit:"Melding versturen", six:"6 van 6 · niets anders houdt u tegen",
+    refTitle:"Ontvangen. Referentie toegekend.", saved:"Opgeslagen",
+    skip:"Overslaan — ik doe dit later", contin:"Verder", perish:"Wat verdwijnt als we wachten",
+    blockPath:"Verplichte velden", elapsed:"verstreken",
   },
   pl:{
     lang:"Polski", detected:"Wykryliśmy zdarzenie", ok:"Czy wszyscy są cali?",

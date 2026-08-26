@@ -108,6 +108,24 @@ These are load-bearing. Breaking one silently defeats the purpose.
    notes toggle doing nothing while the demo still looked correct.
    `tests/render.mjs` mounts the built file in jsdom and drives the real flow.
    Trust it over inspection, and extend it when you add a screen.
+6. **Every control, not just the happy path.** The dispatcher does
+   `if(!fn) return`, so a button whose handler was renamed is silently inert —
+   no throw, no log, and `render.mjs` never visits most screens.
+   `tests/interactive.mjs` clicks every `data-act` on every driver screen and
+   asserts each Back control goes somewhere. Both bugs it was written for were
+   reproduced against it before it was trusted.
+7. **The state in storage is older than the build reading it.** The artifact is
+   emailed and reopened for months, and `Store.load` merges whatever it finds
+   over the defaults. A stale screen name, a null `fail` block or a string
+   where an array belongs each rendered a blank white page.
+   `tests/persistence.mjs` boots the app against corrupt, stale and
+   throwing storage; `load()` validates every value the render path reads.
+8. **The domain rules are executable.** `tests/rules.mjs` asserts the six-field
+   count, that offline and TPA-down still issue a reference, that a disputed
+   coverage check never rejects the driver, that no screen asks about fault,
+   and it greps the source for copy promising what the product cannot do.
+   Four instances of the recovery/ETA promise survived code review; that grep
+   found the fifth.
 
 ## Domain rules
 
@@ -121,6 +139,12 @@ Product decisions with reasons. Do not change these without raising it first.
 - **Six fields block submission, and only six**: vehicle, date/time, location,
   incident type, anyone injured, vehicle drivable. Everything else is chased
   asynchronously. An abandoned FNOL is worse than an incomplete one.
+- **The vehicle and the driver are two questions.** "Can the vehicle still be
+  driven?" is the money field — it drives the reserve and the credit-hire
+  clock. "Do you feel able to drive?" is about the person, and it is asked
+  seventh and **does not block**: a shaken driver in a roadworthy truck is a
+  fleet welfare call — a relief driver, a rest, a lift home — and no insurer
+  acts on it. Conflating them, as the old single question did, loses both facts.
 - **Ordered by perishability, not logical grouping.** Witness contact and the
   other party's plate are gone within the hour; their insurer can be chased
   next week. This ordering is the organising principle of the whole flow.

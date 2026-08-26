@@ -43,7 +43,9 @@ export function scrSoftStop() {
             <div className="sp12" />
             <div className="chipset">
               <span className="chip ok">{score}% complete</span>
-              {s.draft.drivable === false && <span className="chip info">Recovery en route</span>}
+              {/* States the fact the driver reported, not a service this system
+                  does not run. Recovery is the fleet's to arrange. */}
+              {s.draft.drivable === false && <span className="chip info">Reported off road</span>}
               {s.fail.offline && (
                 <span className="chip warn">Will sync when you&rsquo;re back in signal</span>
               )}

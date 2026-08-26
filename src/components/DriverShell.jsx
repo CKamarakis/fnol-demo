@@ -88,11 +88,14 @@ export function langSelect(cur) {
  * above it, the same size and weight as on every other screen — it does not
  * compete with 112, which is the full-width primary in the dock.
  */
+/* Each label names the screen the driver lands back on, so it has to match
+   that screen's own title. "The six questions" described the rule rather than
+   the page, and the page is called "Verify the tracker's data". */
 export const SCREEN_TITLES = {
-  s0: 'Incident', s0det: 'Details', dismiss: 'Dismiss', emg: 'Emergency',
-  s1: 'The six questions', s2: 'Your reference', gaps: 'What disappears',
-  witness: 'Witness', otherv: 'Other vehicle', photos: 'Photos', eas: 'Circumstances',
-  police: 'Police', cargo: 'Cargo', otherins: 'Their insurer', done: 'Finished',
+  s0: 'the incident', s0det: 'the details', dismiss: 'dismiss', emg: 'emergency',
+  s1: "the tracker's data", s2: 'your reference', gaps: 'what disappears',
+  witness: 'the witness', otherv: 'the other vehicle', photos: 'photos', eas: 'circumstances',
+  police: 'police', cargo: 'cargo', otherins: 'their insurer', done: 'finished',
 };
 
 /** Only the cold open has nothing behind it. */
@@ -109,15 +112,20 @@ export function navBar() {
     : s.navStack[s.navStack.length - 1];
   if (!prev) return null;
 
-  const label = SCREEN_TITLES[prev] || 'Back';
+  const label = SCREEN_TITLES[prev] || 'the previous screen';
 
   return (
     <div className="nav-bar">
       <button className="nav-back" data-act="nav-back" aria-label={`Go back to ${label}`}>
         <span className="nav-chev" dangerouslySetInnerHTML={{ __html: I.chevL }} />
-        <span className="nav-lbl">{label}</span>
+        {/* Named as the action, not just the destination: a bare "Incident"
+            beside a chevron reads as a heading for the screen you are on. */}
+        <span className="nav-lbl">Back to {label}</span>
       </button>
-      <span className="nav-saved">{s.lastSaved ? T('saved') : ''}</span>
+      {/* No "Saved" here. It appeared on every screen from the first keystroke
+          and never changed again, so it stopped being information. The
+          reassurance still fires where it is actually earned — the gaps hub,
+          where the driver is deciding whether to walk away mid-report. */}
     </div>
   );
 }

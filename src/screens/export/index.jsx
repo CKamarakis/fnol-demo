@@ -33,6 +33,11 @@ export function buildIncidentJson(){
       // very expensive to retrofit.
       association_id:"drv_assoc_"+(inc?inc.id.slice(4,10):"xxxxxx"),
       display_name:t.driver, purpose:"claims_handling",
+      // Self-reported fitness to continue driving. On the driver, not the
+      // vehicle: it routes to fleet welfare, and no underwriting decision
+      // reads it. Not a health assessment — see the Art. 9 note on injuries.
+      fit_to_drive: d.driverFit,
+      fit_to_drive_routing: d.driverFit===false ? "fleet_welfare" : null,
       retention:"P7Y from claim closure", linked_profile:"external_ref_only"
     },
     injuries: d.injured===null ? null : {
@@ -174,7 +179,10 @@ export function renderExport(){
       el("div",{style:"margin-top:3px"}, d.policeAttended===true ? ("attended · "+(d.policeRef||"reference pending")) : d.policeAttended===false ? "did not attend" : el("i",{style:"color:#546b62"},"not asked"))),
     el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Injuries"),
       el("div",{style:"margin-top:3px"}, d.injured===true ? ("yes · band: "+(d.injurySeverity||"—")+" · emergency services "+(d.injuryEmergency?"attended":"not attended")) : d.injured===false ? "none reported" : el("i",{style:"color:#546b62"},"—")),
-      d.injured===true ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Injury description deliberately not collected — GDPR Art. 9. To be gathered by the adjuster under a proper basis.") : null)
+      d.injured===true ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Injury description deliberately not collected — GDPR Art. 9. To be gathered by the adjuster under a proper basis.") : null),
+    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Driver fit to drive"),
+      el("div",{style:"margin-top:3px"}, d.driverFit===true ? "yes" : d.driverFit===false ? "no · routed to fleet welfare" : el("i",{style:"color:#546b62"},"not answered")),
+      d.driverFit===false ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Self-reported. A welfare routing, not an underwriting input — and never a blocking field.") : null)
   ));
 
   // signatures

@@ -22,6 +22,15 @@ const ART9_NOTE =
   "basis, from the person it belongs to. <b style='color:#546b62'>Presence + severity band + " +
   'emergency attended</b> is everything the reserve and the notification actually need.';
 
+const DRIVER_FIT_NOTE =
+  '&ldquo;Can the truck be driven&rdquo; and &ldquo;can <i>you</i> drive it&rdquo; are different ' +
+  'facts, and the old single question conflated them. A roadworthy vehicle with a shaken driver is ' +
+  'common, and the honest answer changes who acts: the vehicle answer drives the reserve and the ' +
+  '<b>credit-hire clock</b>; the driver answer is a <b>fleet welfare</b> call &mdash; a relief ' +
+  'driver, a rest, a lift home. So this one is the <b>seventh question and it does not block</b>. ' +
+  'Six fields block submission and only six; adding a welfare question to that list would hold a ' +
+  'claim open for something no insurer acts on.';
+
 const MONEY_FIELD_NOTE =
   '&ldquo;Can you drive it&rdquo; answered at minute 2 instead of hour 6 is the single ' +
   'highest-value field in the form. It starts recovery, and it starts &mdash; or does not start ' +
@@ -361,7 +370,7 @@ export function scrTier1() {
           <div className="sp20" />
           <div className="dn-anchor">
             <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-              6 · Are you in a safe enough condition to drive?
+              6 · Can the vehicle still be driven?
             </p>
             {/* Plain yes/no. The sub-label promised "we mark it off the road",
                 which is fleet-side language for a consequence the driver has no
@@ -375,6 +384,23 @@ export function scrTier1() {
           </div>
 
           {dn('The money field', MONEY_FIELD_NOTE)}
+
+          {/* 7 — about the person, not the truck. Deliberately does NOT block:
+              a driver too shaken to drive a roadworthy truck is a real and
+              common situation, but it is a fleet welfare matter, not something
+              an insurer should hold a claim open for. */}
+          <div className="sp20" />
+          <div className="dn-anchor">
+            <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
+              7 · Do you feel able to drive?
+            </p>
+            <div className="grid2">
+              <Choice act="set-driver-fit" value="yes" label="Yes" selected={d.driverFit === true} />
+              <Choice act="set-driver-fit" value="no" label="No" selected={d.driverFit === false} />
+            </div>
+          </div>
+
+          {dn('Two questions, because they are two facts', DRIVER_FIT_NOTE)}
           <div className="sp28" />
         </div>
       </div>

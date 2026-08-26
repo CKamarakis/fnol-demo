@@ -168,7 +168,7 @@
 
 /* back bar */
 .nav-bar{
-  flex:none;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  flex:none;display:flex;align-items:center;gap:10px;
   padding:6px 12px 6px 6px;background:var(--bg-raise);
   border-bottom:1px solid var(--line-soft);
 }
@@ -182,7 +182,6 @@
 .nav-back:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 .nav-back .nav-chev{display:flex}
 .nav-back .nav-chev svg{width:17px;height:17px}
-.nav-saved{font-size:11.5px;color:var(--ink-3);padding-right:6px}
 
 /* map — full width of the phone pane, edge to edge */
 .map-bleed{
@@ -401,12 +400,15 @@
    not. No underline: the two buttons above already mark this as the odd one
    out, and an underline made it read as a footnote rather than a choice. */
 .btn.btn-quiet-sm{
-  min-height:44px;padding:10px 12px;
+  min-height:36px;padding:8px 12px;
   font-size:14px;font-weight:600;
   background:none;border:none;box-shadow:none;
   color:var(--ink-3);
 }
 .btn.btn-quiet-sm:hover{background:none;color:var(--ink-2)}
+/* Text, not a button: it does not need the 8px that separates two filled
+   controls, and the whitespace around it was reading as a gap in the dock. */
+.dock .btn + .btn.btn-quiet-sm{margin-top:2px}
 
 
 /* Docked CTAs sit under the global button size. A phone-width primary at

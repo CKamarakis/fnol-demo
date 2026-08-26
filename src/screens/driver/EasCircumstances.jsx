@@ -81,7 +81,9 @@ export function scrEAS() {
         </div>
       </div>
 
-      {/* the other driver reads this in their own language, not ours */}
+      {/* The other driver reads this in their own language, not ours.
+          Fewer languages than the UI offers: these are the verbatim EAS
+          statements, and a paraphrase of a legal form is worse than English. */}
       <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '10px' }}>
         <div className="seg" style={{ transform: 'scale(.9)', transformOrigin: 'right' }}>
           {['en', 'de', 'pl'].map(k => (

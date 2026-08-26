@@ -283,7 +283,7 @@ export function sysFaked(){
       ["Telematics detection","Payloads use <b>Mapon's real field names, endpoints and thresholds</b> — see the Telematics tab — but the values are invented. No Mapon account was contacted, no device exists, no CAN bus was read. The deceleration figures are computed from the fixture route rather than written as text, so they are at least internally consistent."],
       ["Crash detection itself","<b>Mapon documents none.</b> The trigger here is derived from a harsh-braking alert plus speed, ignition and movement — our inference, carrying a confidence score, not something the partner sends. Confirming whether the device firmware exposes an accelerometer event is the first question I would ask them."],
       ["Coverage check","A boolean from the toggle. A real check queries the policy schedule at date of loss."],
-      ["Recovery dispatch","A message and an ETA. No provider is contacted."],
+      ["Recovery dispatch","<b>Not claimed anywhere any more.</b> An earlier build told the driver recovery was dispatched with an ETA; an FNOL system runs no recovery network and cannot know an arrival time. The vehicle being off the road is reported, and arranging recovery is the fleet's."],
       ["Central plate register","Referenced in copy as the route from plate to insurer. Not called."],
       ["Push / SMS resume link","Described in the soft-stop copy. Not sent."],
       ["Voice input","The mic button is a visual affordance. No speech recognition — it would need a network service."],
@@ -295,7 +295,7 @@ export function sysFaked(){
       ["Completeness engine","Really computed from the draft on every write. The driver's list and the fleet chase list really do read the same array."],
       ["Duplicate matcher","Real haversine distance and real time-window arithmetic against the tuple. The 480 m / 19 min near-match is computed, not hardcoded."],
       ["Persistence","Real <code>localStorage</code>. Close the tab mid-flow and reopen it — the draft is where you left it."],
-      ["The EAS content","The 17 circumstance statements are the real ones, in three languages. The export layout is structurally faithful."],
+      ["The EAS content","The 17 circumstance statements are the real ones, in English, German and Polish. The export layout is structurally faithful."],
       ["The ACORD mapping","Real ACORD Automobile/Property Loss Notice field numbers. Checkable by anyone with the forms."],
     ]],
     ["Honest limitations of the approach", [

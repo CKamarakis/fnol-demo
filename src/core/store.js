@@ -1,4 +1,4 @@
-import { SCENARIOS, setLangSource } from '../data/domain.js';
+import { SCENARIOS, STR, setLangSource } from '../data/domain.js';
 import { clockT, rnd } from './utils.js';
 
 /* ==================================================================
@@ -33,7 +33,8 @@ export function freshDraft(scenId){
     reported:     { vehicle:t.vehicle, occurredAt:t.time, location:t.location, type:t.inferred },
     corrected:    {},   // field -> {from, to, at}
     injured:      null,             // true | false — the one real question
-    drivable:     null,             // true | false — drives the credit-hire clock
+    drivable:     null,             // true | false — the VEHICLE; drives the credit-hire clock
+    driverFit:    null,             // true | false — the PERSON; fleet welfare, never blocking
     // --- injury detail: presence + band + emergency attended. NOT description. ---
     injurySeverity:null, injuryEmergency:null, injuryCount:null,
     // --- perishable gap-fill ---
@@ -147,15 +148,46 @@ export const Store = {
       }));
     }catch(e){ /* quota or private mode — the demo still runs from memory */ }
   },
+  /* Restore, defensively.
+     The artifact is emailed around and reopened for months, so the state in
+     storage is routinely older than the build reading it. Object.assign copies
+     every stored key over a default — including screens that no longer exist,
+     nulls where objects are expected, and strings where arrays are. Each of
+     those renders a blank white screen, which for a file whose whole job is to
+     open on someone else's laptop is the worst failure available.
+     So: merge, then check every value the render path dereferences. Anything
+     unrecognised falls back to its default rather than reaching a component. */
   load(){
+    let d=null;
     try{
       const raw=localStorage.getItem(LS_KEY); if(!raw) return;
-      const d=JSON.parse(raw);
-      if(d && typeof d==="object") Object.assign(this.s,d);
-      if(!this.s.draft) this.s.draft=freshDraft(this.s.scenario);
-      // sessions saved before back-navigation existed have no stack
-      if(!Array.isArray(this.s.navStack)) this.s.navStack=[];
-    }catch(e){}
+      d=JSON.parse(raw);
+    }catch(e){ return; }          // unreadable or unparseable storage — cold open
+
+    try{
+      // Arrays and scalars are not state objects; only a plain object merges.
+      if(!d || typeof d!=="object" || Array.isArray(d)) return;
+      Object.assign(this.s,d);
+
+      const s=this.s;
+      // SCENARIOS[scenario].telematics is read on the first paint.
+      if(!SCENARIOS[s.scenario]) s.scenario="collision";
+      if(!STR[s.lang]) s.lang="en";
+      if(typeof s.screen!=="string" || !s.screen) s.screen="s0";
+      if(!["driver","fleet","system"].includes(s.persona)) s.persona="driver";
+      // fail.tpa is read by the status bar on every render.
+      if(!s.fail || typeof s.fail!=="object") s.fail={tpa:false,offline:false,coverage:false};
+      else s.fail={tpa:!!s.fail.tpa, offline:!!s.fail.offline, coverage:!!s.fail.coverage};
+      // Every one of these is .filter()ed or .length'd during render.
+      for(const k of ["log","hooks","queue","incidents","navStack"]){
+        if(!Array.isArray(s[k])) s[k]=[];
+      }
+      if(!s.draft || typeof s.draft!=="object") s.draft=freshDraft(s.scenario);
+      else s.draft=Object.assign(freshDraft(s.scenario), s.draft);
+    }catch(e){
+      // A shape we cannot repair is still not worth a white screen.
+      this.s.screen="s0"; this.s.persona="driver";
+    }
   },
   reset(keepPersona){
     const persona = keepPersona ? this.s.persona : "driver";

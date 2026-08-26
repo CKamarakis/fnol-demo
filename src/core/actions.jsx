@@ -185,16 +185,18 @@ export const ACTIONS = {
   },
   "set-injured": v => {
     const yes = v==="yes";
+    /* No 112 interrupt here. The driver reached this screen by answering the
+       cold open's safety question, so they have already been shown the
+       emergency screen and have already decided whether to call. Serving it
+       again treats a claims field as if it were news, and the 112 rail is on
+       this screen too — one tap away, where it always is. */
     Store.patchDraft({injured:yes});
-    if(yes && Store.s.screen==="s1"){
-      Store.set({screen:"emg", emgFrom:"s1"});
-      logAdd({m:"SYS",p:"safety route",s:"—",sq:true,ms:0,
-        meta:"injury flipped to yes mid-form → emergency screen interrupts immediately"});
-    }
   },
   "set-severity":  v => Store.patchDraft({injurySeverity:v}),
   "set-emergency": v => Store.patchDraft({injuryEmergency:v==="yes"}),
   "set-drivable":  v => Store.patchDraft({drivable:v==="yes"}),
+  /* Welfare, not underwriting — recorded, never blocking. */
+  "set-driver-fit":v => Store.patchDraft({driverFit:v==="yes"}),
 
   "submit-tier1": async () => {
     const s=Store.s;
