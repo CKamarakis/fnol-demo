@@ -11,7 +11,7 @@
  *   node build/build.mjs            build once
  *   node build/build.mjs --watch    rebuild on change
  */
-import { readFile, writeFile, mkdir, readdir } from 'node:fs/promises';
+import { readFile, writeFile, rename, mkdir, readdir } from 'node:fs/promises';
 import { watch } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
@@ -64,7 +64,22 @@ async function build() {
   if (external) throw new Error(`External reference found: ${external.join(', ')}`);
 
   await mkdir(DIST, { recursive: true });
-  await writeFile(join(DIST, 'prototype.html'), html);
+
+  /* Write to a temporary file, then rename over the target.
+     writeFile truncates first and then streams ~360 KB in. Anyone reading the
+     file during that window — tests/serve.mjs does a fresh readFile on every
+     request, and `npm run watch` rebuilds while a browser tab is open — gets a
+     TRUNCATED bundle. It parses, React mounts and the screen paints, but the
+     tail of the IIFE never runs, so the delegated click listener is never
+     registered: every button on screen is dead, with nothing in the console.
+     Three separate "the CTAs stopped working" reports had exactly that shape
+     and none reproduced afterwards, because the next read got a whole file.
+     rename() is atomic on the same filesystem, so a reader sees either the
+     previous complete build or the new one, never a half of either. */
+  const target = join(DIST, 'prototype.html');
+  const tmp = join(DIST, `.prototype.html.${process.pid}.tmp`);
+  await writeFile(tmp, html);
+  await rename(tmp, target);
 
   const kb = (Buffer.byteLength(html) / 1024).toFixed(0);
   console.log(`built dist/prototype.html — ${kb} KB`);

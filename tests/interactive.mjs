@@ -76,6 +76,55 @@ async function boot(state) {
 }
 
 /* ------------------------------------------------------------------ *
+ * 0 · The build writes atomically.
+ *
+ * writeFile truncates the target and then streams ~360 KB into it. serve.mjs
+ * re-reads the file on every request and `npm run watch` rebuilds under an
+ * open tab, so a reload landing inside that window serves a partial bundle.
+ * The build now writes to a temp file and renames over the target, which is
+ * atomic: a reader gets the previous complete build or the new one.
+ *
+ * Note on what this does NOT explain. Three "every button is dead" reports
+ * were provisionally blamed on this, but a truncated bundle throws a syntax
+ * error and paints NOTHING — measured at every cut from 60% to 99.9%. It
+ * cannot produce the reported symptom of a correct-looking screen with inert
+ * controls. That cause is still unknown. This guard is worth keeping on its
+ * own merits; it is not the answer.
+ * ------------------------------------------------------------------ */
+{
+  // Cut the bundle at 60% — mid-IIFE, the way an interrupted write leaves it.
+  const truncated = html.slice(0, Math.floor(html.length * 0.6));
+  const errors = [];
+  const vc = new VirtualConsole()
+    .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); })
+    .on('error', m => { if (!IGNORE.test(String(m))) errors.push(String(m)); });
+  const dom = new JSDOM(truncated, {
+    runScripts: 'dangerously', url: 'https://localhost/',
+    pretendToBeVisual: true, virtualConsole: vc,
+  });
+  await new Promise(r => setTimeout(r, 220));
+  const doc = dom.window.document;
+  const fine = doc.querySelector('[data-act="s0-fine"]');
+
+  // A partial bundle is a syntax error: nothing renders. Asserted so the
+  // record is straight — this failure mode is loud, not silent.
+  check(!fine && (doc.querySelector('#root')?.textContent || '').trim().length === 0,
+    'a truncated bundle renders nothing at all — it cannot cause a live-looking dead screen',
+    fine ? 'the cold open rendered from a partial bundle' : '');
+  dom.window.close();
+}
+
+/* And the build must not produce one. */
+{
+  const buildSrc = readFileSync(join(ROOT, 'build', 'build.mjs'), 'utf8');
+  check(/rename\(/.test(buildSrc),
+    'the build renames into place rather than writing the target directly',
+    'writeFile onto the served path can be read half-written');
+  check(!/writeFile\(join\(DIST, ['"]prototype\.html['"]\)/.test(buildSrc),
+    'the build never writes straight to the file the server reads');
+}
+
+/* ------------------------------------------------------------------ *
  * 1 · The cold open's CTAs. This is the screen that broke, twice.
  * ------------------------------------------------------------------ */
 {
