@@ -43,8 +43,12 @@ const toUrl = p => `file:///${p.split('\\').join('/')}`;
 const SHOTS = [
   ['driver-cold-open', { persona: 'driver', screen: 's0' }],
   ['driver-notes-on', { persona: 'driver', screen: 's0', notes: true }],
+  ['driver-glass', { persona: 'driver', screen: 's0', scenario: 'glass' }],
   ['driver-theft', { persona: 'driver', screen: 's0', scenario: 'theft' }],
-  ['driver-emg', { persona:'driver', screen:'emg', scenario:'collision' }],
+  // emgFrom is what the 112 screen's Back control points at. A deep link
+  // that omits it renders the screen without a back bar, which is correct in
+  // the app and wrong for a screenshot meant to show the finished screen.
+  ['driver-emg', { persona:'driver', screen:'emg', scenario:'collision', emgFrom:'s0' }],
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
   ['fleet', { persona: 'fleet' }],
   ['system', { persona: 'system' }],

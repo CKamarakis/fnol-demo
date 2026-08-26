@@ -159,7 +159,7 @@
 }
 .emg-rail .emg-btn:hover{filter:brightness(1.1)}
 .emg-rail .emg-btn > span{display:flex;align-items:center;justify-content:center;flex:none;line-height:0}
-.emg-rail .emg-btn svg{display:block;width:19px;height:19px}
+.emg-rail .emg-btn svg{display:block}
 .emg-rail .emg-txt{font-size:12px;color:#b8341c;line-height:1.3;font-weight:600}
 
 /* any icon inside a button is a flex item, never a baseline-aligned inline box */
@@ -194,11 +194,11 @@
 
 /* language dropdown */
 .lang-wrap{position:relative;display:inline-flex;align-items:center;flex:none}
-.lang-wrap .lang-chev{position:absolute;right:9px;pointer-events:none;color:var(--ink-3);display:flex}
-.lang-wrap .lang-chev svg{width:14px;height:14px}
+.lang-wrap .lang-chev{position:absolute;right:6px;pointer-events:none;color:var(--ink-3);display:flex}
+.lang-wrap .lang-chev svg{width:12px;height:12px}
 .lang-sel{
   appearance:none;-webkit-appearance:none;
-  min-height:38px;padding:7px 30px 7px 12px;
+  min-height:32px;padding:5px 21px 5px 9px;
   background:var(--bg-raise-2);color:var(--ink);
   border:1px solid var(--line);border-radius:10px;
   font-family:var(--sans);font-size:13.5px;font-weight:650;cursor:pointer;
@@ -395,7 +395,49 @@
 .trep-foot{margin-top:8px;line-height:1.45;padding-top:8px;border-top:1px solid var(--line-soft);font-size:11.5px}
 
 /* the third action is a different KIND of choice, so it carries less weight */
-.btn.btn-quiet-sm{min-height:48px;font-size:15px;font-weight:600}
+/* The third action is a different KIND of choice — not an answer to "is
+   everyone okay?" — so it drops the button box and reads as plain text. It
+   keeps a 44px tap target: the visual weight shrinks, the thing you hit does
+   not. No underline: the two buttons above already mark this as the odd one
+   out, and an underline made it read as a footnote rather than a choice. */
+.btn.btn-quiet-sm{
+  min-height:44px;padding:10px 12px;
+  font-size:14px;font-weight:600;
+  background:none;border:none;box-shadow:none;
+  color:var(--ink-3);
+}
+.btn.btn-quiet-sm:hover{background:none;color:var(--ink-2)}
+
+
+/* Docked CTAs sit under the global button size. A phone-width primary at
+   17px was reading as a banner rather than a control, and on the 112 screen it
+   crowded the safety copy above it. 56px is the tap floor and it is respected;
+   below that the button stops being reliably hittable with adrenaline. */
+.dock .btn-primary,
+.dock .btn-secondary,
+.dock .btn-danger{min-height:var(--tap);padding:11px 16px;font-size:15.5px;font-weight:650}
+
+/* The handset is a companion to the label, not a second focal point. The
+   filled glyph carries at this size where the outline version did not — its
+   stroke was most of the mark and the middle stayed background-coloured. */
+.dock .btn-danger svg,
+.emg-rail .emg-btn svg{width:17px;height:17px}
+.dock .btn-danger{gap:9px}
+
+/* S0 kicker — the system's claim, sized well under the headline it labels.
+   It states provenance, so the headline underneath can name only the damage. */
+.s0-kicker{
+  font-family:var(--mono);font-size:11px;font-weight:600;
+  text-transform:uppercase;letter-spacing:.09em;
+  color:var(--ink-3);
+}
+
+/* Kicker and language switch share one row, so the top of the screen carries
+   information rather than a band of empty space above the headline. */
+.s0-top{
+  display:flex;align-items:center;justify-content:space-between;
+  gap:10px;margin-bottom:7px;
+}
 
 /* S0 headline meta — address and timestamp, each behind its own icon */
 .s0-meta{display:flex;flex-direction:column;gap:6px;margin-top:9px}

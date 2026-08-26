@@ -88,13 +88,23 @@ export const ACTIONS = {
     startTimerIfNeeded();
     Store.patchDraft({injured:true});
     // The very next screen is 112. No data collection before it.
-    Store.set({screen:"emg"});
+    Store.set({screen:"emg", emgFrom:"s0"});
     logAdd({m:"SYS",p:"safety route",s:"—",sq:true,ms:0,
       meta:"injury=yes → emergency screen served <em>before</em> any field collection. We never ask a claims question ahead of a safety one."});
   },
   "s0-dismiss": () => Store.set({screen:"dismiss"}),
   "back-s0": () => Store.set({screen:"s0"}),
-  "nav-back": () => Store.back(),
+  /* Back from 112 is a mistap correction, not just navigation: it clears the
+     injury flag. Worth a log line, because a viewer watching the System pane
+     should see that the flag went back down rather than silently persisting. */
+  "nav-back": () => {
+    const leavingSafety = Store.s.screen === "emg";
+    Store.back();
+    if(leavingSafety){
+      logAdd({m:"SYS",p:"safety route",s:"—",sq:true,ms:0,
+        meta:"driver went back from the emergency screen — injury flag cleared. Nothing entered was lost."});
+    }
+  },
   "dismiss-reason": v => {
     FakeApi.dismissFalsePositive(Store.s.scenario, v);
     toast("Dismissed. No claim was created.","ok",3400);
@@ -177,7 +187,7 @@ export const ACTIONS = {
     const yes = v==="yes";
     Store.patchDraft({injured:yes});
     if(yes && Store.s.screen==="s1"){
-      Store.set({screen:"emg"});
+      Store.set({screen:"emg", emgFrom:"s1"});
       logAdd({m:"SYS",p:"safety route",s:"—",sq:true,ms:0,
         meta:"injury flipped to yes mid-form → emergency screen interrupts immediately"});
     }

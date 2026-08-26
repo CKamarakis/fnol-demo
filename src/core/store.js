@@ -60,6 +60,7 @@ export const Store = {
     fail:{ tpa:false, offline:false, coverage:false },
     screen:"s0",                   // driver flow position
     navStack:[],                   // where the driver came from — every step is reversible
+    emgFrom:null,                  // which screen routed to 112, so a mistap returns there
     editing:null,                  // which pre-filled row is open for correction
     subScreen:null,
     draft:freshDraft("collision"),
@@ -106,6 +107,18 @@ export const Store = {
     Object.assign(this.s,patch); this.save(); this.emit();
   },
   back(){
+    // 112 is transient: it pushed nothing, so it pops nothing. Back from it
+    // returns to whichever screen routed there and clears the answer that did
+    // — going back from the safety route means "no one is hurt after all",
+    // and carrying a wrong injury flag into the six questions is worse than
+    // the mistap was.
+    if(TRANSIENT.includes(this.s.screen)){
+      const from=this.s.emgFrom;
+      if(!from) return;
+      this.s.draft.injured=false;
+      this.set({screen:from, emgFrom:null, __noHist:true});
+      return;
+    }
     const st=[...this.s.navStack];
     const prev=st.pop();
     if(prev==null) return;

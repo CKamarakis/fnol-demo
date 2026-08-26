@@ -38,7 +38,7 @@ export const STR = {
   en:{
     lang:"English", detected:"We detected an incident", ok:"Is everyone okay?",
     fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident — report something else",
-    already:"What the truck reported", today:"today",
+    already:"Reported information", today:"today",
     call112:"Call 112", emgCta:"Emergency 112", emgTitle:"Safety first", emgSub:"Nothing about the claim matters yet.",
     emgBody:"If anyone is injured, call the emergency number now. This report will wait for you — nothing you have entered is lost.",
     emgCalled:"I've called — continue", emgNoNeed:"No ambulance needed — continue",
@@ -97,7 +97,10 @@ export const SCENARIOS = {
       impact:"no alert fired · below every Mapon threshold",
       inferred:"glass",
     },
-    headline:"Windscreen damage detected",
+    /* The headline splits: a kicker naming what the system did, then the
+       subject it did it to. "Detected" is the system's claim and stays small;
+       the damage is what the driver needs to read first. */
+    kicker:"Detected", headline:"Windscreen damage",
     perishable:["photos"],
     note:"Single-vehicle glass. No EAS — there is no other party to agree facts with. Eight fields, two screens, done.",
   },
@@ -109,7 +112,7 @@ export const SCENARIOS = {
       ...fromMapon(MAPON_FIXTURES.collision),
       inferred:"collision",
     },
-    headline:"We detected an incident",
+    kicker:"Detected", headline:"Possible collision",
     perishable:["witness","otherPlate","photos","eas","police"],
     note:"The full shape. Roughly 41 capturable fields — six of them block. The other 35 are ordered by how fast they evaporate.",
   },
@@ -124,7 +127,7 @@ export const SCENARIOS = {
       clip:"unavailable — unit offline",
       inferred:"theft",
     },
-    headline:"Vehicle telemetry lost",
+    kicker:"Detected", headline:"Vehicle telemetry lost",
     perishable:["police","photos"],
     note:"Theft inverts the ordering. No damage photos exist. The police reference is promoted to near-blocking because no German insurer will progress a theft claim without one, and location falls back to the last telematics ping.",
   },

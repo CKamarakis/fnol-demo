@@ -64,8 +64,10 @@ export function langSelect(cur) {
   return (
     <div className="lang-wrap">
       <select className="lang-sel" aria-label="Language" data-act="set-lang-sel" defaultValue={cur}>
+        {/* Two letters only — "En", "De". The full language name doubled the
+            control's width to say what the code already says. */}
         {Object.keys(STR).map(k => (
-          <option key={k} value={k}>{`${k.toUpperCase()} · ${STR[k].lang}`}</option>
+          <option key={k} value={k}>{k[0].toUpperCase() + k.slice(1)}</option>
         ))}
       </select>
       <span className="lang-chev" dangerouslySetInnerHTML={{ __html: I.chevD }} />
@@ -76,10 +78,15 @@ export function langSelect(cur) {
 /**
  * Back bar — a mistap must always be correctable.
  *
- * Hidden on the cold open, which has nothing behind it, and on TRANSIENT
- * screens, which the driver passes through rather than visits. The 112 screen
- * is the one that matters: a Back button above a safety instruction invites
- * the driver to leave it.
+ * Hidden on the cold open, which has nothing behind it. TRANSIENT screens
+ * push nothing onto the stack, so 112 names its own origin (`emgFrom`)
+ * instead: the driver who tapped "someone is hurt" by accident goes back the
+ * same way they go back anywhere else, rather than learning a second gesture
+ * on the one screen where they are least able to.
+ *
+ * The safety instruction still owns the screen. Back is a chevron in a bar
+ * above it, the same size and weight as on every other screen — it does not
+ * compete with 112, which is the full-width primary in the dock.
  */
 export const SCREEN_TITLES = {
   s0: 'Incident', s0det: 'Details', dismiss: 'Dismiss', emg: 'Emergency',
@@ -88,15 +95,21 @@ export const SCREEN_TITLES = {
   police: 'Police', cargo: 'Cargo', otherins: 'Their insurer', done: 'Finished',
 };
 
-/** s0 has nothing behind it; TRANSIENT screens are passed through, not visited. */
-export const NO_BACK = ['s0', ...TRANSIENT];
+/** Only the cold open has nothing behind it. */
+export const NO_BACK = ['s0'];
 
 export function navBar() {
   const s = Store.s;
   if (NO_BACK.includes(s.screen)) return null;
-  if (!s.navStack.length) return null;
 
-  const label = SCREEN_TITLES[s.navStack[s.navStack.length - 1]] || 'Back';
+  // 112 is passed through, not visited, so it pushes nothing and pops nothing.
+  // Its own back target is the screen that routed to it.
+  const prev = TRANSIENT.includes(s.screen)
+    ? s.emgFrom
+    : s.navStack[s.navStack.length - 1];
+  if (!prev) return null;
+
+  const label = SCREEN_TITLES[prev] || 'Back';
 
   return (
     <div className="nav-bar">
@@ -114,7 +127,7 @@ export function emergencyRail() {
   return (
     <div className="emg-rail dn-anchor">
       <button className="emg-btn" data-act="call112">
-        <span dangerouslySetInnerHTML={{ __html: I.phone }} />
+        <span dangerouslySetInnerHTML={{ __html: I.phoneSolid }} />
         {T('emgCta')}
       </button>
     </div>

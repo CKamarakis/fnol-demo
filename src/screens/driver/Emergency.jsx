@@ -35,14 +35,14 @@ export function scrEmergency() {
 
           {dn(
             'The rule this screen enforces',
-            '<b>We never ask a claims question ahead of a safety one.</b> Answering “someone is hurt” routes here <i>before</i> any field is collected — not to a form with an injury section near the top. There is no Skip on this screen and no field on it. The claim is still open behind it; nothing entered is lost.',
+            '<b>We never ask a claims question ahead of a safety one.</b> Answering “someone is hurt” routes here <i>before</i> any field is collected — not to a form with an injury section near the top. There is no Skip on this screen and no field on it. The claim is still open behind it; nothing entered is lost. A mistap still has to be correctable, so Back is where it is on every other screen — a chevron in the bar above. It is deliberately not a second gesture invented for this screen alone, and going back clears the injury answer rather than carrying a wrong one forward. 112 stays the only full-width control.',
           )}
         </div>
       </div>
 
       <div className="dock">
-        <button className="btn btn-danger btn-lg" data-act="call112">
-          <span dangerouslySetInnerHTML={{ __html: I.phone }} />
+        <button className="btn btn-danger" data-act="call112">
+          <span dangerouslySetInnerHTML={{ __html: I.phoneSolid }} />
           {T('call112')}
         </button>
         <button className="btn btn-secondary" data-act="emg-continue">{T('emgCalled')}</button>

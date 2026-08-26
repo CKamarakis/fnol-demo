@@ -13,6 +13,11 @@ export const rnd = (a,b)=> Math.floor(a+Math.random()*(b-a+1));
 /* icons — every graphic in this file is hand-authored inline SVG. No image requests. */
 export const I = {
   phone:  '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2 19.8 19.8 0 0 1-8.6-3.1 19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 4.2 2 2 0 0 1 4.1 2h3a2 2 0 0 1 2 1.7c.1 1 .4 1.9.7 2.8a2 2 0 0 1-.5 2.1L8.1 9.9a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 2.1-.4c.9.3 1.8.6 2.8.7a2 2 0 0 1 1.7 2z"/></svg>',
+  /* Filled handset, for the emergency buttons only. The outline version
+     reads as a thin ring against coral — at 18px the stroke is most of the
+     glyph and the middle stays background-coloured. Solid white holds its
+     shape at the size the button actually uses. */
+  phoneSolid: '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6.6 2h-2A2.6 2.6 0 0 0 2 4.7C2 14.3 9.7 22 19.3 22a2.6 2.6 0 0 0 2.7-2.6v-2a1.6 1.6 0 0 0-1.3-1.6l-3.4-.7a1.6 1.6 0 0 0-1.6.7l-1 1.5a14.6 14.6 0 0 1-6-6l1.5-1a1.6 1.6 0 0 0 .7-1.6l-.7-3.4A1.6 1.6 0 0 0 8.6 2z"/></svg>',
   chk:    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
   chkS:   '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>',
   chev:   '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg>',

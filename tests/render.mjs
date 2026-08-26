@@ -208,8 +208,32 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   await wait();
   check(/112/.test(t2()), 'injury routes straight to the 112 screen');
   check(!/plate|witness|photograph/i.test(t2()), 'no claims question appears before 112');
-  check(!d2.querySelector('#root [data-act="nav-back"]'),
-    'no Back button above the safety instruction');
+  // Back is the same gesture here as everywhere else — a mistap on "someone
+  // is hurt" must not require learning a control invented for this screen.
+  const emgBack = d2.querySelector('#root [data-act="nav-back"]');
+  check(!!emgBack, 'the 112 screen offers the standard Back control');
+  check(!d2.querySelector('#root .dock [data-act="emg-mistap"]'),
+    'no second, screen-specific escape in the dock');
+  check(/incident/i.test(emgBack.textContent),
+    'Back from 112 names the screen that routed there',
+    'label was ' + emgBack.textContent);
+
+  // Going back from the safety route means "no one is hurt after all". The
+  // flag has to come back down — carrying a wrong injury answer into the six
+  // questions is a worse outcome than the mistap was.
+  hit('nav-back');
+  await wait();
+  check(/is everyone okay/i.test(t2()), 'Back from 112 returns to the cold open');
+  check(hit('s0-fine'), 'the cold open is fully usable again after going back');
+  await wait();
+  check(!/ambulance|emergency service/i.test(t2()),
+    'the injury flag was cleared, so the six questions do not ask about it');
+
+  // Back to the safety route for the rest of the walk.
+  hit('nav-back'); await wait();
+  check(hit('s0-hurt'), 'can route to 112 again after going back');
+  await wait();
+
   check(hit('emg-continue'), 'can continue past the emergency screen');
   await wait();
 
@@ -462,8 +486,12 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   const freeTextInjury = inputs.some(i =>
     /injur|wound|diagnos|medical/i.test(i.getAttribute('placeholder') || i.id || ''));
   check(!freeTextInjury, 'no free-text field collects injury detail — Art. 9');
-  check(/deliberately not collected/i.test(t()),
-    'the refusal is visible, not silent — a missing field reads as an oversight');
+  // The refusal is still stated, but as a design note rather than a greyed-out
+  // input: a driver at the roadside gains nothing from a disabled field, and
+  // the argument is for the reviewer. The rule itself is unchanged — the
+  // free-text check above is what enforces it.
+  check(/art\.?\s*9|health data/i.test(t()),
+    'the refusal is stated, not silent — a missing field reads as an oversight');
 
   // --- no fault attribution anywhere in the driver flow ---
   hit('set-injured', 'no'); await wait();
