@@ -34,9 +34,9 @@ export function freshDraft(scenId){
     corrected:    {},   // field -> {from, to, at}
     injured:      null,             // true | false — the one real question
     drivable:     null,             // true | false — the VEHICLE; drives the credit-hire clock
-    driverFit:    null,             // true | false — the PERSON; fleet welfare, never blocking
     // --- injury detail: presence + band + emergency attended. NOT description. ---
-    injurySeverity:null, injuryEmergency:null, injuryCount:null,
+    // ACORD 2 INJURED columns: severity band, who (PED/INS VEH/OTH VEH), help there.
+    injurySeverity:null, injuryEmergency:null, injuredParties:[],
     // --- perishable gap-fill ---
     witnessPresent:null, witnessName:"", witnessPhone:"",
     otherPlate:"", otherMake:"", otherDriver:"", otherPhone:"", otherInsurer:"", otherPolicy:"",

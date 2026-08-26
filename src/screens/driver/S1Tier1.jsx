@@ -22,14 +22,15 @@ const ART9_NOTE =
   "basis, from the person it belongs to. <b style='color:#546b62'>Presence + severity band + " +
   'emergency attended</b> is everything the reserve and the notification actually need.';
 
-const DRIVER_FIT_NOTE =
-  '&ldquo;Can the truck be driven&rdquo; and &ldquo;can <i>you</i> drive it&rdquo; are different ' +
-  'facts, and the old single question conflated them. A roadworthy vehicle with a shaken driver is ' +
-  'common, and the honest answer changes who acts: the vehicle answer drives the reserve and the ' +
-  '<b>credit-hire clock</b>; the driver answer is a <b>fleet welfare</b> call &mdash; a relief ' +
-  'driver, a rest, a lift home. So this one is the <b>seventh question and it does not block</b>. ' +
-  'Six fields block submission and only six; adding a welfare question to that list would hold a ' +
-  'claim open for something no insurer acts on.';
+const WHO_HURT_NOTE =
+  'The standard was checked rather than guessed. <b>ACORD 2</b>&rsquo;s INJURED section is a table ' +
+  'with one row per person, and its columns are <b>PED / INS VEH / OTH VEH</b> &mdash; which ' +
+  'vehicle each injured party was in, or whether they were on foot. That is not decoration: it ' +
+  'routes the claim. An injured third party is a <b>liability notification</b>, an injured driver ' +
+  'is an <b>employer&rsquo;s liability</b> matter, and a pedestrian is neither. A single ' +
+  '&ldquo;someone is hurt&rdquo; boolean cannot express any of it, and the handler has to phone ' +
+  'back to ask. The same check settled the other direction: <b>no ACORD field asks whether the ' +
+  'driver is fit to keep driving</b>, so the question that asked it has gone.';
 
 const MONEY_FIELD_NOTE =
   '&ldquo;Can you drive it&rdquo; answered at minute 2 instead of hour 6 is the single ' +
@@ -105,6 +106,16 @@ const SEVERITY_OPTIONS = [
   ['walking', 'Walking and talking'],
   ['needs_help', 'Needs help but conscious'],
   ['serious', 'Serious'],
+];
+
+/* ACORD 2's INJURED table columns, in driver language. PED / INS VEH / OTH VEH
+   on the form; "someone on foot" / "me" / "someone in the other vehicle" here.
+   Still no names and no diagnoses — which party, not who or what. */
+const WHO_HURT_OPTIONS = [
+  ['driver', 'Me'],
+  ['our_vehicle', 'Someone else in my vehicle'],
+  ['other_vehicle', 'Someone in the other vehicle'],
+  ['pedestrian', 'Someone on foot or on a bike'],
 ];
 
 /**
@@ -185,6 +196,19 @@ function InjuryDetail({ d }) {
         <Choice key={v} act="set-severity" value={v} label={l} selected={d.injurySeverity === v} />
       ))}
 
+      {/* ACORD 2's INJURED section is a table with one row per person, and its
+          columns are PED / INS VEH / OTH VEH — which vehicle each injured
+          party was in, or whether they were on foot. It routes the claim: an
+          injured third party is a liability notification, an injured driver is
+          an employer's-liability matter, and a pedestrian is neither. Asked as
+          a multi-select because more than one can be true. */}
+      <div className="sp12" />
+      <p className="lbl">Who is hurt? Tap all that apply.</p>
+      {WHO_HURT_OPTIONS.map(([v, l]) => (
+        <Choice key={v} act="toggle-injured-party" value={v} label={l}
+          selected={(d.injuredParties || []).includes(v)} />
+      ))}
+
       <div className="sp12" />
       <p className="lbl">Are emergency services there?</p>
       <div className="grid2">
@@ -196,6 +220,7 @@ function InjuryDetail({ d }) {
           at the roadside gains nothing from a disabled input; the argument is
           for the reviewer, and it belongs where the other arguments live.
           Presence + severity + emergency attended is the whole collection. */}
+      {dn('Checked against the standard, not guessed', WHO_HURT_NOTE)}
       {dn('The injury field we refuse to have', ART9_NOTE)}
     </>
   );
@@ -385,22 +410,6 @@ export function scrTier1() {
 
           {dn('The money field', MONEY_FIELD_NOTE)}
 
-          {/* 7 — about the person, not the truck. Deliberately does NOT block:
-              a driver too shaken to drive a roadworthy truck is a real and
-              common situation, but it is a fleet welfare matter, not something
-              an insurer should hold a claim open for. */}
-          <div className="sp20" />
-          <div className="dn-anchor">
-            <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-              7 · Do you feel able to drive?
-            </p>
-            <div className="grid2">
-              <Choice act="set-driver-fit" value="yes" label="Yes" selected={d.driverFit === true} />
-              <Choice act="set-driver-fit" value="no" label="No" selected={d.driverFit === false} />
-            </div>
-          </div>
-
-          {dn('Two questions, because they are two facts', DRIVER_FIT_NOTE)}
           <div className="sp28" />
         </div>
       </div>

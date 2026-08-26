@@ -139,12 +139,19 @@ Product decisions with reasons. Do not change these without raising it first.
 - **Six fields block submission, and only six**: vehicle, date/time, location,
   incident type, anyone injured, vehicle drivable. Everything else is chased
   asynchronously. An abandoned FNOL is worse than an incomplete one.
-- **The vehicle and the driver are two questions.** "Can the vehicle still be
-  driven?" is the money field — it drives the reserve and the credit-hire
-  clock. "Do you feel able to drive?" is about the person, and it is asked
-  seventh and **does not block**: a shaken driver in a roadworthy truck is a
-  fleet welfare call — a relief driver, a rest, a lift home — and no insurer
-  acts on it. Conflating them, as the old single question did, loses both facts.
+- **A field earns its place by being on the standard, not by sounding useful.**
+  "Do you feel able to drive?" was added, then removed: ACORD 2 asks for driver
+  identity and for injuries, and **no field on the form asks whether the driver
+  is fit to keep driving**. It was removed rather than made optional — an
+  unused field is still a field a driver reads at the roadside. Question 6
+  stays, asking about the *vehicle* ("Can the vehicle still be driven?"), which
+  is ACORD 3 · 38 and drives the reserve and the credit-hire clock.
+- **Injury records which party, never who.** ACORD 2's INJURED section is a
+  table whose columns are PED / INS VEH / OTH VEH. That is the fact the flow
+  collects — driver, our passenger, other vehicle, pedestrian — because it
+  decides whether the claim is also a **liability notification**. Presence
+  alone cannot say so and forces the handler to phone back. Names, ages and
+  diagnoses stay uncollected: Art. 9 is unchanged by this.
 - **Ordered by perishability, not logical grouping.** Witness contact and the
   other party's plate are gone within the hour; their insurer can be chased
   next week. This ordering is the organising principle of the whole flow.

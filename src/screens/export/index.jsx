@@ -5,6 +5,12 @@ import { IMPACT_LABEL } from '../../components/svg.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
 
+/* ACORD 2 INJURED columns, spelled out for a handler reading the export. */
+const WHO_HURT_LABELS = {
+  driver:"the driver", our_vehicle:"a passenger in our vehicle",
+  other_vehicle:"someone in the other vehicle", pedestrian:"a pedestrian or cyclist",
+};
+
 /* ==================================================================
    §10 EAS EXPORT — the closing move
    ================================================================== */
@@ -33,16 +39,14 @@ export function buildIncidentJson(){
       // very expensive to retrofit.
       association_id:"drv_assoc_"+(inc?inc.id.slice(4,10):"xxxxxx"),
       display_name:t.driver, purpose:"claims_handling",
-      // Self-reported fitness to continue driving. On the driver, not the
-      // vehicle: it routes to fleet welfare, and no underwriting decision
-      // reads it. Not a health assessment — see the Art. 9 note on injuries.
-      fit_to_drive: d.driverFit,
-      fit_to_drive_routing: d.driverFit===false ? "fleet_welfare" : null,
       retention:"P7Y from claim closure", linked_profile:"external_ref_only"
     },
     injuries: d.injured===null ? null : {
       present: d.injured,
       severity_band: d.injurySeverity,
+      // ACORD 2 INJURED columns PED / INS VEH / OTH VEH. Which party, never who:
+      // it decides whether this is also a liability notification.
+      parties: d.injuredParties || [],
       emergency_services_attended: d.injuryEmergency,
       description: null,
       description_omitted_reason: "GDPR Art. 9 — special category health data not collected at intake"
@@ -180,9 +184,13 @@ export function renderExport(){
     el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Injuries"),
       el("div",{style:"margin-top:3px"}, d.injured===true ? ("yes · band: "+(d.injurySeverity||"—")+" · emergency services "+(d.injuryEmergency?"attended":"not attended")) : d.injured===false ? "none reported" : el("i",{style:"color:#546b62"},"—")),
       d.injured===true ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Injury description deliberately not collected — GDPR Art. 9. To be gathered by the adjuster under a proper basis.") : null),
-    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Driver fit to drive"),
-      el("div",{style:"margin-top:3px"}, d.driverFit===true ? "yes" : d.driverFit===false ? "no · routed to fleet welfare" : el("i",{style:"color:#546b62"},"not answered")),
-      d.driverFit===false ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Self-reported. A welfare routing, not an underwriting input — and never a blocking field.") : null)
+    el("div",{}, el("div",{style:"font-size:8.5px;letter-spacing:.07em;text-transform:uppercase;color:#64786f;font-weight:700"},"Who was hurt"),
+      el("div",{style:"margin-top:3px"}, d.injured===true
+        ? ((d.injuredParties||[]).length ? (d.injuredParties||[]).map(p=>WHO_HURT_LABELS[p]||p).join(" · ") : el("i",{style:"color:#546b62"},"not yet stated"))
+        : d.injured===false ? "no one reported" : el("i",{style:"color:#546b62"},"—")),
+      (d.injuredParties||[]).includes("other_vehicle") || (d.injuredParties||[]).includes("pedestrian")
+        ? el("div",{style:"margin-top:3px;font-size:8.5px;color:#7a8590;font-style:italic"},"Third-party injury — also a liability notification, not only an own-damage claim.")
+        : null)
   ));
 
   // signatures

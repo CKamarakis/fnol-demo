@@ -119,12 +119,12 @@ async function boot(state) {
   check(!/still to check/i.test(app.text()),
     'six-field rule: nothing else is outstanding once six are answered');
 
-  // Question 7 (driver fitness) is welfare, not underwriting: present, and
-  // deliberately not part of the gate.
-  check(!!app.doc.querySelector('#root [data-act="set-driver-fit"]'),
-    'six-field rule: the driver-fitness question is asked');
-  check(!!app.submit(),
-    'six-field rule: driver fitness does NOT block — it is a welfare answer');
+  // Driver fitness is NOT an FNOL field. ACORD 2 asks for driver identity and
+  // for injuries; no field on the form asks whether the driver is able to keep
+  // driving. The question that asked it has been removed rather than made
+  // optional — an unused field is still a field the driver has to read.
+  check(!app.doc.querySelector('#root [data-act="set-driver-fit"]'),
+    'the form asks nothing the standard does not: driver fitness is gone');
 
   app.close();
 }
@@ -286,6 +286,48 @@ async function boot(state) {
 }
 
 /* ================================================================== *
+ * RULE 11 · The injury section collects what ACORD 2 actually asks for.
+ *
+ * The form's INJURED section is a table with one row per person, and its
+ * columns are PED / INS VEH / OTH VEH — which party each injured person
+ * was. That routes the claim: a hurt third party makes this a liability
+ * notification as well as an own-damage claim, and a single "someone is
+ * hurt" boolean cannot say so. The same check found no field anywhere on
+ * ACORD 2 asking whether the driver is fit to keep driving.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+  await app.click('#root [data-act="set-injured"][data-v="yes"]');
+
+  const parties = [...app.doc.querySelectorAll('#root [data-act="toggle-injured-party"]')]
+    .map(n => n.getAttribute('data-v'));
+  for (const col of ['driver', 'our_vehicle', 'other_vehicle', 'pedestrian']) {
+    check(parties.includes(col), `injury: the "${col}" party can be reported`);
+  }
+
+  // Multi-select: an injured driver AND an injured third party is one of the
+  // commonest shapes a motor claim takes.
+  await app.click('#root [data-act="toggle-injured-party"][data-v="driver"]');
+  await app.click('#root [data-act="toggle-injured-party"][data-v="other_vehicle"]');
+  const on = [...app.doc.querySelectorAll('#root [data-act="toggle-injured-party"][aria-pressed="true"]')]
+    .map(n => n.getAttribute('data-v'));
+  check(on.length === 2, 'injury: more than one party can be hurt at once', `selected: ${on.join(', ')}`);
+
+  // Tapping again clears it — every answer stays correctable.
+  await app.click('#root [data-act="toggle-injured-party"][data-v="driver"]');
+  const after = [...app.doc.querySelectorAll('#root [data-act="toggle-injured-party"][aria-pressed="true"]')]
+    .map(n => n.getAttribute('data-v'));
+  check(after.length === 1 && after[0] === 'other_vehicle',
+    'injury: a party can be un-selected', `selected: ${after.join(', ')}`);
+
+  // Still no names and no diagnoses: which party, never who or what.
+  const freeText = [...app.doc.querySelectorAll('#root input, #root textarea')]
+    .some(i => /injur|wound|diagnos|medical|name/i.test(i.getAttribute('placeholder') || i.id || ''));
+  check(!freeText, 'injury: naming an injured person is still impossible — Art. 9 holds');
+  app.close();
+}
+
+/* ================================================================== *
  * RULE 10 · The six questions open with nothing answered.
  *
  * The counter exists to say how much is left, and it can only be honest if
@@ -400,7 +442,6 @@ async function boot(state) {
     ['set-injured', 'no', 'No one'],
     ['set-injured', 'yes', 'Yes'],
     ['set-drivable', 'no', 'vehicle not drivable'],
-    ['set-driver-fit', 'no', 'driver not fit'],
   ]) {
     const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
     const btn = app.doc.querySelector(`#root [data-act="${act}"][data-v="${value}"]`);

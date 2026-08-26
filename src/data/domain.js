@@ -207,6 +207,7 @@ export const ACORD_MAP = [
   {f:"driver.name",                      a:"ACORD 3 · 33",    e:"Driver name"},
   {f:"driver.licence_number",            a:"ACORD 3 · 34",    e:"Driver's licence number"},
   {f:"injuries[].severity_band",         a:"ACORD 4 · 43",    e:"Injury description (band only — see Art. 9 note)"},
+  {f:"injuries[].parties",               a:"ACORD 4 · PED / INS VEH / OTH VEH", e:"Which party was hurt. Decides whether this is also a liability notification."},
   {f:"injuries[].emergency_attended",    a:"ACORD 4 · 45",    e:"Ambulance / emergency services attended"},
   {f:"third_parties[].vehicle.plate",    a:"ACORD 5 · 51",    e:"Other vehicle plate"},
   {f:"third_parties[].insurer_name",     a:"ACORD 5 · 55",    e:"Other party insurer"},

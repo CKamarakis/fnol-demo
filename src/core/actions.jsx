@@ -231,10 +231,15 @@ export const ACTIONS = {
     Store.patchDraft({injured:yes});
   },
   "set-severity":  v => Store.patchDraft({injurySeverity:v}),
+  /* Which party, not who. More than one can be true — an injured driver and an
+     injured third party is one of the commonest shapes a motor claim takes,
+     and they route to different places. */
+  "toggle-injured-party": v => {
+    const cur = Store.s.draft.injuredParties || [];
+    Store.patchDraft({injuredParties: cur.includes(v) ? cur.filter(x=>x!==v) : [...cur, v]});
+  },
   "set-emergency": v => Store.patchDraft({injuryEmergency:v==="yes"}),
   "set-drivable":  v => Store.patchDraft({drivable:v==="yes"}),
-  /* Welfare, not underwriting — recorded, never blocking. */
-  "set-driver-fit":v => Store.patchDraft({driverFit:v==="yes"}),
 
   "submit-tier1": async () => {
     const s=Store.s;
