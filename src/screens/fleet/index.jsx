@@ -49,7 +49,7 @@ export function fleetList(){
   box.append(el("div",{class:"fl-kpis"},
     kpi("Open incidents", String(open), "live", ""),
     kpi("Time to notification", avgTtn, "from detection to reference", parseFloat(avgTtn)<=90?"good":""),
-    kpi("Off road", String(offRoad), offRoad?"recovery dispatched":"none", offRoad?"warn":""),
+    kpi("Off road", String(offRoad), offRoad?"fleet notified":"none", offRoad?"warn":""),
     kpi("Awaiting TPA", String(queued), queued?"queued — driver unaffected":"all forwarded", queued?"warn":""),
     kpi("Coverage review", String(disputed), disputed?"human task raised":"none", disputed?"warn":"")
   ));
@@ -87,7 +87,10 @@ export function fleetList(){
           el("span",{class:"comp-bar"},el("i",{class:cls,style:"width:"+c.score+"%"})),
           el("span",{class:"mono",style:"font-size:12px",text:c.score+"%"}))),
       el("td",{},
-        r.drivable===false ? el("span",{class:"chip warn",text:"off road · ETA 45m"}) : el("span",{class:"tiny",text:"drivable"})),
+        /* "ETA 45m" was a promise this system cannot keep — an FNOL flow does
+           not run a recovery network and has no idea when anyone arrives. It
+           states the fact the driver reported and stops there. */
+        r.drivable===false ? el("span",{class:"chip warn",text:"off road"}) : el("span",{class:"tiny",text:"drivable"})),
       el("td",{},el("button",{class:"linkish","data-act":"open-export","data-v":r.id},"Export →"))
     ));
     if(r.coverage==="disputed"){
@@ -97,7 +100,7 @@ export function fleetList(){
           el("div",{},
             el("div",{style:"font-weight:700;font-size:13px;color:#b8341c",text:"Review task · underwriting queue · vehicle not on policy schedule at date of loss"}),
             el("p",{class:"tiny",style:"margin-top:5px;max-width:820px;line-height:1.5",
-              html:"The incident was <b style='color:var(--ink-2)'>accepted</b>. A reference was issued and recovery dispatched. The driver saw no difference and was told nothing at the roadside. <b style='color:var(--ink-2)'>Not rejected at intake</b> — GDPR Art. 22: an automated decision producing a legal or similarly significant effect on an individual requires human involvement and a right to contest. Operationally it is also the right call, because schedule data is stale far more often than drivers are dishonest."}))))));
+              html:"The incident was <b style='color:var(--ink-2)'>accepted</b>. A reference was issued and the fleet was notified. The driver saw no difference and was told nothing at the roadside. <b style='color:var(--ink-2)'>Not rejected at intake</b> — GDPR Art. 22: an automated decision producing a legal or similarly significant effect on an individual requires human involvement and a right to contest. Operationally it is also the right call, because schedule data is stale far more often than drivers are dishonest."}))))));
     }
   });
   t.append(tb);

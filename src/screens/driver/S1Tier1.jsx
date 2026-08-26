@@ -22,11 +22,6 @@ const ART9_NOTE =
   "basis, from the person it belongs to. <b style='color:#546b62'>Presence + severity band + " +
   'emergency attended</b> is everything the reserve and the notification actually need.';
 
-const VISIBLE_REFUSAL_NOTE =
-  'A missing field reads as an oversight. A <b>visible refusal</b> reads as a decision. This is ' +
-  'the same reason the no-fault omission is annotated rather than silent &mdash; restraint that ' +
-  'nobody notices buys you nothing in a review.';
-
 const MONEY_FIELD_NOTE =
   '&ldquo;Can you drive it&rdquo; answered at minute 2 instead of hour 6 is the single ' +
   'highest-value field in the form. It starts recovery, and it starts &mdash; or does not start ' +
@@ -188,18 +183,11 @@ function InjuryDetail({ d }) {
         <Choice act="set-emergency" value="no" label="Not yet" selected={d.injuryEmergency === false} />
       </div>
 
-      {/* The Art. 9 field — visibly greyed, reason inline. The restraint is the feature. */}
-      <div className="sp12" />
-      <div className="blocked-field dn-anchor">
-        <div className="bf-label">Description of the injuries</div>
-        <div className="bf-fake">Deliberately not collected here</div>
-        <div className="bf-why">
-          <span dangerouslySetInnerHTML={{ __html: I.warn }} />
-          <div dangerouslySetInnerHTML={{ __html: ART9_NOTE }} />
-        </div>
-      </div>
-
-      {dn('Why show a field you refuse to have', VISIBLE_REFUSAL_NOTE)}
+      {/* The Art. 9 refusal is a design note, not a greyed-out field. A driver
+          at the roadside gains nothing from a disabled input; the argument is
+          for the reviewer, and it belongs where the other arguments live.
+          Presence + severity + emergency attended is the whole collection. */}
+      {dn('The injury field we refuse to have', ART9_NOTE)}
     </>
   );
 }
@@ -375,23 +363,14 @@ export function scrTier1() {
             <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
               6 · Are you in a safe enough condition to drive?
             </p>
+            {/* Plain yes/no. The sub-label promised "we mark it off the road",
+                which is fleet-side language for a consequence the driver has no
+                stake in — and arranging recovery is the fleet's job, not this
+                system's. The answer is what matters; what it triggers belongs
+                on the fleet screen. */}
             <div className="grid2">
               <Choice act="set-drivable" value="yes" label="Yes" selected={d.drivable === true} />
-              <button
-                className="choice"
-                data-act="set-drivable"
-                data-v="no"
-                aria-pressed={String(d.drivable === false)}
-              >
-                <span
-                  className="cbox round"
-                  dangerouslySetInnerHTML={{ __html: d.drivable === false ? I.chkS : '' }}
-                />
-                <span>
-                  No
-                  <span className="choice-sub">We mark it off the road</span>
-                </span>
-              </button>
+              <Choice act="set-drivable" value="no" label="No" selected={d.drivable === false} />
             </div>
           </div>
 

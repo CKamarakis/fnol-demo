@@ -50,7 +50,7 @@ function TruckReport({ t }) {
         </div>
       ))}
 
-      <p className="tiny trep-foot">The vehicle sent this. We already have it.</p>
+      <p className="tiny trep-foot">Telemetry data</p>
     </div>
   );
 }
@@ -63,21 +63,16 @@ export function scrS0() {
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="scroll">
-        <div className="pad" style={{ paddingTop: '22px' }}>
-          {/* language switch — on screen one, never buried in settings */}
-          <div style={{
-            display: 'flex', justifyContent: 'space-between',
-            alignItems: 'center', gap: '10px',
-          }}>
-            <div className="chip plain" style={{ borderColor: 'var(--line)', gap: '7px' }}>
-              <span style={{ color: 'var(--warn)' }} dangerouslySetInnerHTML={{ __html: I.bolt }} />
-              Detected by the vehicle
-            </div>
+        <div className="pad" style={{ paddingTop: '14px' }}>
+          {/* The kicker shares the language switch's row. On its own the switch
+              left a band of empty screen above the headline, and the kicker is
+              short enough to sit beside it — the switch stays on screen one,
+              never buried in settings. */}
+          <div className="s0-top">
+            <div className="s0-kicker">{s.lang === 'en' ? sc.kicker : T('detected')}</div>
             {langSelect(s.lang)}
           </div>
-
-          <div className="sp20" />
-          <h1 className="h1">{s.lang === 'en' ? sc.headline : T('detected')}</h1>
+          {s.lang === 'en' && <h1 className="h1">{sc.headline}</h1>}
           <div className="s0-meta">
             <div className="s0-meta-row">
               <span className="s0-meta-ic" dangerouslySetInnerHTML={{ __html: I.pin }} />
