@@ -4,6 +4,7 @@ import { Store, freshDraft, logAdd } from './store.js';
 import { el } from './dom.jsx';
 import { clockT, rnd, toast, uuid } from './utils.js';
 import { gapItems } from '../screens/driver/GapShell.jsx';
+import { chatTurns } from '../screens/driver/Chat.jsx';
 
 /* ==================================================================
    §13 ACTIONS — one delegated listener for the whole app
@@ -171,7 +172,7 @@ export const ACTIONS = {
        screen at "5 still to check" — the same defect the counter was written to
        avoid, arriving from a different direction. The driver answers it on the
        screen that asks it. */
-    Store.set({screen:"s1"});
+    Store.set({screen:intakeScreen()});
   },
   "s0-hurt": () => {
     startTimerIfNeeded();
@@ -207,7 +208,35 @@ export const ACTIONS = {
     logAdd({m:"SYS",p:"tel:112",s:"—",sq:true,ms:0,meta:"emergency dialler invoked (simulated) — available on every screen, above the fold"});
     toast("Dialling 112, simulated.","err",3000);
   },
-  "emg-continue": () => Store.set({screen:"s1"}),
+  /* Back to wherever the driver was heading. Coming from the cold open that is
+     the mode choice; coming from the chat's own injury turn it is the chat,
+     which then asks who is hurt. The safety screen never decides the path. */
+  "emg-continue": () => Store.set({screen: Store.s.emgFrom==="s1chat" ? "s1chat" : intakeScreen(),
+    emgFrom:null}),
+
+  /* ---- driver: which way through the six ---- */
+  /* A presentation preference, not a claims field. Nothing downstream reads it
+     and no value it produces differs — see the note on the choice screen. */
+  "set-intake-mode": v => {
+    const mode = v==="chat" ? "chat" : "form";
+    startTimerIfNeeded();
+    Store.patchDraft({intakeMode:mode});
+    const patch = {screen: mode==="chat" ? "s1chat" : "s1", editing:null, subScreen:null};
+    /* Switching INTO the chat has to land on the first thing still unanswered.
+       A driver who filled three rows on the form and then asked for Roady is
+       not asking to be walked back through the three they already did — the
+       transcript shows those as settled and the open turn is the next real
+       question. Without this the turn index is whatever it was (0 on a first
+       switch), which reads as the app having thrown their answers away. */
+    if(mode==="chat"){
+      const turns = chatTurns();
+      let i = turns.findIndex(t => !t.answered);
+      if(i < 0) i = Math.max(0, turns.length-1);
+      patch.chatTurn = i;
+      patch.chatSeen = Math.max(Store.s.chatSeen, i);
+    }
+    Store.set(patch);
+  },
 
   /* ---- driver: Tier 1 ---- */
   /* Open a row for correction. Telematics is wrong often enough — GPS drift,
@@ -223,34 +252,72 @@ export const ACTIONS = {
   "cancel-edit": () => Store.set({editing:null}),
 
   "save-field": (v, node) => {
-    const input = document.querySelector('[data-editfield="'+v+'"]');
-    if(!input) return;
-    const next = input.value.trim();
     const d = Store.s.draft;
-    const key = {location:"location", time:"occurredAt", vehicle:"vehicle"}[v] || v;
-    if(next && next !== d[key]){
-      const from = d[key];
-      Store.patchDraft({
-        [key]: next,
-        corrected: {...d.corrected, [key]:{from, to:next, at:new Date().toISOString()}},
-        // a corrected value still needs confirming, so the driver sees their own edit
-        [key==="location"?"locationConfirmed":key==="occurredAt"?"timeConfirmed":"vehicleConfirmed"]: true,
-      });
+    const EDIT_KEYS = {location:"location", time:"occurredAt", vehicle:"vehicle", date:"occurredOn"};
+    const CONFIRMS  = {location:"locationConfirmed", occurredAt:"timeConfirmed",
+                       occurredOn:"timeConfirmed", vehicle:"vehicleConfirmed"};
+    /* A row may carry two inputs that belong to one fact — date and time are
+       the case. Both are read and both are recorded, because a driver
+       correcting one and leaving the other is the ordinary use: an incident
+       found at 00:20 keeps its time and moves back a day. */
+    const fields = v==="time" ? ["time","date"] : [v];
+
+    const patch = {};
+    const corrected = {...d.corrected};
+    const changed = [];
+
+    for(const f of fields){
+      const input = document.querySelector('[data-editfield="'+f+'"]');
+      if(!input) continue;
+      const next = input.value.trim();
+      const key = EDIT_KEYS[f] || f;
+      if(!next || next === d[key]) continue;
+      patch[key] = next;
+      corrected[key] = {from:d[key], to:next, at:new Date().toISOString()};
+      if(CONFIRMS[key]) patch[CONFIRMS[key]] = true;   // their own edit still shows as confirmed
+      changed.push({key, from:d[key], to:next});
+    }
+
+    if(changed.length){
+      Store.patchDraft({...patch, corrected});
       logAdd({m:"PATCH", p:"/v1/incidents/"+(Store.s.incident?.id||"draft"), s:"200", ms:rnd(30,80), key:uuid(),
-        meta:"driver corrected <b>"+key+"</b>: \""+from+"\" → \""+next+"\". Original telematics value retained for the handler."});
+        meta:"driver corrected "+changed.map(c =>
+          "<b>"+c.key+"</b>: \""+c.from+"\" → \""+c.to+"\"").join(", ")
+          +". Original telematics value retained for the handler."});
       toast("Corrected. We kept what the truck reported too.","ok");
     }
     Store.set({editing:null});
+    // A correction settles the turn as surely as a confirmation does.
+    chatAdvance({location:"location", time:"time", vehicle:"vehicle"}[v] || v);
   },
 
-  "confirm-vehicle":  () => Store.patchDraft({vehicleConfirmed:!Store.s.draft.vehicleConfirmed}),
-  "confirm-time":     () => Store.patchDraft({timeConfirmed:!Store.s.draft.timeConfirmed}),
-  "confirm-location": () => Store.patchDraft({locationConfirmed:!Store.s.draft.locationConfirmed}),
+  /* Tapping a row toggles it, so a mistap is correctable. In the chat the same
+     tap is an answer, and answering moves on — but only when it confirmed:
+     un-confirming and then advancing would leave the turn behind unanswered. */
+  /* Confirming a pre-filled value.
+     On the FORM the control is the row itself, and tapping it toggles: the row
+     is the state, so tapping a confirmed row is how a mistap is undone.
+     In the CHAT the control is a button labelled "Confirm", and a button that
+     un-answers the question it claims to settle is a bug — reopening an
+     answered turn and tapping Confirm took a finished report back to "1 still
+     to check" and removed the submit control. Same handler, and the gesture
+     follows the screen it is on. */
+  "confirm-vehicle":  () => confirmField("vehicleConfirmed", "vehicle"),
+  "confirm-time":     () => confirmField("timeConfirmed", "time"),
+  "confirm-location": () => confirmField("locationConfirmed", "location"),
   "confirm-type":     () => {
-    // Confirm/unconfirm only. Changing the value goes through 'Not right?',
-    // like every other pre-filled row.
-    Store.patchDraft({typeConfirmed:!Store.s.draft.typeConfirmed});
     if(Store.s.subScreen==="type") Store.set({subScreen:null});
+    confirmField("typeConfirmed", "type");
+  },
+  /* Close the type picker and settle the answer.
+     Not `confirm-type`, which TOGGLES: reusing it here would un-confirm the
+     type whenever the driver opened the picker, changed nothing, and tapped
+     Done — closing the editor and silently undoing the answer in one gesture.
+     Done always means confirmed. */
+  "type-done": () => {
+    Store.patchDraft({typeConfirmed:true});
+    Store.set({subScreen:null, editing:null});
+    chatAdvance("type");
   },
   "set-type": (v, node) => {
     const next = node?.value || v;
@@ -331,6 +398,18 @@ export const ACTIONS = {
     Store.patchDraft(yes
       ? {injured:true}
       : {injured:false, injuredParties:[], injurySeverity:[], injuryEmergency:null});
+    /* The chat behaves exactly as the form does, and for the same reason.
+       An earlier build interrupted to 112 here, on the argument that a driver
+       could reach the chat having said everyone was fine and only then find
+       otherwise. But both paths reach the six the SAME way — through the cold
+       open's safety question — so the chat inherits the same guarantee the
+       form relies on, and the interrupt was redundant with a screen the driver
+       had already been shown. It also cost them the answer they were giving:
+       "yes" is the start of naming who and how badly, and being thrown to a
+       safety screen mid-thought is a worse outcome than the rail already
+       one tap above. Two paths through one question must not behave
+       differently. */
+    if(Store.s.screen==="s1chat") chatAdvance("injured");
   },
   /* Multi-select: a group of casualties is rarely one band, and collapsing
      them to one sets the reserve from the wrong person. */
@@ -345,8 +424,37 @@ export const ACTIONS = {
     const cur = Store.s.draft.injuredParties || [];
     Store.patchDraft({injuredParties: cur.includes(v) ? cur.filter(x=>x!==v) : [...cur, v]});
   },
-  "set-emergency": v => Store.patchDraft({injuryEmergency:v==="yes"}),
-  "set-drivable":  v => Store.patchDraft({drivable:v==="yes"}),
+  "set-emergency": v => { Store.patchDraft({injuryEmergency:v==="yes"}); chatAdvance("emergency"); },
+  "set-drivable":  v => { Store.patchDraft({drivable:v==="yes"}); chatAdvance("drivable"); },
+
+  /* ---- driver: chat path ----
+     No handler of its own for answering: every turn uses the form's handler,
+     and those call chatAdvance() when the chat is the open screen. A parallel
+     set of chat-only writers is how the two paths would start to diverge. */
+
+  /* Reopening an answered turn. The turns after it stay visible — chatSeen is
+     untouched — because the driver is correcting one answer, not rewinding the
+     report. Correcting a value they can see is wrong is the same gesture here
+     as tapping a pre-filled row on the form. */
+  "chat-reopen": v => {
+    const i = Number(v);
+    if(Number.isNaN(i) || i<0) return;
+    Store.set({chatTurn:i, editing:null, subScreen:null});
+  },
+
+  /* The dock counter, pointed at the first unanswered turn. Same intent as the
+     form's goto-unanswered: naming a count without saying where it lives is a
+     small cruelty on a hard shoulder. Here "where" is a turn, not a scroll
+     position, so it opens that turn rather than scrolling to it. */
+  /* The explicit continue on a multi-select turn, where a tap cannot advance. */
+  "chat-advance": v => chatAdvance(v),
+
+  "chat-seek": () => {
+    const turns = chatTurns();
+    const i = turns.findIndex(t => !t.answered);
+    if(i<0) return;
+    Store.set({chatTurn:i, chatSeen:Math.max(Store.s.chatSeen, i), editing:null, subScreen:null});
+  },
   /* "Not sure" is recorded as not-insured rather than as unanswered: an
      uninsured other party routes to the national guarantee fund, and a handler
      needs to know the driver looked and could not tell. */
@@ -482,6 +590,46 @@ export const ACTIONS = {
   "close-export": () => Store.set({exportOpen:false}),
   "print": () => window.print(),
 };
+
+/* Which screen the six are answered on. The driver picks once, on s0choice,
+   and the choice rides on the draft so a reopened report resumes the same way.
+   Unset means they have not been asked yet. */
+export function intakeScreen(){
+  const m = Store.s.draft.intakeMode;
+  return m==="chat" ? "s1chat" : m==="form" ? "s1" : "s0choice";
+}
+
+/* Confirm one pre-filled field, and move on if the chat is asking.
+
+   The toggle belongs to the form, where the control IS the row and tapping a
+   confirmed row is the only way to take it back. In the chat the control is a
+   button that says "Confirm"; there, confirming is idempotent and undoing is
+   the Edit button beside it. */
+function confirmField(flag, turnId){
+  const inChat = Store.s.screen === "s1chat";
+  Store.patchDraft({[flag]: inChat ? true : !Store.s.draft[flag]});
+  if(Store.s.draft[flag]) chatAdvance(turnId);
+}
+
+/* Advance the chat by one turn, if the chat is what is on screen.
+   Called from the shared answer handlers rather than from chat-only ones, so
+   there is exactly one writer per field and the two paths cannot drift. A
+   no-op on the form, which is why the handlers can call it unconditionally.
+
+   Only ever moves FORWARD past turns that are answered: a driver who reopened
+   question 2 and re-confirmed it should land back at the end of what they have
+   already done, not be walked through it again. */
+export function chatAdvance(fromId){
+  if(Store.s.screen!=="s1chat") return;
+  const turns = chatTurns();
+  const i = turns.findIndex(t => t.id===fromId);
+  if(i<0) return;
+  let next = i+1;
+  while(next<turns.length && turns[next].answered) next++;
+  if(next>=turns.length) next = turns.length-1;
+  Store.set({chatTurn:next, chatSeen:Math.max(Store.s.chatSeen, next),
+    editing:null, subScreen:null});
+}
 
 /* move to the next perishable item, or the soft stop */
 export function nextGap(currentId){

@@ -130,3 +130,45 @@ export function svgRing(pct){
 }
 
 
+
+/* ---------------------------------------------------------------- *
+ * The two ways into the six.
+ *
+ * Scene illustrations rather than line icons: this is the one screen
+ * where the driver is choosing between two experiences they have not
+ * seen yet, and a glyph of a list beside a glyph of a speech bubble
+ * makes them look like two settings rather than two ways to spend the
+ * next ninety seconds. Drawn in the same idiom as svgSilhouette so the
+ * screen still looks like the rest of the product.
+ * ---------------------------------------------------------------- */
+
+/** Roady: a conversation, one question at a time, with a truck answering. */
+export function svgRoady(){
+  return `<svg class="msvg" viewBox="0 0 96 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <rect x="6" y="10" width="52" height="24" rx="9" fill="#dbe7e1"/>
+    <rect x="6" y="10" width="52" height="24" rx="9" fill="none" stroke="#2A453D" stroke-width="1.6" opacity=".55"/>
+    <path d="M16 20 h30 M16 26 h20" stroke="#2A453D" stroke-width="2" stroke-linecap="round" opacity=".62"/>
+    <path d="M18 34 v7 l8 -7 z" fill="#dbe7e1" stroke="#2A453D" stroke-width="1.6" stroke-linejoin="round" opacity=".8"/>
+    <rect x="42" y="42" width="46" height="20" rx="8" fill="#ffffff" stroke="#2A453D" stroke-width="1.6" opacity=".8"/>
+    <path d="M78 62 v6 l-8 -6 z" fill="#ffffff" stroke="#2A453D" stroke-width="1.6" stroke-linejoin="round" opacity=".8"/>
+    <path d="M52 52 l5 5 l9 -10" fill="none" stroke="#1f7a5a" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="70" cy="22" r="13" fill="#F1F5F9" stroke="#2A453D" stroke-width="1.5" opacity=".7"/>
+    <path d="M62 26 h4 M62 26 v-5 h6 l3 4 h4 v5 h-13 z" fill="none" stroke="#2A453D" stroke-width="1.5" stroke-linejoin="round" opacity=".75"/>
+    <circle cx="66" cy="30" r="1.8" fill="#2A453D" opacity=".75"/>
+    <circle cx="75" cy="30" r="1.8" fill="#2A453D" opacity=".75"/>
+  </svg>`;
+}
+
+/** The form: the whole shape at once, tick it in any order. */
+export function svgForm(){
+  return `<svg class="msvg" viewBox="0 0 96 72" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+    <rect x="20" y="6" width="56" height="60" rx="7" fill="#ffffff" stroke="#2A453D" stroke-width="1.7" opacity=".82"/>
+    <rect x="28" y="16" width="40" height="8" rx="3" fill="#dbe7e1"/>
+    <rect x="28" y="30" width="40" height="8" rx="3" fill="#dbe7e1"/>
+    <rect x="28" y="44" width="40" height="8" rx="3" fill="#dbe7e1"/>
+    <path d="M32 20 l3 3 l6 -6" fill="none" stroke="#1f7a5a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M32 48 l3 3 l6 -6" fill="none" stroke="#1f7a5a" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="35" cy="34" r="3.4" fill="none" stroke="#2A453D" stroke-width="1.6" opacity=".5"/>
+    <path d="M48 20 h16 M48 34 h16 M48 48 h11" stroke="#2A453D" stroke-width="1.7" stroke-linecap="round" opacity=".42"/>
+  </svg>`;
+}

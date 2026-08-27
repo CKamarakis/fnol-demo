@@ -26,7 +26,8 @@ between a prototype and a promise.
 | **Photo capture** | Tapping a slot marks it captured and fires a real attachment call with a simulated payload size. No camera opens. | Camera access and object storage with pre-signed uploads. |
 | **Dashcam clip** | A reference string. There is no footage. | Video telematics integration. |
 | **The map** | Hand-authored inline SVG. Schematic, not geographic — it says "we know where you are" without pretending to be a map. | Map tiles, which would break the no-network guarantee, so this stays schematic in the demo regardless. |
-| **Voice input** | A visible affordance. Speech recognition needs a network service, which would break the offline constraint. Tapping the mic says so. | On-device speech recognition. |
+| **Roady, the chat path** | A fixed script, not a model. It asks the same six fields in a fixed order using the same buttons the form uses, and it writes the same draft through the same handlers. It does not read free text, does not interpret a sentence, and does not volunteer. Nothing here reasons. | A model, plus a decision about what happens when it misreads a driver at a roadside. The taps are not a placeholder for that: they are what makes an offline artifact safe to ship. |
+| **Voice input** | Nothing. There was a mic button on every text field; it was removed. Speech recognition needs a network service, and a control that announces it cannot do the thing it depicts is worse than no control. | On-device speech recognition. |
 | **SMS / push resume** | The payload is shown; nothing is sent. | A messaging provider. |
 | **The other party's signature** | You can draw in the pad. Nobody is asked to consent to anything. | Nothing technical — this is a human problem, and the weakest link in the EAS flow. |
 | **Authentication** | None. Single hardcoded driver. | Real auth, and a decision about whether drivers authenticate at all at the roadside. |

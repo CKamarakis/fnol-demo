@@ -5,7 +5,7 @@ import { dn } from '../../components/DriverShell.jsx';
 import { svgSilhouette } from '../../components/svg.js';
 // The same option tuples and the same summary the questions used, so the
 // driver's copy cannot drift out of step with what they were shown.
-import { SEVERITY_OPTIONS, WHO_HURT_OPTIONS, typeSummary } from './S1Tier1.jsx';
+import { SEVERITY_OPTIONS, WHO_HURT_OPTIONS, typeSummary, whenLabel } from './S1Tier1.jsx';
 
 /* ---------- the driver's own copy ----------------------------------------
    Everything else in this flow moves information away from the driver: to the
@@ -214,12 +214,11 @@ export function scrArchive() {
           {/* The six that blocked submission, in the order they were asked. */}
           <Section title="The report">
             <Row label="Vehicle" value={d.vehicle || '—'} />
-            <Row label="When" value={d.occurredAt || '—'} />
+            <Row label="When" value={whenLabel(d) || "—"} />
             <Row label="Where it happened" value={d.location || '—'} />
             <Row label="What happened" value={typeLabel} />
             <Row label="Anyone hurt" value={injuredLabel} />
             <Row label="Still drivable" value={drivableLabel} />
-            {d.damageDesc && <Row label="Damage" value={d.damageDesc} />}
             {d.whereSeen && <Row label="Where to inspect it" value={d.whereSeen} />}
           </Section>
 

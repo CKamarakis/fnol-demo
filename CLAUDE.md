@@ -37,6 +37,7 @@ src/
     dom.jsx           el() builder — legacy element construction, React-compatible
     utils.js          icons, esc/uuid/clock helpers, imperative toast
     store.js          single state object, localStorage, subscribe/emit
+    tier1.js          what "six are answered" means — shared by both intake paths
     useStore.js       useSyncExternalStore bridge to the store
     FakeApi.js        implements the real API contract over a fake transport
     actions.jsx       every data-act handler, one delegated listener
@@ -50,6 +51,8 @@ src/
   screens/
     driver/           one file per screen, index.jsx is the router
       Archive.jsx     the driver's own copy of what was filed
+      ModeChoice.jsx  the fork: answer the six as a form, or as a chat
+      Chat.jsx        the chat path through the six — same fields, one at a time
       GapShell.jsx    shared shell for the optional screens, + gapItems()
     fleet/ system/ export/
   styles/             numeric prefixes ARE the cascade order
@@ -214,6 +217,38 @@ Product decisions with reasons. Do not change these without raising it first.
   having. This is the same move the flow already makes with vehicle, time and
   location — the unit reports, the driver confirms. Here there is nothing left
   to confirm.
+- **Two ways through the six, one report.** The blocking six can be answered as
+  a scrolling form (`S1Tier1.jsx`) or one question at a time in a chat
+  (`Chat.jsx`), and the driver chooses on `ModeChoice.jsx` after the cold open.
+  This is a **presentation choice, not a second intake**: every control in the
+  chat is the same component wired to the same `data-act` handler, so both
+  paths write the same draft keys, and `tests/rules.mjs` runs both with
+  identical answers and fails if the drafts differ by anything but
+  `intakeMode`. Readiness is not reimplemented either — both call
+  `tier1Ready()` from `core/tier1.js`, because two screens that block on the
+  same six must not be able to disagree about whether they are done. Adding a
+  blocking field means adding it to both, or the chat silently submits five.
+- **Roady is a script, not a model, and says so.** Constraint 1 forbids every
+  network primitive, so there is nothing to call: the chat asks a fixed
+  sequence of the same six questions with the same buttons. It takes **no free
+  text** except where the form already types (correcting vehicle, time or
+  location, and naming an "other" incident type), shows **no typing indicator**
+  and **invents no latency** — nothing pretends to think. A chat that guesses
+  at a typed sentence guesses wrong at a roadside, and the cost lands on the
+  person least able to absorb it. The taps are not a limitation being
+  apologised for; they are what makes it honest. Recorded in
+  `docs/whats-faked.md` and in the System pane's simulated list.
+- **The chat's injury question behaves exactly as the form's does.** Answering
+  yes opens the who and severity turns; it does **not** interrupt to 112. An
+  earlier build did interrupt, reasoning that a driver could reach the chat
+  having said everyone was fine and only then find otherwise — but both paths
+  reach the six through the cold open's safety question, so the chat inherits
+  the same guarantee the form relies on, and the interrupt was redundant with a
+  screen the driver had already been shown. It also cost them the answer they
+  were giving: "yes" is the start of naming who and how badly, and being thrown
+  to a safety screen mid-thought is worse than the 112 rail already one tap
+  above every screen. **Two paths through one question must not behave
+  differently** — that difference is the bug, not the safety rule.
 - **"Where will the truck be?" is not the incident location.** Question 3
   captured where it *happened*; this asks where the vehicle can be **inspected
   once it moves**, which is what decides whether an inspection is booked or

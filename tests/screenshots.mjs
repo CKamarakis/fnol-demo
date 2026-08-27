@@ -54,6 +54,21 @@ const SHOTS = [
   // that omits it renders the screen without a back bar, which is correct in
   // the app and wrong for a screenshot meant to show the finished screen.
   ['driver-emg', { persona:'driver', screen:'emg', scenario:'collision', emgFrom:'s0' }],
+  // The fork, and both ends of the chat: one turn open, and a long transcript
+  // with the injury branch expanded — the case that runs past a phone screen.
+  ['driver-mode-choice', { persona: 'driver', screen: 's0choice', scenario: 'collision', navStack: ['s0'], notes: false }],
+  ['driver-mode-choice-de', { persona: 'driver', screen: 's0choice', scenario: 'collision', navStack: ['s0'], lang: 'de', notes: false }],
+  ['driver-chat-start', { persona: 'driver', screen: 's1chat', scenario: 'collision', navStack: ['s0choice'], notes: false, chatTurn: 0, chatSeen: 0, draft: { intakeMode: 'chat' } }],
+  ['driver-chat-long', { persona: 'driver', screen: 's1chat', scenario: 'collision', navStack: ['s0choice'], notes: false, chatTurn: 6, chatSeen: 6,
+    draft: { intakeMode:'chat', vehicleConfirmed:true, timeConfirmed:true, locationConfirmed:true, typeConfirmed:true, injured:true, injuredParties:['driver','pedestrian'], injurySeverity:['walking'] } }],
+  // German compounds are the overflow case, and a bubble is narrower than a row.
+  ['driver-chat-de', { persona: 'driver', screen: 's1chat', scenario: 'collision', navStack: ['s0choice'], lang: 'de', notes: false, chatTurn: 2, chatSeen: 2, draft: { intakeMode:'chat', vehicleConfirmed:true, timeConfirmed:true } }],
+  ['driver-chat-injury', { persona: 'driver', screen: 's1chat', scenario: 'collision', navStack: ['s0choice'], notes: false, chatTurn: 5, chatSeen: 5, draft: { intakeMode:'chat', vehicleConfirmed:true, timeConfirmed:true, locationConfirmed:true, typeConfirmed:true, injured:true } }],
+  ['driver-chat-theft', { persona: 'driver', screen: 's1chat', scenario: 'theft', navStack: ['s0choice'], notes: false, chatTurn: 4, chatSeen: 4, draft: { intakeMode:'chat', vehicleConfirmed:true, timeConfirmed:true, locationConfirmed:true, typeConfirmed:true } }],
+  // The correction editor open: the one place the driver types, and the case
+  // where an indented input costs visible characters.
+  ['driver-chat-edit-time', { persona: 'driver', screen: 's1chat', scenario: 'glass', navStack: ['s0choice'], notes: false, chatTurn: 1, chatSeen: 1, editing: 'time', draft: { intakeMode:'chat', vehicleConfirmed:true } }],
+  ['driver-chat-edit', { persona: 'driver', screen: 's1chat', scenario: 'glass', navStack: ['s0choice'], notes: false, chatTurn: 2, chatSeen: 2, editing: 'location', draft: { intakeMode:'chat', vehicleConfirmed:true, timeConfirmed:true } }],
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
   ['driver-photos', { persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'], notes: false }],
   ['driver-otherins', { persona: 'driver', screen: 'otherins', scenario: 'collision', navStack: ['s0'], notes: false }],

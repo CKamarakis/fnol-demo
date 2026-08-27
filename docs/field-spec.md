@@ -57,8 +57,35 @@ overwrite**:
 | `reported` | What the vehicle sent, kept whatever the driver does |
 | `corrected` | Per field: the original value, the driver's value, and when |
 
+**Date and time are two values, both stored.** `occurredAt` holds the time and
+`occurredOn` the date (ACORD 2 · 21, date of loss). They are separate because
+the driver may correct either half: an incident found at 00:20 keeps its time
+and moves back a day. An earlier build stored only the time and rendered
+`new Date()` beside it, so the date was never sent to the handler and was wrong
+for any report filed after midnight or reopened later — which this artifact,
+emailed and opened for months, does by design.
+
 The row says so on screen — *"you corrected this · truck reported …"* — and the
 handler sees both values and knows which came from where.
+
+---
+
+## `intakeMode` — how the six were answered, not what they were
+
+| Field | Holds |
+| --- | --- |
+| `intakeMode` | `form`, `chat`, or unset before the driver has chosen |
+
+A **presentation preference, not a claims field**. The six can be answered as
+one scrolling form or one question at a time; both write the same draft keys
+through the same handlers, and `tests/rules.mjs` runs both paths with identical
+answers and fails if the resulting drafts differ by anything but this key.
+
+It is recorded because it is the kind of thing worth knowing across a fleet —
+if nobody ever picks one, that is an answer — and for no other reason. Nothing
+downstream reads it, it is absent from `ACORD_MAP`, and it does not appear on
+the export. Deliberately on the draft rather than in app state, so a report
+reopened after a week resumes the way it was started.
 
 ---
 

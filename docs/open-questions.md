@@ -149,6 +149,31 @@ The first thing I would want after shipping is capture-rate data by field
 position, because that is the number that tells us whether the ordering was
 worth the argument.
 
+### Does the chat path actually help anyone?
+
+The six can now be answered as a form or one question at a time. The argument
+for the chat is that a shaken person on a hard shoulder should not have to hold
+six things in their head at once. The argument against is concrete and unproven
+either way:
+
+- The form shows six rows and a counter. The chat shows **one question and a
+  history you have to scroll to re-read**, and on a 390×844 phone the
+  transcript runs past a screen by the injury turns.
+- It **fixes the order**. Someone who already knows the truck is drivable and
+  wants that recorded first cannot do it.
+- It costs **one extra tap** on the fastest path, paid by every driver
+  including the ones who would never have wanted it.
+
+Building both is what makes the question askable, and it is not answerable from
+this repo. The measurement is a split by `intakeMode`: completion rate,
+time-to-reference, and correction rate on the four pre-filled fields — the last
+being the one that matters, because a driver tapping through a transcript
+without reading is the specific failure this path invites.
+
+My own guess is that the chat wins on the injury branch and loses everywhere
+else, which would argue for a hybrid nobody has designed yet. That guess is
+worth exactly as much as the rest of the UX reasoning here.
+
 ---
 
 ## Related

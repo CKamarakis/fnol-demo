@@ -128,16 +128,27 @@ export function scrPhotos() {
           decides whether an inspection is booked or wasted. The label says so;
           without it, it reads as a duplicate and the driver retypes the
           roadside. */}
-      {/* Neither question exists for a theft. The vehicle is gone: there is no
-          damage the driver has seen and no address to inspect it at. Asking
-          anyway would be a form covering its own validation rules at the
-          driver's expense — the two facts are recorded as not-applicable in
-          ACORD_OMITTED instead, which is where a deliberate gap belongs. */}
+      {/* "What is damaged?" was here, and it is gone.
+
+          ACORD 3 · 37 DESCRIBE DAMAGE is a real field, which is normally the
+          whole argument for keeping something. It lost anyway: the driver is
+          standing in front of the damage photographing it, and asking them to
+          type what the camera is recording is the weakest field in the flow.
+          The facts it held are already carried — the incident type and
+          `alsoDamaged` from question 4, the point of impact from the accident
+          statement, and the frames themselves. A damage DESCRIPTION is the
+          assessor's to write; in Germany that is the Sachverständiger, and
+          this flow already refuses to pretend a phone on a hard shoulder
+          replaces them. Recorded in ACORD_OMITTED.
+
+          "Where can it be inspected" stays. It is the one fact here that
+          nothing else captures: question 3 recorded where it HAPPENED, and
+          this is where the vehicle will BE once it moves, which is what
+          decides whether an inspection is booked or wasted. Not asked for a
+          theft — there is no vehicle to inspect. */}
       {sc.type !== 'theft' && (
         <>
           <div className="sp16" />
-          {textField('What is damaged? A sentence is plenty', 'damageDesc',
-            'Nearside wing and step, windscreen cracked')}
           {textField('Where can the truck be inspected once it moves?', 'whereSeen',
             'Depot Berlin-Süd, or the hard shoulder until recovery')}
         </>

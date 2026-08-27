@@ -5,9 +5,11 @@ import { Store } from '../../core/store.js';
 import { emergencyRail, navBar, offlineBanner, statusBar, timerRail } from '../../components/DriverShell.jsx';
 import { scrArchive } from './Archive.jsx';
 import { scrCargo } from './Cargo.jsx';
+import { scrChat } from './Chat.jsx';
 import { scrDismiss } from './Dismiss.jsx';
 import { scrEAS } from './EasCircumstances.jsx';
 import { scrEmergency } from './Emergency.jsx';
+import { scrModeChoice } from './ModeChoice.jsx';
 import { scrOtherInsurer } from './OtherInsurer.jsx';
 import { scrOtherVehicle } from './OtherVehicle.jsx';
 import { scrPhotos } from './Photos.jsx';
@@ -25,7 +27,9 @@ const SCREENS = {
   s0det: scrS0Detail,
   dismiss: scrDismiss,
   emg: scrEmergency,
+  s0choice: scrModeChoice,
   s1: scrTier1,
+  s1chat: scrChat,
   s2: scrReference,
   witness: scrWitness,
   otherv: scrOtherVehicle,
@@ -39,7 +43,7 @@ const SCREENS = {
 };
 
 /** The timer is a demo instrument, shown only while the blocking path runs. */
-const TIMED_SCREENS = ['s1', 's0det'];
+const TIMED_SCREENS = ['s1', 's1chat', 's0det'];
 
 export function renderDriver() {
   const s = Store.s;

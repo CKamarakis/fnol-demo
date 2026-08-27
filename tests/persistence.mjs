@@ -165,6 +165,13 @@ for (const [label, state] of STALE) {
   if (fine) {
     fine.dispatchEvent(new app.window.MouseEvent('click', { bubbles: true }));
     await new Promise(r => setTimeout(r, 120));
+    // The fork comes first now. This walk takes the form; the chat path has
+    // its own round-trip below.
+    const mode = app.doc.querySelector('#root [data-act="set-intake-mode"][data-v="form"]');
+    if (mode) {
+      mode.dispatchEvent(new app.window.MouseEvent('click', { bubbles: true }));
+      await new Promise(r => setTimeout(r, 120));
+    }
     // Answer something ON the six questions. The cold open deliberately
     // records nothing — it routes to 112 or it does not — so a real answer
     // has to come from the screen that asks it.

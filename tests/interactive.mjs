@@ -145,7 +145,9 @@ async function boot(state) {
 /* Each CTA must actually move the app. A handler that is registered but does
    nothing is the same defect from the user's side as one that is missing. */
 const CTA_ROUTES = [
-  ['s0-fine', /verify the tracker/i, 'answers "everyone\'s fine" and reaches the questions'],
+  // The cold open leads to the fork, not straight to the six: both ways
+  // through them reach the same report, and the driver picks.
+  ['s0-fine', /fill the incident report/i, 'answers "everyone\'s fine" and reaches the fork'],
   ['s0-hurt', /112|emergency|safety/i, 'answers "someone is hurt" and reaches 112'],
   ['s0-dismiss', /what was it/i, 'dismisses and reaches the reason picker'],
 ];
@@ -173,7 +175,7 @@ for (const [act, expect, msg] of CTA_ROUTES) {
  * and fails on anything that throws.
  * ------------------------------------------------------------------ */
 const SCREENS = [
-  's0', 'dismiss', 'emg', 's1',
+  's0', 'dismiss', 'emg', 's0choice', 's1', 's1chat',
   'witness', 'otherv', 'photos', 'eas', 'police', 'cargo', 'otherins',
 ];
 
@@ -211,7 +213,8 @@ for (const screen of SCREENS) {
 
 // Every other driver screen must offer a way back, and it must say where to.
 const NEEDS_BACK = [
-  's1', 'witness', 'otherv', 'photos', 'eas', 'police', 'cargo', 'otherins', 'archive',
+  's0choice', 's1', 's1chat',
+  'witness', 'otherv', 'photos', 'eas', 'police', 'cargo', 'otherins', 'archive',
 ];
 
 for (const screen of NEEDS_BACK) {

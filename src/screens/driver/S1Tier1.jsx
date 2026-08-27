@@ -1,6 +1,7 @@
 import { I } from '../../core/utils.js';
 import { SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
+import { tier1Answered, tier1Ready } from '../../core/tier1.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { Choice } from '../../components/Choice.jsx';
 import { svgMap } from '../../components/svg.js';
@@ -70,7 +71,7 @@ const TYPE_LABELS = {
  * sits — alphabetical is the only order that needs no explanation. "Other"
  * stays pinned to the end, because it is a fallback rather than a choice.
  */
-const TYPE_OPTIONS = [
+export const TYPE_OPTIONS = [
   ['animal', 'Animal'],
   ['cargo', 'Cargo or load damage'],
   ['collision', 'Collision with another vehicle'],
@@ -85,6 +86,19 @@ const TYPE_OPTIONS = [
 ];
 
 const typeLabel = v => (TYPE_OPTIONS.find(o => o[0] === v) || [, v])[1];
+
+/**
+ * When it happened, as one string.
+ *
+ * Both halves come from the draft. An earlier build rendered
+ * `new Date().toLocaleDateString()` beside the stored time, so the date was
+ * never stored, never sent to the handler, and silently wrong for any report
+ * filed after midnight or reopened the next day — which this artifact, emailed
+ * and opened for months, does by design.
+ */
+export function whenLabel(d) {
+  return d.occurredOn ? `${d.occurredAt} · ${d.occurredOn}` : d.occurredAt;
+}
 
 /** The row shows the whole answer: what happened, plus anything else damaged. */
 export function typeSummary(d) {
@@ -102,7 +116,7 @@ export function typeSummary(d) {
  * rows pushed everything else off the screen, and a dropdown is the control a
  * driver already knows.
  */
-function TypeSelect({ id, act, value, index, placeholder }) {
+export function TypeSelect({ id, act, value, index, placeholder }) {
   return (
     <div className="lang-wrap type-wrap">
       <select
@@ -178,8 +192,9 @@ export function fieldRow({ ic, label, value, state, act, hint, editKey, correcte
   );
 }
 
-/** Inline correction for one row. */
-function EditRow({ editKey, label, value, hint }) {
+/** Inline correction for one row. Shared with the chat, which puts the same
+    editor in the answer slot of a turn rather than under a row. */
+export function EditRow({ editKey, label, value, hint, second }) {
   return (
     <div className="frow-editor">
       <label className="lbl" htmlFor={`edit-${editKey}`}>{label}</label>
@@ -191,6 +206,26 @@ function EditRow({ editKey, label, value, hint }) {
         placeholder={hint}
         autoComplete="off"
       />
+      {/* A row can carry two values that belong to one fact. Date and time are
+          the case: the unit reports a single instant, and a driver correcting
+          when it happened may need to move either half — an incident found at
+          00:20 belongs to yesterday. Editing one and being unable to see the
+          other is how a report ends up dated the day it was filed. */}
+      {second && (
+        <>
+          <label className="lbl" htmlFor={`edit-${second.key}`} style={{ marginTop: '10px' }}>
+            {second.label}
+          </label>
+          <input
+            id={`edit-${second.key}`}
+            className="inp"
+            data-editfield={second.key}
+            defaultValue={second.value}
+            placeholder={second.hint}
+            autoComplete="off"
+          />
+        </>
+      )}
       <p className="tiny" style={{ margin: '8px 0 10px', lineHeight: 1.45 }}>
         What the truck reported is kept either way, so the handler can see both.
       </p>
@@ -260,34 +295,12 @@ export function scrTier1() {
   const d = s.draft;
   const sc = SCENARIOS[s.scenario];
 
-  // Count what the DRIVER has settled, not what arrived pre-filled. Counting
-  // pre-filled values made the screen open at "5 of 6", telling a driver they
-  // had completed five things before they had touched anything.
-  /* "Yes, someone is hurt" is not an answer on its own — it is the start of
-     one. Which party decides whether this is also a liability notification,
-     and the band decides the reserve; a bare yes leaves the handler phoning
-     back for both. So the injury question counts as settled when the driver
-     says no one is hurt, or says yes AND names at least one party and one
-     band. "No one" stays a single tap, because the common case must not get
-     slower to protect the rare one.
-     This is still ONE of the six. It is a completeness rule for a single
-     question, not a seventh blocking field. */
-  const injuryAnswered = d.injured === false
-    || (d.injured === true
-        && (d.injuredParties || []).length > 0
-        && (d.injurySeverity || []).length > 0);
-
-  const answered = [
-    d.vehicleConfirmed,
-    d.timeConfirmed,
-    d.locationConfirmed,
-    d.typeConfirmed,
-    injuryAnswered,
-    d.drivable !== null,
-  ].filter(Boolean).length;
-
-  const ready = d.vehicleConfirmed && d.timeConfirmed && d.locationConfirmed
-    && d.typeConfirmed && injuryAnswered && d.drivable !== null;
+  /* Both the form and the chat collect these six, so what "answered" and
+     "ready" mean lives in core/tier1.js and is shared. Two screens that block
+     on the same six must never be able to disagree about whether they are
+     done — see the note there. */
+  const answered = tier1Answered(d);
+  const ready = tier1Ready(d);
 
   // Six fields block, always. For a theft, `drivable` arrives pre-answered
   // from freshDraft(), so it is already inside `answered` and this counts only
@@ -319,13 +332,16 @@ export function scrTier1() {
 
           {fieldRow({
             ic: I.clock, label: 'Date & time',
-            value: `${d.occurredAt} · ${new Date().toLocaleDateString('de-DE')}`,
+            value: whenLabel(d),
             state: d.timeConfirmed ? 'confirmed' : 'pending',
             act: 'confirm-time', hint: 'tap to confirm',
             editKey: 'time', corrected: d.corrected?.occurredAt,
           })}
           {s.editing === 'time' && (
-            <EditRow editKey="time" label="Time it happened" value={d.occurredAt} hint="14:32" />
+            <EditRow
+              editKey="time" label="Time it happened" value={d.occurredAt} hint="14:32"
+              second={{ key: 'date', label: 'Date it happened', value: d.occurredOn, hint: '19 August 2026' }}
+            />
           )}
 
           <div style={{ marginTop: '9px' }}>
@@ -421,6 +437,14 @@ export function scrTier1() {
                   {(d.alsoDamaged || []).length ? 'Add another' : 'Add damage'}
                 </button>
               </div>
+
+              {/* The picker closes on its own control, like the text editors
+                  do. The row above it can still be tapped to confirm, but that
+                  is a second gesture for one intention and it is above the
+                  fold once the also-damaged list has a few rows in it. */}
+              <button className="btn btn-primary btn-sm type-done" data-act="type-done">
+                Done
+              </button>
             </div>
           )}
 
@@ -491,6 +515,22 @@ export function scrTier1() {
         ) : (
           <button className="btn btn-secondary btn-lg btn-seek" data-act="goto-unanswered">
             {`${outstanding} ${T('stillToCheck')} · ${T('seekHint')}`}
+          </button>
+        )}
+        {/* The way back to Roady. The fork promised the driver could switch at
+            any point, and until this existed that promise only held in one
+            direction — the chat could reach the form and the form was a dead
+            end. Someone who picked the form and finds the roadside harder than
+            expected should not have to go back two screens to change their
+            mind.
+
+            Hidden once all six are answered: at that point switching would walk
+            a driver back through questions they have already settled, and the
+            only control that should be in front of them is the one that files
+            the report. */}
+        {!ready && (
+          <button className="skip chat-switch" data-act="set-intake-mode" data-v="chat">
+            {T('formSwitch')}
           </button>
         )}
       </div>

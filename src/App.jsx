@@ -65,5 +65,32 @@ export function App() {
     if (gap > 0) scroller.scrollBy({ top: gap + 16, behavior: 'smooth' });
   }, [s.subScreen, s.editing]);
 
+  /* The chat's open turn is the only thing on the screen the driver can act on,
+     and every answer pushes it further down a growing transcript. Four turns in
+     it sits below the fold: the dock says one is still to check and the
+     question itself is off-screen, which reads as the app having lost it.
+     So the open turn is scrolled to after every advance. Bottom-aligned rather
+     than centred — the answer controls are underneath the question, and they
+     are what the driver came for. */
+  const chatSettled = useRef(false);
+  useEffect(() => {
+    if (s.screen !== 's1chat') { chatSettled.current = false; return; }
+    const turn = document.querySelector('#root .turn-open');
+    if (!turn) return;
+    const scroller = turn.closest('.scroll');
+    if (!scroller) return;
+    const gap = turn.getBoundingClientRect().bottom - scroller.getBoundingClientRect().bottom;
+    if (gap <= 0) { chatSettled.current = true; return; }
+    /* Instant on arrival, animated afterwards. A driver resuming a report days
+       later should find the open question already in front of them rather than
+       watch the transcript travel; once they are answering, the movement is
+       what tells them a new question arrived. */
+    scroller.scrollBy({
+      top: gap + 20,
+      behavior: chatSettled.current ? 'smooth' : 'auto',
+    });
+    chatSettled.current = true;
+  }, [s.screen, s.chatTurn, s.chatSeen, s.editing, s.subScreen]);
+
   return <Pane />;
 }

@@ -286,7 +286,8 @@ export function sysFaked(){
       ["Recovery dispatch","<b>Not claimed anywhere any more.</b> An earlier build told the driver recovery was dispatched with an ETA; an FNOL system runs no recovery network and cannot know an arrival time. The vehicle being off the road is reported, and arranging recovery is the fleet's."],
       ["Central plate register","Referenced in copy as the route from plate to insurer. Not called."],
       ["Push / SMS resume link","Described in the soft-stop copy. Not sent."],
-      ["Voice input","The mic button is a visual affordance. No speech recognition — it would need a network service."],
+      ["Voice input","Removed. There was a mic button on every text field; speech recognition needs a network service, so it depicted something this file cannot do."],
+      ["Roady, the chat path","A fixed script. Same six fields, same handlers, same draft — asked one at a time instead of all at once. Nothing here is a model, and nothing reads free text."],
       ["Photo capture","Tapping a slot marks it captured and fires a real attachment call with a simulated payload size. The camera is not opened."],
     ]],
     ["Real in this file — genuinely working code", [

@@ -93,7 +93,8 @@ export function langSelect(cur) {
    the page, and the page is called "Verify the tracker's data". */
 export const SCREEN_TITLES = {
   s0: 'the incident', s0det: 'the details', dismiss: 'dismiss', emg: 'emergency',
-  s1: "the tracker's data", s2: 'your reference',
+  s0choice: 'how to answer',
+  s1: "the tracker's data", s1chat: 'the questions', s2: 'your reference',
   witness: 'the witness', otherv: 'the other vehicle', photos: 'photos', eas: 'circumstances',
   police: 'police', cargo: 'cargo', otherins: 'their insurer', done: 'finished',
   archive: 'your copy',

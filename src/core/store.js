@@ -23,7 +23,13 @@ export function freshDraft(scenId){
     // --- Tier 1: the only six fields that block submission ---
     vehicle:      t.vehicle,        vehicleConfirmed:false,
     vin:          t.vin || "",      // ACORD 2 VIN — from the unit, never typed
+    // Time and date are separate values because the unit reports one instant
+    // and the driver may correct either half. The date was previously not
+    // stored at all: the screens rendered `new Date()` beside the time, so a
+    // report filed after midnight, or reopened the next day, showed a date
+    // nobody entered and the handler received none at all.
     occurredAt:   t.time,           timeConfirmed:false,
+    occurredOn:   t.date || "",     // ACORD 2 · 21 DATE OF LOSS
     location:     t.location,       lat:t.lat, lon:t.lon, locationConfirmed:false,
     type:         t.inferred,       typeConfirmed:false,
     typeOther:    "",               // when type is "other", what it actually was
@@ -31,7 +37,7 @@ export function freshDraft(scenId){
     // What the vehicle originally reported. Kept whatever the driver does, so a
     // correction is a recorded disagreement rather than an overwrite — the
     // handler can see both values and who changed which.
-    reported:     { vehicle:t.vehicle, occurredAt:t.time, location:t.location, type:t.inferred },
+    reported:     { vehicle:t.vehicle, occurredAt:t.time, occurredOn:t.date||"", location:t.location, type:t.inferred },
     corrected:    {},   // field -> {from, to, at}
     injured:      null,             // true | false — the one real question
     // ACORD 3 · 38. Drives the reserve and the credit-hire clock, so the fact
@@ -49,15 +55,29 @@ export function freshDraft(scenId){
     witnessPresent:null, witnessName:"", witnessPhone:"",
     otherPlate:"", otherMake:"", otherDriver:"", otherPhone:"", otherInsurer:"", otherPolicy:"",
     otherInsured:null,              // ACORD 2 OTHER VEH/PROP INS? — uninsured routes differently
-    damageDesc:"", whereSeen:"",    // ACORD 2 DESCRIBE DAMAGE / WHERE CAN VEH BE SEEN
+    // ACORD 3 · WHERE CAN VEH BE SEEN. The damage DESCRIPTION that used to sit
+    // beside it is gone: see ACORD_OMITTED. Where it happened is not where it
+    // will be, which is the fact this one holds and question 3 does not.
+    whereSeen:"",
     photos:{}, // slot -> {at, skipped}
     easA:[], easB:[], impact:null, sketch:null, sigA:null, sigB:null,
     policeAttended:null, policeRef:"",
     cargoLaden:null, cargoDesc:"", trailer:"", hazardous:null,
     skipped:[],      // ids of things the driver chose to skip — logged, never nagged
     notes:"",
+    // Which way the driver chose to answer the six: the form or the chat. A
+    // presentation preference, not a claims field — it changes no value that
+    // reaches the handler, and nothing downstream reads it. Kept on the draft
+    // rather than in app state so a reopened report resumes the way it started.
+    intakeMode:null, // "form" | "chat" | null (not yet chosen)
   };
 }
+
+/* The chat asks the six one at a time, so it needs to know which one is open.
+   Turn indices are positions in the script built by chatTurns() — derived from
+   the scenario, never stored — so a stale index is always possible and is
+   clamped on load rather than trusted. */
+export const CHAT_TURN_MAX = 40;
 
 export const Store = {
   s:{
@@ -74,6 +94,10 @@ export const Store = {
     emgFrom:null,                  // which screen routed to 112, so a mistap returns there
     editing:null,                  // which pre-filled row is open for correction
     subScreen:null,
+    chatTurn:0,                    // index of the open question in the chat path
+    chatSeen:0,                    // furthest turn reached — reopening one keeps
+                                   // the turns after it visible, so correcting
+                                   // an early answer does not hide later ones
     draft:freshDraft("collision"),
     incident:null,                 // the server-side record once created
     reference:null,
@@ -127,6 +151,16 @@ export const Store = {
       const from=this.s.emgFrom;
       if(!from) return;
       this.s.draft.injured=null;
+      /* Nothing routes to 112 from the chat any more — the injury turn behaves
+         as the form does and stays put, because both paths already passed the
+         cold open's safety question. This clamp stays as a guard rather than a
+         behaviour: clearing `injured` removes the three detail turns, so an
+         index pointing past them would be stale. Reached only if some future
+         screen routes here from the chat. */
+      if(from==="s1chat" && this.s.chatTurn>4){
+        this.s.chatTurn=4;
+        this.s.chatSeen=4;
+      }
       this.set({screen:from, emgFrom:null, __noHist:true});
       return;
     }
@@ -149,7 +183,7 @@ export const Store = {
     try{
       const {persona,scenario,lang,notes,fail,screen,subScreen,incident,reference,
              refLatencyMs,startedAt,stoppedAt,log,hooks,queue,incidents,mergeGroup,
-             fleetTab,sysTab,exportOpen,easLangCol} = this.s;
+             fleetTab,sysTab,exportOpen,easLangCol,chatTurn,chatSeen} = this.s;
       // Photo thumbnails are data URLs — tens of KB each, and the whole app
       // gets ~5 MB of localStorage. Persist that a shot exists, never the
       // pixels: a reopened artifact shows the slot captured, and the image
@@ -174,7 +208,7 @@ export const Store = {
         persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
         refLatencyMs,startedAt,stoppedAt,
         log:log.slice(-140), hooks:hooks.slice(-80), queue, incidents, mergeGroup,
-        fleetTab,sysTab,exportOpen,easLangCol
+        fleetTab,sysTab,exportOpen,easLangCol,chatTurn,chatSeen
       }));
     }catch(e){ /* quota or private mode — the demo still runs from memory */ }
   },
@@ -214,6 +248,22 @@ export const Store = {
       }
       if(!s.draft || typeof s.draft!=="object") s.draft=freshDraft(s.scenario);
       else s.draft=Object.assign(freshDraft(s.scenario), s.draft);
+
+      /* The chat indexes into a script whose length depends on the scenario —
+         a theft has one turn fewer, and the injury turns only exist once the
+         driver says yes. A stored index is therefore routinely wrong for the
+         state being loaded: too high after a scenario switch, or pointing at
+         an injury turn for a draft where nobody is hurt. The chat clamps to
+         the script it actually built; here we only refuse values that are not
+         usable as an index at all, which is what would break the render. */
+      for(const k of ["chatTurn","chatSeen"]){
+        const n = s[k];
+        if(typeof n!=="number" || !Number.isFinite(n) || n<0) s[k]=0;
+        else s[k]=Math.min(Math.floor(n), CHAT_TURN_MAX);
+      }
+      if(s.chatSeen < s.chatTurn) s.chatSeen = s.chatTurn;
+      // An unrecognised mode would route to a screen that renders neither path.
+      if(!["form","chat"].includes(s.draft.intakeMode)) s.draft.intakeMode=null;
       // A draft belongs to the scenario it was made for. Stored state that
       // names one scenario and carries another's pre-filled values renders the
       // wrong incident type on the confirm rows — a theft showing "Collision
@@ -225,10 +275,19 @@ export const Store = {
          && !(s.draft.corrected && s.draft.corrected.type)){
         const t=SCENARIOS[s.scenario].telematics;
         Object.assign(s.draft, {
-          vehicle:t.vehicle, vin:t.vin||"", occurredAt:t.time,
+          vehicle:t.vehicle, vin:t.vin||"", occurredAt:t.time, occurredOn:t.date||"",
           location:t.location, lat:t.lat, lon:t.lon, type:t.inferred,
-          reported:{vehicle:t.vehicle, occurredAt:t.time, location:t.location, type:t.inferred},
+          reported:{vehicle:t.vehicle, occurredAt:t.time, occurredOn:t.date||"",
+            location:t.location, type:t.inferred},
         });
+      }
+
+      /* A draft written before the date was stored has no occurredOn at all,
+         and the screens would render an empty date rather than the wrong one.
+         Seed it from the scenario the draft belongs to: the unit reported one
+         instant, so the date that goes with a stored time is the unit's. */
+      if(typeof s.draft.occurredOn!=="string" || !s.draft.occurredOn){
+        s.draft.occurredOn = SCENARIOS[s.scenario].telematics.date || "";
       }
 
       // A stale build wrote no drivableSource at all, and a theft draft from
@@ -292,7 +351,7 @@ export const Store = {
       incident:null, reference:null, refLatencyMs:null, startedAt:null, stoppedAt:null, tick:0,
       log:[], hooks:[], queue:[], incidents:[], mergeGroup:null,
       exportOpen:false, fleetTab:"list", sysTab:"log", detailOpen:false, lastSaved:null,
-      easLangCol:"en",
+      easLangCol:"en", chatTurn:0, chatSeen:0,
     });
     this.save(); this.emit();
   }

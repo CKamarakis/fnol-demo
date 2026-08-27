@@ -1,0 +1,132 @@
+/* ============================================================
+   9. CHAT — the alternative path through the blocking six
+
+   Every colour here is an existing token. Nothing new is declared, so
+   contrast.mjs already covers these surfaces: --bg-raise-2 and --accent-soft
+   both carry --ink, which is the pairing the cards and chips already use.
+
+   The bubbles are the first asymmetric radius in the project. That is
+   deliberate and it is the ONLY thing distinguishing them from cards: shape
+   carries "this is a conversation", and the tail corner carries who is
+   speaking. Neither is load-bearing on its own — Roady's side has an avatar
+   and the driver's side is a button with a pen icon, so the distinction
+   survives without colour and without shape.
+   ============================================================ */
+
+/* ---- the mode fork ---- */
+/* Twice the height of an ordinary row, because this is not a settings toggle:
+   it is the driver choosing how they are about to spend the next ninety
+   seconds, and each option carries an illustration of what they are choosing. */
+.mode-card{
+  display:flex;align-items:center;gap:13px;width:100%;text-align:left;
+  min-height:116px;padding:14px 12px 14px 14px;margin-bottom:12px;
+  background:var(--bg-raise);border:1.5px solid var(--line);border-radius:var(--r-md);
+}
+.mode-card:active{background:var(--bg-raise-2)}
+.mode-art{
+  flex:none;width:88px;height:74px;display:flex;align-items:center;justify-content:center;
+  background:var(--bg);border-radius:var(--r-sm);overflow:hidden;
+}
+.mode-art .msvg{width:100%;height:100%;display:block}
+.mode-body{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.mode-title{font-weight:650;font-size:15.5px;color:var(--ink);line-height:1.3}
+.mode-sub{font-size:12.5px;color:var(--ink-3);line-height:1.45}
+.mode-chev{flex:none;color:var(--ink-3);display:flex}
+
+/* ---- transcript ---- */
+.transcript{display:flex;flex-direction:column;gap:14px;margin:4px 0 8px}
+.turn{display:flex;flex-direction:column;gap:8px}
+
+.bub-row{display:flex;gap:9px;align-items:flex-end}
+.bub-row-in{justify-content:flex-start}
+.bub-row-out{justify-content:flex-end}
+
+/* Roady's avatar. A truck, not a face or a spark: the thing speaking is the
+   vehicle's own report being read back, and a persona illustration would
+   promise a personality that no script has. */
+.bub-av{
+  flex:none;width:30px;height:30px;border-radius:50%;
+  background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;margin-bottom:2px;
+}
+.bub-av svg{width:16px;height:16px}
+
+.bub{
+  max-width:79%;padding:11px 14px;font-size:14.5px;line-height:1.45;
+  display:flex;flex-direction:column;gap:5px;
+}
+/* Roady speaks: square tail bottom-left. */
+.bub-in{
+  background:var(--bg-raise);border:1px solid var(--line);color:var(--ink);
+  border-radius:var(--r-md) var(--r-md) var(--r-md) 4px;
+}
+/* The driver answers: square tail bottom-right, and it is a button. */
+.bub-out{
+  background:var(--accent-soft);border:1px solid var(--accent);color:var(--ink);
+  border-radius:var(--r-md) var(--r-md) 4px var(--r-md);
+  flex-direction:row;align-items:center;gap:9px;text-align:left;
+  min-height:44px;
+}
+.bub-out:active{background:var(--bg-raise-2)}
+
+.bub-q{font-weight:600}
+/* What the truck reported, quoted inside Roady's bubble. Monospace because it
+   is a value read off an instrument, not a sentence. */
+.bub-val{
+  font-family:var(--mono);font-size:13px;color:var(--ink-2);
+  background:var(--bg-raise-2);border-radius:var(--r-sm);
+  padding:6px 9px;word-break:break-word;
+}
+.bub-said{font-weight:600;flex:1;min-width:0}
+.bub-redo{flex:none;color:var(--ink-3);display:flex;opacity:.75}
+.bub-redo svg{width:14px;height:14px}
+
+/* The open turn's controls, indented to the same gutter as Roady's bubble so
+   the question and its answers read as one block. */
+.bub-answer{padding-left:39px}
+.bub-answer .choice{margin-top:8px}
+.bub-answer .choice:first-child{margin-top:0}
+.bub-answer .grid2 .choice{margin-top:0}
+.chat-next{width:100%;margin-top:10px}
+
+/* Confirm / Edit. Sized to their labels rather than to half the screen: these
+   are one-word answers to a question already asked above them, and two
+   full-width slabs made a two-word reply look like the weightiest thing on the
+   screen. Still over the 56px tap minimum on the vertical, which is the axis a
+   thumb actually misses on. */
+.chat-acts{display:flex;gap:9px;align-items:center}
+/* width:auto is the point — .btn sets width:100%, which made these two stack
+   full-width and read as the heaviest thing on the screen. */
+.chat-act{
+  width:auto;flex:0 0 auto;min-height:46px;padding:9px 22px;
+  font-size:14.5px;font-weight:650;line-height:1.25;
+  border-radius:var(--r-md);
+}
+
+/* The correction editor breaks out of the bubble gutter and uses the full
+   width. A road name with a kilometre marker is long, the field is the one
+   place the driver is typing rather than tapping, and an input indented to
+   align with a speech bubble shows a dozen fewer characters for no reason. */
+.bub-answer .frow-editor{margin-left:-39px;margin-right:0}
+.bub-answer .frow-editor .inp{font-size:13.6px;padding:12px 13px}
+
+/* Switching to the form is a change of mind, not a step in the flow, so it sits
+   quieter and tighter than the .skip it borrows from — that one is a
+   full-height escape hatch on the optional screens, and it was reserving a
+   gap-screen's worth of dock for a link. The counter above it is the control
+   the driver is here for; this one keeps out of its way. */
+.dock .skip.chat-switch{
+  min-height:0;margin-top:6px;padding:8px 12px;font-size:13.5px;font-weight:600;
+}
+/* Tighter than the standard dock: two controls, one of them a quiet link. */
+.chat-dock{padding:10px 20px 8px}
+
+@media (max-width:420px){
+  .bub{max-width:84%}
+  .bub-answer{padding-left:0}
+}
+
+/* The type picker's own way out. Full width and separated from the controls
+   above it, so it reads as closing the panel rather than as another option
+   inside it. */
+.type-done{width:100%;margin-top:14px}

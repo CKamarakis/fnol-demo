@@ -197,7 +197,12 @@ function* copyLines(src) {
       // on the free-text screens.
       const found = [];
       let m;
-      const PROP = /\b(?:label|placeholder|title|sub|hint)\s*[:=]\s*["'`]([^"'`]{20,})["'`]/g;
+      /* `q` and `question` are here because the chat script is an array of
+         question objects, and a script under a key this rule does not know is
+         the most copy-dense object in the product with nothing checking it.
+         The script uses `label` for exactly that reason; these two are the
+         guard against the next one that does not. */
+      const PROP = /\b(?:label|placeholder|title|sub|hint|q|question)\s*[:=]\s*["'`]([^"'`]{20,})["'`]/g;
       while ((m = PROP.exec(line))) found.push(m[1]);
       const FN = /\b(?:textField|Choice|Note)\s*\(\s*["'`]([^"'`]{20,})["'`]/g;
       while ((m = FN.exec(line))) found.push(m[1]);

@@ -70,6 +70,12 @@ const click = sel => {
 // walk the blocking path
 check(click('[data-act="s0-fine"]'), 'can answer "everyone\'s fine"');
 await wait();
+/* The cold open now leads to the fork: form or chat. Both reach the same six.
+   This suite walks the FORM path; the chat has its own section below. */
+check(!!document.querySelector('[data-act="set-intake-mode"][data-v="form"]'),
+  'the cold open offers a way to answer');
+check(click('[data-act="set-intake-mode"][data-v="form"]'), 'can choose the form');
+await wait();
 check(document.querySelectorAll('.frow').length >= 4,
   'tier-1 screen shows the pre-filled rows');
 check(/verify the tracker/i.test(text()),
@@ -259,10 +265,14 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   check(/is everyone okay/i.test(t2()), 'Back from 112 returns to the cold open');
   check(hit('s0-fine'), 'the cold open is fully usable again after going back');
   await wait();
+  hit('set-intake-mode', 'form');
+  await wait();
   check(!/ambulance|emergency service/i.test(t2()),
     'the injury flag was cleared, so the six questions do not ask about it');
 
-  // Back to the safety route for the rest of the walk.
+  // Back to the safety route for the rest of the walk. Two steps now: the six
+  // questions sit behind the choice of how to answer them.
+  hit('nav-back'); await wait();
   hit('nav-back'); await wait();
   check(hit('s0-hurt'), 'can route to 112 again after going back');
   await wait();
@@ -335,6 +345,7 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
     const app = fresh();
     await wait();
     app.hit('s0-fine'); await wait();
+    app.hit('set-intake-mode', 'form'); await wait();
     // All six, because submit does not exist until they are answered.
     for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location',
       'confirm-type', 'set-injured', 'set-drivable']) {
@@ -387,6 +398,8 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   const t = () => doc.querySelector('#root')?.textContent || '';
 
   hit('s0-fine');
+  await wait();
+  hit('set-intake-mode', 'form');
   await wait();
 
   check(!!doc.querySelector('[data-act="edit-field"]'),
@@ -451,6 +464,7 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   const t = () => doc.querySelector('#root')?.textContent || '';
 
   hit('s0-fine'); await wait();
+  hit('set-intake-mode', 'form'); await wait();
   hit('edit-field', 'type'); await wait();
 
   const main = doc.querySelector('#type-main');
@@ -511,6 +525,7 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
 
   // --- the injury branch refuses to collect a diagnosis ---
   hit('s0-fine'); await wait();
+  hit('set-intake-mode', 'form'); await wait();
   hit('set-injured', 'yes'); await wait();
 
   // Answering yes routes to 112 first — that is the rule working, not a
@@ -588,6 +603,246 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
 
     d.window.close();
   }
+}
+
+/* ------------------------------------------------------------------ *
+ * The chat path, driven end to end.
+ *
+ * rules.mjs proves the two paths agree on the resulting draft. This proves the
+ * conversation actually walks: that each answer advances the turn, that the
+ * open question is the only one showing controls, and that a driver can go
+ * back and change an answer without losing the ones after it.
+ * ------------------------------------------------------------------ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const errs = [];
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errs.push(e.message); }),
+  });
+  const doc = d.window.document;
+  const hit = (a, v) => {
+    const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+    const n = doc.querySelector(sel);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+  const openTurns = () => doc.querySelectorAll('#root .turn-open').length;
+
+  await wait();
+  hit('s0-fine'); await wait();
+  check(hit('set-intake-mode', 'chat'), 'the chat path is reachable from the fork');
+  await wait();
+
+  check(/Roady/.test(t()), 'the chat names who is asking');
+  check(openTurns() === 1, 'exactly one turn is open at a time', `${openTurns()} open`);
+  check(/is that right/i.test(t()), 'the first turn asks about the vehicle');
+  check(!/anyone hurt/i.test(t()), 'later questions are not shown before their turn');
+
+  // Four confirmations, each of which should advance on its own.
+  for (const [act, label] of [
+    ['confirm-vehicle', 'vehicle'], ['confirm-time', 'time'],
+    ['confirm-location', 'location'], ['confirm-type', 'type'],
+  ]) {
+    check(hit(act, 'yes'), `chat: the ${label} turn is answerable`);
+    await wait();
+  }
+  check(openTurns() === 1, 'chat: still exactly one turn open after four answers');
+  check(/anyone hurt/i.test(t()), 'chat: four answers reach the injury question');
+
+  // "No one" is one tap and must not route to 112.
+  check(hit('set-injured', 'no'), 'chat: injury is answerable');
+  await wait();
+  check(!/112/.test(t().replace(/Emergency 112/g, '')),
+    'chat: "no one" does not route to the emergency screen');
+  check(/still be driven/i.test(t()), 'chat: reaches the drivable question');
+
+  check(hit('set-drivable', 'yes'), 'chat: drivable is answerable');
+  await wait();
+
+  // Six answered: the dock swaps the counter for the real control.
+  check(!!doc.querySelector('#root [data-act="submit-tier1"]'),
+    'chat: six answers unblock submission');
+  check(!/still to check/i.test(t()), 'chat: nothing is left outstanding');
+
+  // An answered turn stays tappable, and reopening it keeps the rest.
+  const said = doc.querySelectorAll('#root [data-act="chat-reopen"]');
+  check(said.length >= 5, 'chat: answered turns stay on screen and tappable',
+    `${said.length} tappable`);
+
+  check(hit('chat-reopen', '0'), 'chat: an answered turn reopens');
+  await wait();
+  check(openTurns() === 1, 'chat: reopening still leaves one turn open');
+  check(/is that right/i.test(t()), 'chat: reopening returns to that question');
+  check(!!doc.querySelector('#root [data-act="submit-tier1"]'),
+    'chat: correcting an early answer does not discard the later ones');
+
+  check(errs.length === 0, 'chat: the whole path throws nothing', errs.slice(0, 2).join(' | '));
+  d.window.close();
+}
+
+/* ------------------------------------------------------------------ *
+ * Switching is a two-way promise.
+ *
+ * The fork says "you can switch at any point". Until the form carried a way
+ * back, that held in one direction only. And a switch has to RESUME: a driver
+ * who answered three rows and then asked for Roady is not asking to be walked
+ * back through the three they already did.
+ * ------------------------------------------------------------------ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const errs = [];
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errs.push(e.message); }),
+  });
+  const doc = d.window.document;
+  const hit = (a, v) => {
+    const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+    const n = doc.querySelector(sel);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+
+  await wait();
+  hit('s0-fine'); await wait();
+  hit('set-intake-mode', 'form'); await wait();
+
+  check(!!doc.querySelector('#root [data-act="set-intake-mode"][data-v="chat"]'),
+    'the form offers a way to switch to Roady');
+
+  // Answer three on the form, then switch.
+  for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location']) {
+    hit(act); await wait();
+  }
+  check(hit('set-intake-mode', 'chat'), 'the form can switch to the chat mid-report');
+  await wait();
+
+  check(/Roady/.test(t()), 'switching reaches the chat');
+  // The chat must open on what is still outstanding, not on question one.
+  check(/what happened|reported this/i.test(t()),
+    'switching resumes at the first unanswered question, not the first question',
+    t().slice(0, 160).replace(/\s+/g, ' '));
+  check(/3 still to check/i.test(t()),
+    'the three answered on the form are still answered in the chat',
+    t().match(/\d+ still to check/i)?.[0] || 'no counter');
+
+  // And once all six are answered, the switch link is gone: the only control
+  // in front of the driver should be the one that files the report.
+  for (const [act, v] of [['confirm-type', null], ['set-injured', 'no'], ['set-drivable', 'yes']]) {
+    hit(act, v); await wait();
+  }
+  hit('set-intake-mode', 'form'); await wait();
+  check(!!doc.querySelector('#root [data-act="submit-tier1"]'),
+    'six answered: the form offers submission');
+  check(!doc.querySelector('#root [data-act="set-intake-mode"][data-v="chat"]'),
+    'six answered: the switch link is gone rather than offering a pointless rewalk');
+
+  check(errs.length === 0, 'switching throws nothing', errs.slice(0, 2).join(' | '));
+  d.window.close();
+}
+
+/* ------------------------------------------------------------------ *
+ * Re-confirming an answered turn must not un-answer it.
+ *
+ * On the form the control IS the row, and tapping a confirmed row is the only
+ * way to take a mistap back. In the chat the control is a button that says
+ * "Confirm" — and it shared the form's toggle, so reopening a settled turn and
+ * tapping Confirm took a finished report back to "1 still to check" and removed
+ * the submit control. The driver saw a button labelled Confirm un-answer the
+ * question it claimed to settle.
+ * ------------------------------------------------------------------ */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const errs = [];
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole()
+      .on('jsdomError', e => { if (!IGNORE.test(e.message)) errs.push(e.message); }),
+  });
+  const doc = d.window.document;
+  const hit = async (a, v) => {
+    const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+    const n = doc.querySelector(sel);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    await wait();
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+
+  await wait();
+  await hit('s0-fine'); await hit('set-intake-mode', 'chat');
+  for (const a of ['confirm-vehicle', 'confirm-time', 'confirm-location', 'confirm-type']) {
+    await hit(a, 'yes');
+  }
+  await hit('set-injured', 'yes');
+  await hit('toggle-injured-party', 'our_vehicle');
+  await hit('chat-advance', 'parties');
+  await hit('toggle-severity', 'walking');
+  await hit('chat-advance', 'severity');
+  await hit('set-emergency', 'no');
+  await hit('set-drivable', 'yes');
+
+  check(!!doc.querySelector('#root [data-act="submit-tier1"]'),
+    'chat: the full injury branch reaches submission');
+
+  // The regression: reopen a settled turn and confirm it again.
+  await hit('chat-reopen', '0');
+  await hit('confirm-vehicle', 'yes');
+
+  check(!/still to check/i.test(t()),
+    'chat: re-confirming an answered turn does not un-answer it',
+    t().match(/\d+ still to check/i)?.[0] || '');
+  check(!!doc.querySelector('#root [data-act="submit-tier1"]'),
+    'chat: the report stays submittable after re-confirming');
+
+  // And it still files.
+  await hit('submit-tier1');
+  await new Promise(r => setTimeout(r, 600));
+  check(/INS-DE-\d{4}-\d+/.test(t()),
+    'chat: submitting after a re-confirm issues a reference',
+    t().slice(0, 120).replace(/\s+/g, ' '));
+
+  check(errs.length === 0, 'chat: the re-confirm path throws nothing', errs.slice(0, 2).join(' | '));
+  d.window.close();
+}
+
+/* The form keeps its toggle: there the row is the control, and tapping a
+   confirmed row is how a mistap is undone. */
+{
+  const { VirtualConsole } = await import('jsdom');
+  const d = new JSDOM(html, {
+    runScripts: 'dangerously', pretendToBeVisual: true, url: 'https://localhost/',
+    virtualConsole: new VirtualConsole(),
+  });
+  const doc = d.window.document;
+  const hit = async (a, v) => {
+    const sel = v ? `#root [data-act="${a}"][data-v="${v}"]` : `#root [data-act="${a}"]`;
+    const n = doc.querySelector(sel);
+    if (!n) return false;
+    n.dispatchEvent(new d.window.MouseEvent('click', { bubbles: true }));
+    await wait();
+    return true;
+  };
+  const t = () => doc.querySelector('#root')?.textContent || '';
+
+  await wait();
+  await hit('s0-fine'); await hit('set-intake-mode', 'form');
+  await hit('confirm-vehicle');
+  const afterOne = t().match(/(\d+) still to check/i)?.[1];
+  await hit('confirm-vehicle');
+  const afterTwo = t().match(/(\d+) still to check/i)?.[1];
+  check(afterOne === '5' && afterTwo === '6',
+    'form: tapping a confirmed row still un-confirms it, so a mistap is correctable',
+    `${afterOne} then ${afterTwo}`);
+  d.window.close();
 }
 
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');

@@ -324,8 +324,13 @@ async function boot(state) {
   const app = await boot({
     persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'],
   });
-  check(!!app.doc.querySelector('#root [data-field="damageDesc"]'),
-    'ACORD DESCRIBE DAMAGE is collected');
+  /* DESCRIBE DAMAGE is deliberately NOT collected, in any scenario. The driver
+     is photographing the damage as they answer; the type and alsoDamaged from
+     question 4, the point of impact, and the frames themselves already carry
+     it, and the description proper is the assessor's to write. Recorded in
+     ACORD_OMITTED rather than dropped silently. */
+  check(!app.doc.querySelector('#root [data-field="damageDesc"]'),
+    'ACORD DESCRIBE DAMAGE is not asked of the driver — it is in ACORD_OMITTED');
   check(!!app.doc.querySelector('#root [data-field="whereSeen"]'),
     'ACORD WHERE CAN VEH BE SEEN is collected');
   check(!!app.doc.querySelector('#root [data-act="gap-skip"]'),
@@ -356,10 +361,14 @@ async function boot(state) {
   const omitted = readFileSync(join(ROOT, 'src', 'data', 'domain.js'), 'utf8');
   check(/ACORD_OMITTED/.test(omitted),
     'the fields ACORD asks for and this flow refuses are enumerated');
-  for (const must of ['Art. 9', 'ESTIMATE AMT', 'PURPOSE OF USE', 'licence']) {
+  for (const must of ['Art. 9', 'ESTIMATE AMT', 'PURPOSE OF USE', 'licence', 'DESCRIBE DAMAGE']) {
     check(omitted.includes(must),
       `the omission list names "${must}"`);
   }
+  // A removed field must leave the carried list too, or the audit claims to
+  // send the handler something nothing collects.
+  check(!/vehicle\.damage_description/.test(omitted),
+    'a field moved to the omission list is no longer claimed as carried');
   app.close();
 }
 
@@ -577,8 +586,10 @@ async function boot(state) {
   // Every route onto the six questions, including the safety detour.
   const ROUTES = [
     ['direct load', { persona: 'driver', screen: 's1', scenario: 'collision' }, null],
-    ['via "everyone\'s fine"', { persona: 'driver', screen: 's0', scenario: 'collision' }, ['s0-fine']],
-    ['via 112 then continue', { persona: 'driver', screen: 's0', scenario: 'collision' }, ['s0-hurt', 'emg-continue']],
+    ['via "everyone\'s fine"', { persona: 'driver', screen: 's0', scenario: 'collision' },
+      ['s0-fine', 'set-intake-mode']],
+    ['via 112 then continue', { persona: 'driver', screen: 's0', scenario: 'collision' },
+      ['s0-hurt', 'emg-continue', 'set-intake-mode']],
   ];
 
   for (const [label, state, path] of ROUTES) {
@@ -1153,6 +1164,178 @@ for (const [persona, tabs] of [
   check((text.match(/Skipped/g) || []).length >= 3,
     'archive: each skipped screen says so rather than vanishing',
     `found ${(text.match(/Skipped/g) || []).length}`);
+  app.close();
+}
+
+/* ==================================================================
+ * RULE · Two ways in, one report.
+ *
+ * The chat is a second PRESENTATION of the blocking six, not a second intake.
+ * If the two paths can produce different drafts from the same answers then one
+ * of them is lying to the handler, and nothing else in this file would catch
+ * it: both paths pass every other rule here on their own.
+ *
+ * So: run both with the same answers and compare the drafts key by key.
+ * ================================================================== */
+{
+  // The six, answered identically on each path. The chat advances itself, so
+  // the same clicks arrive in the same order without naming any turn.
+  const ANSWERS = [
+    ['confirm-vehicle', null], ['confirm-time', null], ['confirm-location', null],
+    ['confirm-type', null], ['set-injured', 'no'], ['set-drivable', 'yes'],
+  ];
+
+  const walk = async mode => {
+    const app = await boot({ persona: 'driver', screen: 's0', scenario: 'collision' });
+    await app.click('#root [data-act="s0-fine"]');
+    await app.click(`#root [data-act="set-intake-mode"][data-v="${mode}"]`);
+    for (const [act, v] of ANSWERS) {
+      const sel = v == null
+        ? `#root [data-act="${act}"]`
+        : `#root [data-act="${act}"][data-v="${v}"]`;
+      const node = app.doc.querySelector(sel);
+      if (node) await app.click(node);
+    }
+    const stored = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1') || '{}');
+    const ready = !!app.doc.querySelector('#root [data-act="submit-tier1"]');
+    app.close();
+    return { draft: stored.draft || {}, ready };
+  };
+
+  const form = await walk('form');
+  const chat = await walk('chat');
+
+  check(form.ready, 'both paths: the form reaches submission on six answers');
+  check(chat.ready, 'both paths: the chat reaches submission on the same six');
+
+  /* intakeMode is the one key that legitimately differs — it records which way
+     the driver chose, and nothing downstream reads it. Everything else must
+     match, including the telematics values and the untouched perishables. */
+  const keys = [...new Set([...Object.keys(form.draft), ...Object.keys(chat.draft)])]
+    .filter(k => k !== 'intakeMode');
+  const diffs = keys.filter(k =>
+    JSON.stringify(form.draft[k]) !== JSON.stringify(chat.draft[k]));
+
+  check(diffs.length === 0,
+    'both paths: the same answers produce the same draft, key for key',
+    diffs.map(k => `${k}: form=${JSON.stringify(form.draft[k])} chat=${JSON.stringify(chat.draft[k])}`).join(' · '));
+
+  check(chat.draft.intakeMode === 'chat' && form.draft.intakeMode === 'form',
+    'both paths: the chosen mode is recorded, and is the only difference');
+}
+
+/* The chat asks the six and only the six, and asks nothing about fault. */
+{
+  const app = await boot({ persona: 'driver', screen: 's1chat', scenario: 'collision',
+    navStack: ['s0choice'], draft: { intakeMode: 'chat' } });
+  const text = app.doc.querySelector('#root .phone')?.textContent || '';
+  check(!/fault|blame|at fault|whose fault|responsib/i.test(text),
+    'chat: never asks whose fault it was');
+  check(/6/.test(text), 'chat: says how many the driver has settled');
+  app.close();
+}
+
+/* Saying yes to injury opens the detail turns, on BOTH paths.
+   The chat used to interrupt to 112 here. It no longer does: both paths reach
+   the six through the cold open's safety question, so the chat inherits the
+   same guarantee the form relies on, and interrupting cost the driver the
+   answer they were part-way through giving. The rule this protects is that one
+   question must not behave differently depending on which path asked it. */
+{
+  const app = await boot({ persona: 'driver', screen: 's1chat', scenario: 'collision',
+    navStack: ['s0choice'], draft: { intakeMode: 'chat' } });
+  // Walk to the injury turn.
+  for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location', 'confirm-type']) {
+    const n = app.doc.querySelector(`#root [data-act="${act}"]`);
+    if (n) await app.click(n);
+  }
+  const yes = app.doc.querySelector('#root [data-act="set-injured"][data-v="yes"]');
+  check(!!yes, 'chat: reaches the injury question');
+  if (yes) await app.click(yes);
+
+  const text = app.text();
+  check(/who is hurt/i.test(text),
+    'chat: yes opens the who-is-hurt turn rather than leaving the flow',
+    text.slice(0, 160).replace(/\s+/g, ' '));
+  check(!!app.doc.querySelector('#root [data-act="toggle-injured-party"]'),
+    'chat: the party multi-select is on screen');
+
+  // Naming a party advances to the severity bands, which are also multi-select.
+  await app.click('#root [data-act="toggle-injured-party"][data-v="driver"]');
+  await app.click('#root [data-act="chat-advance"]');
+  check(!!app.doc.querySelector('#root [data-act="toggle-severity"]'),
+    'chat: the severity bands follow, as they do on the form');
+
+  // 112 is still one tap away, where it is on every driver screen.
+  check(!!app.doc.querySelector('#root [data-act="call112"]'),
+    'chat: the 112 rail is still above the fold throughout the injury turns');
+  app.close();
+}
+
+/* ==================================================================
+ * RULE · The date of loss is stored, not inferred from today.
+ *
+ * Every screen used to render `new Date()` beside the stored time, so the date
+ * was never held on the draft, never reached the handler, and was silently
+ * wrong for any report filed after midnight or reopened later — which this
+ * artifact, emailed and opened for months, does by design. It is ACORD 2 · 21,
+ * and limitation periods run from it.
+ * ================================================================== */
+{
+  // The fixtures are dated 19 August 2026. Asserting that literal is the whole
+  // point: a date rendered from Date.now() would read as today instead, which
+  // is exactly the defect this guards.
+  const FIXTURE_DATE = '19 August 2026';
+  const todayish = new Date().toLocaleDateString('en-GB',
+    { day: 'numeric', month: 'long', year: 'numeric' });
+
+  const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+  const text = app.text();
+
+  check(text.includes(FIXTURE_DATE),
+    'date of loss: the driver sees the date the UNIT reported, beside the time',
+    text.match(/\d{2}:\d{2}[^|]{0,30}/)?.[0] || 'no date/time found');
+  check(FIXTURE_DATE !== todayish && !text.includes(todayish),
+    'date of loss: it is not silently todays date',
+    `today is ${todayish}`);
+
+  // Correcting must offer BOTH halves — an incident found at 00:20 keeps its
+  // time and moves back a day, and a driver who cannot reach the date is stuck
+  // with whatever the unit guessed.
+  await app.click('#root [data-act="edit-field"][data-v="time"]');
+  check(!!app.doc.querySelector('#root [data-editfield="time"]'),
+    'date of loss: the editor offers the time');
+  const dateInput = app.doc.querySelector('#root [data-editfield="date"]');
+  check(!!dateInput,
+    'date of loss: the editor also offers the date, so it can be corrected');
+  check(dateInput && dateInput.value === FIXTURE_DATE,
+    'date of loss: the date editor opens pre-filled with what was reported',
+    dateInput ? dateInput.value : 'no input');
+
+  // It is persisted, not recomputed on each render.
+  const stored = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1') || '{}');
+  check((stored.draft || {}).occurredOn === FIXTURE_DATE,
+    'date of loss: it is stored on the draft, so it survives a reload',
+    JSON.stringify((stored.draft || {}).occurredOn));
+  app.close();
+}
+
+/* The driver's own copy states the date too — it is one of the six. */
+{
+  const app = await boot({ persona: 'driver', screen: 'archive', scenario: 'collision',
+    navStack: ['done'] });
+  check(app.text().includes('19 August 2026'),
+    'archive: the driver\'s copy shows when it happened, date included');
+  app.close();
+}
+
+/* A theft is not asked what a theft victim cannot answer, on either path. */
+{
+  const app = await boot({ persona: 'driver', screen: 's1chat', scenario: 'theft',
+    navStack: ['s0choice'], draft: { intakeMode: 'chat' } });
+  const text = app.doc.querySelector('#root .phone')?.textContent || '';
+  check(!/can the vehicle still be driven/i.test(text),
+    'chat: a theft is never asked whether the vehicle is drivable');
   app.close();
 }
 
