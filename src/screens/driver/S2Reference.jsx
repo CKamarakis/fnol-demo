@@ -127,9 +127,9 @@ export function scrReference() {
                 dangerouslySetInnerHTML={{ __html: I.info }}
               />
               <p className="tiny" style={{ lineHeight: 1.5 }}>
-                You can close the app now. Everything is saved. We&rsquo;ll message you a link to
-                finish the rest whenever you&rsquo;re ready.{' '}
-                <b style={{ color: 'var(--ink-2)' }}>the report is already filed</b>.
+                You can close the app now. <b style={{ color: 'var(--ink-2)' }}>The report is
+                already filed.</b> We&rsquo;ll message you a link to finish the rest whenever
+                you&rsquo;re ready.
               </p>
             </div>
           </div>

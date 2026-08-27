@@ -32,8 +32,7 @@ export function scrCargo() {
             <div className="card-quiet" style={{ marginTop: '12px', borderColor: '#e0a89c' }}>
               <p className="tiny" style={{ lineHeight: 1.5 }}>
                 <b style={{ color: '#b8341c' }}>ADR load flagged.</b> This escalates immediately.
-                It changes the recovery provider, the road closure, and who has to be told. This is
-                the one “late” field that would justify being promoted.
+                It changes the recovery provider, the road closure, and who has to be told.
               </p>
             </div>
           )}

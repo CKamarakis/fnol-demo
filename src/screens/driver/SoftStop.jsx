@@ -60,7 +60,7 @@ export function scrSoftStop() {
                   className="tiny"
                   style={{ fontWeight: 700, color: 'var(--ink-2)', marginBottom: '8px' }}
                 >
-                  We&rsquo;ll ask you about these later
+                  We&rsquo;ll message you about these tomorrow
                 </div>
                 <div className="chipset">
                   {outstanding.map(x => (
@@ -69,10 +69,6 @@ export function scrSoftStop() {
                     </span>
                   ))}
                 </div>
-                <p className="tiny" style={{ marginTop: '10px' }}>
-                  No nagging now. A message tomorrow when you&rsquo;re not standing on a hard
-                  shoulder.
-                </p>
               </div>
             </>
           )}

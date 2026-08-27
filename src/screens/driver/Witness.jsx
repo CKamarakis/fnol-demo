@@ -31,10 +31,8 @@ export function scrWitness() {
           {textField('A phone number', 'witnessPhone', '+49 …', 'tel')}
           <div className="card-quiet">
             <p className="tiny" style={{ lineHeight: 1.5 }}>
-              A number with no name still works.{' '}
-              <b style={{ color: 'var(--ink-2)' }}>
-                Do not let the name field stop you getting the number.
-              </b>
+              <b style={{ color: 'var(--ink-2)' }}>A number with no name still works.</b>{' '}
+              Get the number first.
             </p>
           </div>
         </>
