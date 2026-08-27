@@ -3,11 +3,11 @@ import { I } from '../../core/utils.js';
 import { SCENARIOS } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { emergencyRail, navBar, offlineBanner, statusBar, timerRail } from '../../components/DriverShell.jsx';
+import { scrArchive } from './Archive.jsx';
 import { scrCargo } from './Cargo.jsx';
 import { scrDismiss } from './Dismiss.jsx';
 import { scrEAS } from './EasCircumstances.jsx';
 import { scrEmergency } from './Emergency.jsx';
-import { scrGaps } from './GapsHub.jsx';
 import { scrOtherInsurer } from './OtherInsurer.jsx';
 import { scrOtherVehicle } from './OtherVehicle.jsx';
 import { scrPhotos } from './Photos.jsx';
@@ -27,7 +27,6 @@ const SCREENS = {
   emg: scrEmergency,
   s1: scrTier1,
   s2: scrReference,
-  gaps: scrGaps,
   witness: scrWitness,
   otherv: scrOtherVehicle,
   photos: scrPhotos,
@@ -36,6 +35,7 @@ const SCREENS = {
   cargo: scrCargo,
   otherins: scrOtherInsurer,
   done: scrSoftStop,
+  archive: scrArchive,
 };
 
 /** The timer is a demo instrument, shown only while the blocking path runs. */

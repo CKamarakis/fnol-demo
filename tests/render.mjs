@@ -100,10 +100,20 @@ if (submitted) {
 // conversion can pass every other check while a screen throws on mount.
 // Safety route: "someone is hurt" must reach 112 before any claims field.
 // This is the single most important ordering rule in the product.
-check(clickIn('go-gaps'), 'can reach the perishability hub');
+// The hub that used to launch these is gone: it listed the screens after it
+// and cost a tap to read. "Continue" now walks the same perishability order
+// directly, so the first optional screen is one tap from the reference.
+check(clickIn('go-gaps'), 'the reference screen leads into the optional flow');
 await wait();
-check(/disappear/i.test(text()), 'hub is framed as what disappears, not a progress bar');
+check(!/^\s*$/.test(text()), 'it lands on a screen, not an empty hub');
+check(/saw it|witness/i.test(text()),
+  'it lands on the FIRST perishable item, not a menu of them',
+  text().slice(0, 90).replace(/\s+/g, ' '));
 
+// Each of these is a separate module, so visiting all of them is what catches
+// a screen broken during refactoring. Driven by state rather than by clicking
+// through a hub — that dependency is exactly what made this block fail when
+// the hub was removed, and it tests the screens rather than the route to them.
 const GAPS = [
   ['witness', /saw it|witness/i],
   ['otherv', /plate/i],
@@ -113,16 +123,34 @@ const GAPS = [
   ['cargo', /loaded|cargo|trailer/i],
   ['otherins', /insurer/i],
 ];
-for (const [id, expect] of GAPS) {
-  const reached = clickIn('goto', id);
-  await wait();
-  check(reached, `can open the "${id}" screen`);
-  if (reached) {
-    check(expect.test(text()), `"${id}" screen rendered its content`);
-    check(errors.length === 0, `"${id}" screen mounted without errors`,
-      errors.slice(-2).join(' | '));
-    clickIn('nav-back');
+{
+  const { VirtualConsole } = await import('jsdom');
+  for (const [id, expect] of GAPS) {
+    const errs = [];
+    const d = new JSDOM(html, {
+      runScripts: 'dangerously',
+      pretendToBeVisual: true,
+      url: 'https://localhost/',
+      virtualConsole: new VirtualConsole()
+        .on('jsdomError', e => { if (!IGNORE.test(e.message)) errs.push(e.message); }),
+      beforeParse(w) {
+        try {
+          w.localStorage.setItem('fnol.demo.v1', JSON.stringify({
+            persona: 'driver', screen: id, scenario: 'collision', navStack: ['s0'],
+          }));
+        } catch { /* ignore */ }
+      },
+    });
     await wait();
+    const body = d.window.document.querySelector('#root')?.textContent || '';
+
+    check(body.trim().length > 40, `can open the "${id}" screen`,
+      `only ${body.trim().length} chars`);
+    check(expect.test(body), `"${id}" screen rendered its content`,
+      body.slice(0, 90).replace(/\s+/g, ' '));
+    check(errs.length === 0, `"${id}" screen mounted without errors`,
+      errs.slice(0, 2).join(' | '));
+    d.window.close();
   }
 }
 
@@ -509,35 +537,57 @@ check(errors.length === 0, 'no errors after interaction', errors.slice(0, 3).joi
   hit('set-injured', 'no'); await wait();
   hit('set-drivable', 'yes'); await wait();
   hit('submit-tier1'); await wait(); await wait();
-  hit('go-gaps'); await wait();
+  d.window.close();
+}
 
+/* Each optional screen, mounted on its own. Previously this walked out of the
+   perishability hub with `if (!hit('goto', id)) continue;` — which, once the
+   hub was removed, silently skipped every screen and asserted nothing while
+   still reporting green. A seeded mount per screen cannot skip: a screen that
+   fails to render fails the check. */
+{
+  const { VirtualConsole } = await import('jsdom');
   const GAP_SCREENS = ['witness', 'otherv', 'photos', 'eas', 'police', 'otherins'];
+
   for (const id of GAP_SCREENS) {
-    if (!hit('goto', id)) continue;
+    const d = new JSDOM(html, {
+      runScripts: 'dangerously',
+      pretendToBeVisual: true,
+      url: 'https://localhost/',
+      virtualConsole: new VirtualConsole()
+        .on('jsdomError', e => { if (!IGNORE.test(e.message)) errors.push(e.message); }),
+      beforeParse(w) {
+        try {
+          w.localStorage.setItem('fnol.demo.v1', JSON.stringify({
+            persona: 'driver', screen: id, scenario: 'collision', navStack: ['s0'],
+          }));
+        } catch { /* ignore */ }
+      },
+    });
     await wait();
+    const doc2 = d.window.document;
 
     // Every optional screen must offer a one-tap way out. A screen without one
     // is a screen that can trap a driver who cannot answer it.
-    check(!!doc.querySelector('#root [data-act="gap-skip"]'),
+    check(!!doc2.querySelector('#root [data-act="gap-skip"]'),
       `"${id}" offers a non-shaming skip`);
 
     // The fault question must not appear as a control on any of them.
-    const faultControl = [...doc.querySelectorAll('#root button, #root select')]
+    const faultControl = [...doc2.querySelectorAll('#root button, #root select')]
       .find(n => /whose fault|at fault|who was responsible|blame/i.test(n.textContent || ''));
     check(!faultControl, `"${id}" asks nothing about fault`,
       faultControl ? `found: "${faultControl.textContent.trim()}"` : '');
 
-    hit('nav-back'); await wait();
+    // --- the EAS screen carries both columns, or it is not the EAS ---
+    if (id === 'eas') {
+      check(doc2.querySelectorAll('#root [data-act="eas-tick"][data-col="A"]').length >= 15,
+        'EAS column A has the full statement set');
+      check(doc2.querySelectorAll('#root [data-act="eas-tick"][data-col="B"]').length >= 15,
+        'EAS column B is present — a one-sided form is not the EAS');
+    }
+
+    d.window.close();
   }
-
-  // --- the EAS screen carries both columns, or it is not the EAS ---
-  hit('goto', 'eas'); await wait();
-  check(doc.querySelectorAll('#root [data-act="eas-tick"][data-col="A"]').length >= 15,
-    'EAS column A has the full statement set');
-  check(doc.querySelectorAll('#root [data-act="eas-tick"][data-col="B"]').length >= 15,
-    'EAS column B is present — a one-sided form is not the EAS');
-
-  d.window.close();
 }
 
 console.log(failed ? `\n${failed} failure(s)` : '\nall render assertions passed');

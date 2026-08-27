@@ -145,14 +145,6 @@
 }
 .inp::placeholder{color:#4a5768;font-weight:500}
 .inp:focus{border-color:var(--accent);outline:none}
-.inp-wrap{position:relative}
-.inp-wrap .mic{
-  position:absolute;right:8px;top:50%;transform:translateY(-50%);
-  width:44px;height:44px;border-radius:11px;display:grid;place-items:center;
-  color:var(--ink-3);background:var(--bg-raise);
-}
-.inp-wrap .mic:hover{color:var(--accent);background:var(--accent-soft)}
-.inp-wrap.has-mic .inp{padding-right:60px}
 .lbl{display:block;font-size:13px;font-weight:650;color:var(--ink-2);margin:0 0 8px}
 .plate-inp{
   font-family:var(--mono);font-size:26px;letter-spacing:.14em;text-align:center;
@@ -273,24 +265,6 @@
 .crumb i.on{background:var(--accent)}
 .crumb i.done{background:var(--ok)}
 
-/* perishability list */
-.perish-item{
-  display:flex;align-items:center;gap:13px;width:100%;padding:14px 15px;min-height:var(--tap);
-  background:var(--bg-raise);border:1px solid var(--line);border-radius:var(--r-md);text-align:left;
-}
-.perish-item + .perish-item{margin-top:9px}
-.perish-item:hover{border-color:#bccbd7}
-.perish-item.done{opacity:.62;border-color:var(--line-soft)}
-.perish-item.done .pi-title{text-decoration:line-through;text-decoration-color:#4a5768}
-.perish-item.skipped{opacity:.5}
-.pi-clock{flex:none;width:34px;text-align:center}
-.pi-body{flex:1;min-width:0}
-.pi-title{font-size:16px;font-weight:650}
-.pi-window{font-size:12px;color:var(--ink-3);margin-top:2px;display:flex;align-items:center;gap:5px}
-.pi-window b{color:var(--warn);font-weight:700}
-.pi-window.gone b{color:var(--danger-deep)}
-.pi-window.cool b{color:var(--ink-2)}
-
 /* reference screen */
 .ref-hero{
   background:linear-gradient(160deg,#12314e,#0e1a26);
@@ -322,6 +296,17 @@
 .chip.plain{background:transparent}
 .chipset{display:flex;flex-wrap:wrap;gap:8px}
 
+/* Archive — the driver's own copy. Label left, value right, wrapping onto its
+   own line rather than squeezing: a location or a damage sentence is long, and
+   truncating the driver's record to keep a grid tidy defeats the point. */
+.arch-row{
+  display:flex;gap:14px;align-items:baseline;justify-content:space-between;
+  padding:11px 14px;border-top:1px solid var(--line-soft);
+}
+.arch-row:first-child{border-top:none}
+.arch-k{font-size:12.5px;color:var(--ink-3);flex:none}
+.arch-v{font-size:14px;font-weight:600;color:var(--ink-1);text-align:right;line-height:1.35}
+
 /* skip link — non-shaming, one tap, never confirms */
 .skip{
   display:block;width:100%;min-height:48px;margin-top:12px;padding:12px;
@@ -341,8 +326,16 @@
 .pslot.skipped{opacity:.45;border-style:dashed}
 .pslot .psvg{position:absolute;inset:0;width:100%;height:100%}
 .pslot .plabel{
-  position:relative;padding:8px 10px;font-size:12px;font-weight:700;line-height:1.25;
-  background:linear-gradient(to top,#dfe7eeef,#dfe7ee00);
+  position:relative;padding:14px 10px 8px;font-size:12px;font-weight:700;line-height:1.25;
+  /* A two-line label needs the scrim to start higher than the text, or the
+     second line sits over bare silhouette. Padding-top extends the gradient. */
+  background:linear-gradient(to top,#dfe7eef7 62%,#dfe7ee00);
+}
+/* Over a photograph the pale scrim cannot hold contrast — the image behind it
+   is arbitrary. A captured slot switches to a dark scrim and white text. */
+.pslot.shot .plabel{
+  color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.55);
+  background:linear-gradient(to top,rgba(8,20,28,.82),rgba(8,20,28,0));
 }
 .pslot .pnum{
   position:absolute;top:7px;left:7px;width:21px;height:21px;border-radius:50%;
@@ -350,6 +343,39 @@
   font-size:11px;font-family:var(--mono);font-weight:700;color:var(--ink-2);
 }
 .pslot.shot .pnum{background:var(--ok);border-color:var(--ok);color:#04241a}
+/* The captured frame fills the slot. object-fit keeps a portrait phone shot
+   from stretching into the 4:3 tile. */
+.pslot .pthumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+/* A slot is now a group: the named frame, its extras, and the add control. */
+.pslot-group{display:flex;flex-direction:column;gap:6px}
+.pslot-group .pslot{width:100%}
+
+/* How many frames this named thing has. Sits opposite the number badge so the
+   two never collide. */
+.pslot .pcount{
+  position:absolute;top:7px;right:7px;min-width:21px;height:21px;padding:0 6px;
+  border-radius:11px;background:#0f2c22e0;color:#fff;display:grid;place-items:center;
+  font-size:11px;font-family:var(--mono);font-weight:700;
+}
+
+/* Extras: small, non-interactive, clearly subordinate to the named frame. */
+.pextra{display:flex;flex-wrap:wrap;gap:5px}
+.pextra-item{
+  width:38px;height:38px;border-radius:6px;overflow:hidden;flex:none;
+  border:1px solid var(--line);background:var(--bg-sunken);display:block;
+}
+.pextra-item img{width:100%;height:100%;object-fit:cover;display:block}
+.pextra-none{display:grid;place-items:center;width:100%;height:100%;color:var(--ink-3)}
+
+/* Secondary to the slot it belongs to: full width so the tap target clears
+   56px in height terms across the group, but quiet enough not to compete. */
+.padd{
+  width:100%;padding:9px 8px;border-radius:var(--r-sm);
+  border:1px dashed var(--line);background:transparent;
+  font-size:12px;font-weight:700;color:var(--ink-2);transition:all .12s;
+}
+.padd:hover{border-color:#a9bcc9;background:var(--bg-sunken);color:var(--ink-1)}
+
 .pslot .pflash{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none}
 @keyframes flash{0%{opacity:.9}100%{opacity:0}}
 .pslot.flashing .pflash{animation:flash .42s ease-out}

@@ -307,20 +307,24 @@ export const FakeApi = (function(){
   }
 
   /* ---------------- POST /v1/incidents/{id}/attachments ---------------- */
-  async function postAttachment(id, slot){
+  // kb is the real byte count of the file the driver just took, when there is
+  // one. It falls back to a plausible size only for a caller that has no file
+  // in hand (a test, or a replayed queue entry).
+  async function postAttachment(id, slot, kb){
     const inc = store.incidents[id];
     const key = uuid();
+    const size = (typeof kb==="number" && kb>0 ? kb : rnd(1800,4400))+" KB";
     // Attachments queue SEPARATELY from field data. Field data is small and
     // must sync first; a 4 MB photo must never hold up the claim record.
     const r = await transport("POST","/v1/incidents/"+id+"/attachments",{key, kind:"attachment", body:{slot}});
     if(r.queued){
       const q=Store.s.queue[Store.s.queue.length-1];
-      if(q){ q.incidentId=id; q.slot=slot; q.bytes=rnd(1800,4400)+" KB"; }
+      if(q){ q.incidentId=id; q.slot=slot; q.bytes=size; }
       return {queued:true};
     }
-    if(inc){ inc.attachments.push({slot, id:"att_"+uuid().slice(0,6), at:clockT()}); }
+    if(inc){ inc.attachments.push({slot, id:"att_"+uuid().slice(0,6), at:clockT(), size}); }
     logAdd({m:"POST", p:"/v1/incidents/"+id+"/attachments", s:"201", ms:r.ms+rnd(200,700), key,
-      meta:"slot=<em>"+slot+"</em> · "+rnd(1800,4400)+" KB · separate queue from field data"});
+      meta:"slot=<em>"+slot+"</em> · "+size+" · separate queue from field data"});
     hookFire("attachment.received", {incident_id:id, slot});
     return {status:201};
   }

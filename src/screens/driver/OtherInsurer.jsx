@@ -1,8 +1,8 @@
 import { I } from '../../core/utils.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { Store } from '../../core/store.js';
-import { Choice, Note } from '../../components/Choice.jsx';
-import { gapShell, textField } from './GapsHub.jsx';
+import { Choice } from '../../components/Choice.jsx';
+import { gapShell, textField } from './GapShell.jsx';
 
 /* ---------- other insurer — deliberately last ---------- */
 export function scrOtherInsurer() {
@@ -24,17 +24,13 @@ export function scrOtherInsurer() {
 
       {textField('Their insurer, if you can see the card', 'otherInsurer', 'HUK-Coburg, Allianz…')}
       {textField('Policy number', 'otherPolicy', '')}
-      <Note>
-        Genuinely optional. We can get this from the plate through the central register.{' '}
-        <b style={{ color: 'var(--ink-2)' }}>Skip it without a second thought.</b>
-      </Note>
     </div>
   );
 
   return gapShell({
     id: 'otherIns',
     title: 'Their insurance',
-    sub: 'Last on the list on purpose.',
+    sub: 'Only if the card is in front of you. Skipping is expected here.',
     body,
     note: dn(
       'The field every FNOL form puts near the top',

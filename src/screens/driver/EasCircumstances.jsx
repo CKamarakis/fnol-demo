@@ -3,7 +3,7 @@ import { I } from '../../core/utils.js';
 import { IMPACT_LABEL, svgImpact } from '../../components/svg.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
-import { gapShell } from './GapsHub.jsx';
+import { gapShell } from './GapShell.jsx';
 
 /* ---------- EAS circumstances ---------- */
 
@@ -118,8 +118,8 @@ export function scrEAS() {
         ))}
 
         <div className="eas-count">
-          <span style={{ color: '#3d5f54' }}>A — {d.easA.length} ticked</span>
-          <span style={{ color: '#9a6410' }}>B — {d.easB.length} ticked</span>
+          <span style={{ color: '#3d5f54' }}>A · {d.easA.length} ticked</span>
+          <span style={{ color: '#9a6410' }}>B · {d.easB.length} ticked</span>
         </div>
       </div>
 
@@ -155,11 +155,11 @@ export function scrEAS() {
       <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>Both drivers sign</p>
       <div style={{ display: 'grid', gap: '12px' }}>
         <SignaturePad
-          id="sigA" label="A — you (Marek K.)" color="#3d5f54"
+          id="sigA" label="A · you (Marek K.)" color="#3d5f54"
           hint="sign here" signed={!!d.sigA}
         />
         <SignaturePad
-          id="sigB" label="B — the other driver" color="#9a6410"
+          id="sigB" label="B · the other driver" color="#9a6410"
           hint="hand them the phone" signed={!!d.sigB}
         />
       </div>
@@ -188,7 +188,7 @@ export function scrEAS() {
   return gapShell({
     id: 'eas',
     title: 'What was happening',
-    sub: 'The European Accident Statement, box 12 — both columns.',
+    sub: 'The European Accident Statement, box 12. Both columns.',
     body,
     note: dn('Why we adopted the EAS instead of designing a schema', WHY_EAS_NOTE),
   });

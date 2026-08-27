@@ -34,7 +34,14 @@ export function freshDraft(scenId){
     reported:     { vehicle:t.vehicle, occurredAt:t.time, location:t.location, type:t.inferred },
     corrected:    {},   // field -> {from, to, at}
     injured:      null,             // true | false — the one real question
-    drivable:     null,             // true | false — the VEHICLE; drives the credit-hire clock
+    // ACORD 3 · 38. Drives the reserve and the credit-hire clock, so the fact
+    // is needed — but for a theft it is settled by the incident, not by the
+    // driver: a stolen vehicle is not drivable and has no inspection address.
+    // Pre-answered here rather than asked, which keeps the blocking count at
+    // six while removing a question nobody can answer. `drivableSource` marks
+    // it so the fleet and export panes never present a derivation as testimony.
+    drivable:     sc.type === "theft" ? false : null,
+    drivableSource: sc.type === "theft" ? "derived" : null,
     // --- injury detail: presence + band + emergency attended. NOT description. ---
     // ACORD 2 INJURED columns: severity band, who (PED/INS VEH/OTH VEH), help there.
     injurySeverity:[], injuryEmergency:null, injuredParties:[],
@@ -140,9 +147,29 @@ export const Store = {
   },
   save(){
     try{
-      const {persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
+      const {persona,scenario,lang,notes,fail,screen,subScreen,incident,reference,
              refLatencyMs,startedAt,stoppedAt,log,hooks,queue,incidents,mergeGroup,
              fleetTab,sysTab,exportOpen,easLangCol} = this.s;
+      // Photo thumbnails are data URLs — tens of KB each, and the whole app
+      // gets ~5 MB of localStorage. Persist that a shot exists, never the
+      // pixels: a reopened artifact shows the slot captured, and the image
+      // itself belonged to the session that took it.
+      const draft = Object.assign({}, this.s.draft);
+      const ph = draft.photos;
+      if(ph && typeof ph==="object"){
+        const lean={};
+        for(const k in ph){
+          const v=ph[k];
+          if(!v || typeof v!=="object"){ lean[k]=v; continue; }
+          // Extras multiply the quota risk — five frames of one wing is five
+          // data URLs — so they are stripped the same way as the lead image.
+          const ex = Array.isArray(v.extra)
+            ? v.extra.map(e => (e && typeof e==="object") ? Object.assign({}, e, {thumb:null}) : e)
+            : v.extra;
+          lean[k]=Object.assign({}, v, {thumb:null, extra:ex});
+        }
+        draft.photos=lean;
+      }
       localStorage.setItem(LS_KEY, JSON.stringify({
         persona,scenario,lang,notes,fail,screen,subScreen,draft,incident,reference,
         refLatencyMs,startedAt,stoppedAt,
@@ -187,6 +214,68 @@ export const Store = {
       }
       if(!s.draft || typeof s.draft!=="object") s.draft=freshDraft(s.scenario);
       else s.draft=Object.assign(freshDraft(s.scenario), s.draft);
+      // A draft belongs to the scenario it was made for. Stored state that
+      // names one scenario and carries another's pre-filled values renders the
+      // wrong incident type on the confirm rows — a theft showing "Collision
+      // with another vehicle". Happens whenever the scenario is set without a
+      // matching draft, which a deep link does by omitting draft entirely.
+      // The driver's own answers are kept; only the telematics-derived values
+      // are re-seeded from the scenario that is actually loaded.
+      if(s.draft.type && s.draft.type!==SCENARIOS[s.scenario].telematics.inferred
+         && !(s.draft.corrected && s.draft.corrected.type)){
+        const t=SCENARIOS[s.scenario].telematics;
+        Object.assign(s.draft, {
+          vehicle:t.vehicle, vin:t.vin||"", occurredAt:t.time,
+          location:t.location, lat:t.lat, lon:t.lon, type:t.inferred,
+          reported:{vehicle:t.vehicle, occurredAt:t.time, location:t.location, type:t.inferred},
+        });
+      }
+
+      // A stale build wrote no drivableSource at all, and a theft draft from
+      // one of those has drivable:null — which would show question 6 again and
+      // block submission on a field the flow no longer asks. Re-derive it.
+      if(SCENARIOS[s.scenario].type==="theft"){
+        if(s.draft.drivable===null || s.draft.drivable===undefined){
+          s.draft.drivable=false; s.draft.drivableSource="derived";
+        }
+      }
+      if(typeof s.draft.drivableSource!=="string") s.draft.drivableSource=null;
+
+      // photos is keyed and dereferenced on every render of the photo grid and
+      // the archive. A stale build wrote {at,skipped}; this one adds kb/thumb.
+      // Anything that is not a plain object per slot is dropped rather than
+      // repaired — a missing slot renders as un-captured, which is true.
+      const ph=s.draft.photos;
+      if(!ph || typeof ph!=="object" || Array.isArray(ph)) s.draft.photos={};
+      else {
+        const clean={};
+        for(const k in ph){
+          const v=ph[k];
+          if(!v || typeof v!=="object" || Array.isArray(v)) continue;
+          const th = (v.thumb && typeof v.thumb==="object" && typeof v.thumb.url==="string")
+            ? v.thumb : null;
+          // extra is .map()ed and .length'd by the photo grid and the archive.
+          // A stale build wrote no extras at all, so absent is the normal case.
+          const ex = Array.isArray(v.extra)
+            ? v.extra.filter(e => e && typeof e==="object" && !Array.isArray(e)).map(e => ({
+                at: typeof e.at==="string" ? e.at : "",
+                kb: typeof e.kb==="number" ? e.kb : null,
+                name: typeof e.name==="string" ? e.name : "",
+                thumb: (e.thumb && typeof e.thumb==="object" && typeof e.thumb.url==="string")
+                  ? e.thumb : null,
+              }))
+            : [];
+          clean[k]={
+            at: typeof v.at==="string" ? v.at : "",
+            skipped: !!v.skipped,
+            kb: typeof v.kb==="number" ? v.kb : null,
+            name: typeof v.name==="string" ? v.name : "",
+            thumb: th,
+            extra: ex,
+          };
+        }
+        s.draft.photos=clean;
+      }
     }catch(e){
       // A shape we cannot repair is still not worth a white screen.
       this.s.screen="s0"; this.s.persona="driver";

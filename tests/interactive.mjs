@@ -173,7 +173,7 @@ for (const [act, expect, msg] of CTA_ROUTES) {
  * and fails on anything that throws.
  * ------------------------------------------------------------------ */
 const SCREENS = [
-  's0', 'dismiss', 'emg', 's1', 'gaps',
+  's0', 'dismiss', 'emg', 's1',
   'witness', 'otherv', 'photos', 'eas', 'police', 'cargo', 'otherins',
 ];
 
@@ -211,7 +211,7 @@ for (const screen of SCREENS) {
 
 // Every other driver screen must offer a way back, and it must say where to.
 const NEEDS_BACK = [
-  's1', 'gaps', 'witness', 'otherv', 'photos', 'eas', 'police', 'cargo', 'otherins',
+  's1', 'witness', 'otherv', 'photos', 'eas', 'police', 'cargo', 'otherins', 'archive',
 ];
 
 for (const screen of NEEDS_BACK) {

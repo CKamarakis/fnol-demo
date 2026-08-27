@@ -39,7 +39,12 @@ export function buildIncidentJson(){
       // plates get reassigned and mistyped, and the VIN is what an appraiser
       // and a salvage buyer key on.
       vin: d.vin || null,
-      make_model:"DAF XF 480", drivable:d.drivable,
+      make_model:"DAF XF 480",
+      drivable:d.drivable,
+      // A handler reading "drivable: false" must be able to tell whether a
+      // person said so or the system worked it out. For theft it is derived
+      // from the incident type and never asked, so it says so.
+      drivable_source: d.drivableSource || "driver_answered",
       damage_description: d.damageDesc || null,     // ACORD 2 DESCRIBE DAMAGE
       where_can_be_seen: d.whereSeen || null,       // ACORD 2 WHERE CAN VEH BE SEEN
       damage_points: d.impact? [d.impact] : [], fleet_id:"INS-FL-0087"
@@ -93,8 +98,14 @@ export function buildIncidentJson(){
     } : null,
     fault: null,
     fault_note: "Intentionally absent. No field in this product asks who was at fault.",
+    // Every frame is its own attachment, but each carries the slot name it was
+    // taken under — the adjuster reads by named thing, not by upload order.
     attachments: Object.keys(d.photos).filter(k=>!d.photos[k].skipped)
-      .map(k=>({slot:k, label:(PHOTO_SLOTS[k]||{}).label, captured_at:d.photos[k].at})),
+      .flatMap(k=>{
+        const p=d.photos[k], label=(PHOTO_SLOTS[k]||{}).label;
+        return [{slot:k, label, captured_at:p.at}].concat(
+          (p.extra||[]).map(e=>({slot:k, label, captured_at:e.at, additional:true})));
+      }),
     skipped_deliberately: d.skipped,
     completeness: inc ? inc.completeness : null,
   };

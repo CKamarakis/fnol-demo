@@ -1,7 +1,7 @@
 import { I } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
-import { gapShell, textField } from './GapsHub.jsx';
+import { gapShell, textField } from './GapShell.jsx';
 
 /* ---------- witness ---------- */
 
@@ -27,7 +27,7 @@ export function scrWitness() {
 
       {d.witnessPresent === true && (
         <>
-          {textField('Their name — first name is enough', 'witnessName', 'Anything you can get')}
+          {textField('Their name, a first name is enough', 'witnessName', 'Anything you can get')}
           {textField('A phone number', 'witnessPhone', '+49 …', 'tel')}
           <div className="card-quiet">
             <p className="tiny" style={{ lineHeight: 1.5 }}>

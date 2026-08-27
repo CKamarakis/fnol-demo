@@ -39,30 +39,30 @@ export const EAS_STATEMENTS = [
 export const STR = {
   de:{
     lang:"Deutsch", detected:"Erkannt", ok:"Sind alle wohlauf?",
-    fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall — etwas anderes melden",
+    fine:"Alles in Ordnung", hurt:"Jemand ist verletzt", dismiss:"Kein Unfall. Etwas anderes melden",
     already:"Was der Lkw gemeldet hat", today:"heute",
     call112:"112 anrufen", emgCta:"Notruf 112", emgTitle:"Sicherheit zuerst", emgSub:"Der Schaden ist jetzt nicht wichtig.",
-    emgBody:"Wenn jemand verletzt ist, rufen Sie jetzt den Notruf. Diese Meldung wartet auf Sie — nichts geht verloren.",
-    emgCalled:"Angerufen — weiter", emgNoNeed:"Kein Rettungswagen nötig — weiter",
-    tier1:"Daten des Trackers prüfen", tier1sub:"Tippen Sie jeden Punkt an, um ihn zu bestätigen oder zu korrigieren.",
-    stillToCheck:"noch zu prüfen", allChecked:"Alles geprüft", seekHint:"Tippen — wir springen hin",
-    submit:"Bestätigen", six:"6 von 6 · mehr blockiert Sie nicht",
+    emgBody:"Wenn jemand verletzt ist, ruf jetzt den Notruf. Diese Meldung wartet auf dich. Nichts geht verloren.",
+    emgCalled:"Angerufen, weiter", emgNoNeed:"Kein Rettungswagen nötig, weiter",
+    tier1:"Daten des Trackers prüfen", tier1sub:"Tippe jeden Punkt an, um ihn zu bestätigen oder zu korrigieren.",
+    stillToCheck:"noch zu prüfen", allChecked:"Alles geprüft", seekHint:"Tippen, wir springen hin",
+    submit:"Bestätigen", six:"6 von 6 · mehr blockiert dich nicht",
     refTitle:"Erfasst. Schadennummer vergeben.", saved:"Gespeichert",
-    skip:"Überspringen — später erledigen", contin:"Weiter", perish:"Was verschwindet, wenn wir warten",
+    skip:"Überspringen, später erledigen", contin:"Weiter", perish:"Was verschwindet, wenn wir warten",
     blockPath:"Pflichtangaben", elapsed:"vergangen",
   },
   en:{
     lang:"English", detected:"Detected", ok:"Is everyone okay?",
-    fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident — report something else",
+    fine:"Everyone's fine", hurt:"Someone is hurt", dismiss:"Not an incident. Report something else",
     already:"Reported information", today:"today",
     call112:"Call 112", emgCta:"Emergency 112", emgTitle:"Safety first", emgSub:"Nothing about the claim matters yet.",
-    emgBody:"If anyone is injured, call the emergency number now. This report will wait for you — nothing you have entered is lost.",
-    emgCalled:"I've called — continue", emgNoNeed:"No ambulance needed — continue",
+    emgBody:"If anyone is injured, call the emergency number now. This report waits for you. Nothing you entered is lost.",
+    emgCalled:"I've called, continue", emgNoNeed:"No ambulance needed, continue",
     tier1:"Verify the tracker's data", tier1sub:"Tap each item to confirm or correct its value.",
     stillToCheck:"still to check", allChecked:"All checked", seekHint:"Tap to jump there",
     submit:"Confirm", six:"6 of 6 · nothing else blocks you",
     refTitle:"You're covered. Reference issued.", saved:"Saved",
-    skip:"Skip — I'll do this later", contin:"Continue", perish:"Things that disappear if we wait",
+    skip:"Skip, I'll do this later", contin:"Continue", perish:"Things that disappear if we wait",
     blockPath:"Blocking path", elapsed:"elapsed",
   },
   /* French and Dutch: the Benelux and France corridors carry the same trucks as
@@ -70,44 +70,44 @@ export const STR = {
      to begin with — the constat amiable. */
   fr:{
     lang:"Français", detected:"Détecté", ok:"Tout le monde va bien ?",
-    fine:"Tout le monde va bien", hurt:"Quelqu'un est blessé", dismiss:"Pas un accident — signaler autre chose",
+    fine:"Tout le monde va bien", hurt:"Quelqu'un est blessé", dismiss:"Pas un accident. Signaler autre chose",
     already:"Informations transmises", today:"aujourd'hui",
     call112:"Appeler le 112", emgCta:"Urgence 112", emgTitle:"La sécurité d'abord", emgSub:"Le sinistre n'a aucune importance pour l'instant.",
-    emgBody:"Si quelqu'un est blessé, appelez les secours maintenant. Cette déclaration vous attendra — rien de ce que vous avez saisi n'est perdu.",
-    emgCalled:"J'ai appelé — continuer", emgNoNeed:"Pas besoin d'ambulance — continuer",
-    tier1:"Vérifier les données du boîtier", tier1sub:"Touchez chaque élément pour confirmer ou corriger sa valeur.",
+    emgBody:"Si quelqu'un est blessé, appelle les secours maintenant. Cette déclaration t'attend. Rien de ce que tu as saisi n'est perdu.",
+    emgCalled:"J'ai appelé, continuer", emgNoNeed:"Pas besoin d'ambulance, continuer",
+    tier1:"Vérifier les données du boîtier", tier1sub:"Touche chaque élément pour confirmer ou corriger sa valeur.",
     stillToCheck:"encore à vérifier", allChecked:"Tout est vérifié", seekHint:"Toucher pour y aller",
-    submit:"Confirmer", six:"6 sur 6 · rien d'autre ne vous bloque",
+    submit:"Confirmer", six:"6 sur 6 · rien d'autre ne te bloque",
     refTitle:"Déclaration reçue. Référence attribuée.", saved:"Enregistré",
-    skip:"Passer — je le ferai plus tard", contin:"Continuer", perish:"Ce qui disparaît si nous attendons",
+    skip:"Passer, je le ferai plus tard", contin:"Continuer", perish:"Ce qui disparaît si nous attendons",
     blockPath:"Champs obligatoires", elapsed:"écoulé",
   },
   nl:{
     lang:"Nederlands", detected:"Gedetecteerd", ok:"Is iedereen in orde?",
-    fine:"Iedereen is in orde", hurt:"Er is iemand gewond", dismiss:"Geen incident — iets anders melden",
+    fine:"Iedereen is in orde", hurt:"Er is iemand gewond", dismiss:"Geen incident. Iets anders melden",
     already:"Doorgegeven gegevens", today:"vandaag",
     call112:"Bel 112", emgCta:"Noodgeval 112", emgTitle:"Veiligheid eerst", emgSub:"De schade doet er nu even niet toe.",
-    emgBody:"Als er iemand gewond is, bel dan nu het alarmnummer. Deze melding wacht op u — niets van wat u hebt ingevuld gaat verloren.",
-    emgCalled:"Ik heb gebeld — verder", emgNoNeed:"Geen ambulance nodig — verder",
+    emgBody:"Als er iemand gewond is, bel dan nu het alarmnummer. Deze melding wacht op je. Niets van wat je hebt ingevuld gaat verloren.",
+    emgCalled:"Ik heb gebeld, verder", emgNoNeed:"Geen ambulance nodig, verder",
     tier1:"Gegevens van de tracker controleren", tier1sub:"Tik op elk item om de waarde te bevestigen of te corrigeren.",
     stillToCheck:"nog te controleren", allChecked:"Alles gecontroleerd", seekHint:"Tik om er te komen",
-    submit:"Bevestigen", six:"6 van 6 · niets anders houdt u tegen",
+    submit:"Bevestigen", six:"6 van 6 · niets anders houdt je tegen",
     refTitle:"Ontvangen. Referentie toegekend.", saved:"Opgeslagen",
-    skip:"Overslaan — ik doe dit later", contin:"Verder", perish:"Wat verdwijnt als we wachten",
+    skip:"Overslaan, ik doe dit later", contin:"Verder", perish:"Wat verdwijnt als we wachten",
     blockPath:"Verplichte velden", elapsed:"verstreken",
   },
   pl:{
     lang:"Polski", detected:"Wykryto", ok:"Czy wszyscy są cali?",
-    fine:"Wszystko w porządku", hurt:"Ktoś jest ranny", dismiss:"To nie zdarzenie — zgłoś co innego",
+    fine:"Wszystko w porządku", hurt:"Ktoś jest ranny", dismiss:"To nie zdarzenie. Zgłoś co innego",
     already:"Co zgłosiła ciężarówka", today:"dzisiaj",
     call112:"Zadzwoń 112", emgCta:"Alarmowy 112", emgTitle:"Najpierw bezpieczeństwo", emgSub:"Szkoda może poczekać.",
-    emgBody:"Jeśli ktoś jest ranny, zadzwoń teraz pod numer alarmowy. Zgłoszenie poczeka — nic nie zostanie utracone.",
-    emgCalled:"Zadzwoniłem — dalej", emgNoNeed:"Karetka niepotrzebna — dalej",
+    emgBody:"Jeśli ktoś jest ranny, zadzwoń teraz pod numer alarmowy. Zgłoszenie poczeka. Nic nie zostanie utracone.",
+    emgCalled:"Zadzwoniłem, dalej", emgNoNeed:"Karetka niepotrzebna, dalej",
     tier1:"Sprawdź dane z nadajnika", tier1sub:"Dotknij każdej pozycji, aby ją potwierdzić lub poprawić.",
     stillToCheck:"do sprawdzenia", allChecked:"Wszystko sprawdzone", seekHint:"Dotknij, aby przejść",
     submit:"Potwierdź", six:"6 z 6 · nic więcej nie blokuje",
     refTitle:"Zgłoszone. Numer szkody nadany.", saved:"Zapisano",
-    skip:"Pomiń — zrobię to później", contin:"Dalej", perish:"To, co zniknie, jeśli poczekamy",
+    skip:"Pomiń, zrobię to później", contin:"Dalej", perish:"To, co zniknie, jeśli poczekamy",
     blockPath:"Ścieżka obowiązkowa", elapsed:"upłynęło",
   }
 };
@@ -121,7 +121,7 @@ export const T = k => (STR[currentLang()]||STR.en)[k] || STR.en[k] || k;
 /* --- Scenarios. Same form, three shapes. --- */
 export const SCENARIOS = {
   glass:{
-    id:"glass", label:"Glass — single vehicle", short:"Glass",
+    id:"glass", label:"Glass, single vehicle", short:"Glass",
     type:"glass", fieldCount:8, thirdParty:false, eas:false, photos:["wide","damage"],
     telematics:{
       ...fromMapon(MAPON_FIXTURES.glass),
@@ -143,7 +143,7 @@ export const SCENARIOS = {
     note:"Single-vehicle glass. No EAS — there is no other party to agree facts with. Eight fields, two screens, done.",
   },
   collision:{
-    id:"collision", label:"Collision — multi-party + injury", short:"Collision",
+    id:"collision", label:"Collision, multi-party + injury", short:"Collision",
     type:"collision", fieldCount:41, thirdParty:true, eas:true,
     photos:["wide","damage","other","signage","docs"],
     telematics:{
@@ -158,14 +158,22 @@ export const SCENARIOS = {
     note:"The full shape. Roughly 41 capturable fields — six of them block. The other 35 are ordered by how fast they evaporate.",
   },
   theft:{
-    id:"theft", label:"Theft — vehicle gone", short:"Theft",
+    id:"theft", label:"Theft, vehicle gone", short:"Theft",
     type:"theft", fieldCount:14, thirdParty:false, eas:false, photos:["scene_empty","signage"],
+    // Nothing moved and no recovery was called, so the default photo copy
+    // describes an incident that did not happen. What actually perishes here
+    // is the parking bay: it fills with another vehicle within the hour, and
+    // with it goes the evidence of where the truck stood and what overlooked it.
+    perishOverride:{
+      photos:{window:"Gone once the bay refills",
+        why:"Photos of the empty bay and the signage show the vehicle was here. Another truck parks in it within the hour."},
+    },
     telematics:{
       ...fromMapon(MAPON_FIXTURES.theft, {locationNote:"last known position"}),
       time:"03:47", date:"19 August 2026",
       speed:"ignition off 03:47 · unit offline 04:02",
       impact:"no impact event · supply voltage lost",
-      clip:"unavailable — unit offline",
+      clip:"unavailable, unit offline",
       inferred:"theft",
     },
     headline:{
@@ -182,13 +190,13 @@ export const SCENARIOS = {
    of the whole form and it is MY recommendation, not an industry
    standard. Ordered by half-life, not by logical grouping. --- */
 export const PERISHABLE = {
-  witness:    {label:"Witness contact",           window:"Gone in ~10 minutes", half:"minutes",  ord:1, why:"A witness who walks away is unreachable forever. Highest value per character typed in the entire form."},
-  otherPlate: {label:"The other vehicle's plate", window:"Gone when they drive off", half:"minutes", ord:2, why:"Everything else about the other party can be chased from the plate. The plate cannot be chased from anything."},
-  photos:     {label:"Scene photos",              window:"Gone once vehicles move", half:"minutes", ord:3, why:"Position, debris field, skid marks and road conditions are destroyed by the recovery truck."},
-  eas:        {label:"Agreed circumstances",      window:"Gone when they leave",    half:"minutes", ord:4, why:"The other driver's agreement to the facts is only obtainable while they are standing there."},
-  police:     {label:"Police reference",          window:"Hours",                   half:"hours",   ord:5, why:"Retrievable later, but the officer is here now and it is one question."},
-  cargo:      {label:"Cargo & trailer",           window:"Today",                   half:"today",   ord:6, why:"Freight profile only. Reachable from the CMR note and the TMS afterwards."},
-  otherIns:   {label:"Their insurer",             window:"Next week is fine",       half:"cool",    ord:7, why:"Derivable from the plate via the central register. Deliberately last — asking for it at the scene costs more than it returns."},
+  witness:    {label:"Witness contact",           window:"Gone in ~10 minutes", half:"minutes",  ord:1, why:"A witness who walks away cannot be found again. A name and a number now is worth more than anything else on this screen."},
+  otherPlate: {label:"The other vehicle's plate", window:"Gone when they drive off", half:"minutes", ord:2, why:"From the plate we can find their insurer and everything else. Without it, we cannot."},
+  photos:     {label:"Scene photos",              window:"Gone once vehicles move", half:"minutes", ord:3, why:"Photos now show where the vehicles stopped and what the road looked like. Once they move, that is gone."},
+  eas:        {label:"Agreed circumstances",      window:"Gone when they leave",    half:"minutes", ord:4, why:"The other driver has to agree these facts while they are still here. Afterwards they cannot."},
+  police:     {label:"Police reference",          window:"Hours",                   half:"hours",   ord:5, why:"You can get this later, but the officer is here now and it is one question."},
+  cargo:      {label:"Cargo & trailer",           window:"Today",                   half:"today",   ord:6, why:"Only asked because this vehicle carries freight. We can get it from the paperwork later."},
+  otherIns:   {label:"Their insurer",             window:"Next week is fine",       half:"cool",    ord:7, why:"We can look this up from the plate, so it is last. Answer it only if the card is in front of you."},
 };
 
 /* --- ACORD mapping. The carrier-exchange target made explicit.
@@ -243,16 +251,23 @@ export const ACORD_OMITTED = [
    e:"Art. 9 health data. Presence, severity band, which party and whether help attended is what the reserve and the notification need."},
   {a:"REPORTED BY / REPORTED TO, CAT #, site & location codes",
    e:"Back-office routing the system fills in itself. Every one of these on the driver's screen is a field that is not a question about the accident."},
+  // Not omitted from the record — omitted from the QUESTIONS, and only for
+  // theft. The values still reach the handler; they are derived rather than
+  // asked, and marked as derived so nobody mistakes them for testimony.
+  {a:"VEH DRIVABLE? (ACORD 3 · 38) — theft only",
+   e:"Derived, not asked. A stolen vehicle is not drivable, and the fact drives the reserve and the credit-hire clock either way. Putting a question with one possible answer to someone who has just lost a truck is a form protecting its own validation rules. Carried to the handler flagged as derived from the incident type."},
+  {a:"DESCRIBE DAMAGE · WHERE CAN VEH BE SEEN — theft only",
+   e:"Unanswerable while the vehicle is missing: the driver has seen no damage and there is no address to inspect it at. Both are established by whoever recovers the vehicle. Asked in every other scenario."},
 ];
 
 /* Photo slots — named, with silhouette overlays, not "upload photos" */
 export const PHOTO_SLOTS = {
-  wide:        {n:1, label:"Wide scene — both vehicles, road behind", sil:"wide"},
-  damage:      {n:2, label:"Damage close-up — your vehicle",          sil:"damage"},
-  other:       {n:3, label:"The other vehicle — get the plate in",    sil:"plate"},
+  wide:        {n:1, label:"Wide scene, both vehicles and the road behind", sil:"wide"},
+  damage:      {n:2, label:"Damage close-up of your vehicle",          sil:"damage"},
+  other:       {n:3, label:"The other vehicle, with the plate in shot",    sil:"plate"},
   signage:     {n:4, label:"Signage & road markings",                 sil:"sign"},
-  docs:        {n:5, label:"Their documents — insurance card",        sil:"doc"},
-  scene_empty: {n:1, label:"Where it was parked — empty space",       sil:"wide"},
+  docs:        {n:5, label:"Their documents, the insurance card",        sil:"doc"},
+  scene_empty: {n:1, label:"Where it was parked, the empty space",       sil:"wide"},
 };
 
 

@@ -1,6 +1,6 @@
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
-import { gapItems } from './GapsHub.jsx';
+import { gapItems } from './GapShell.jsx';
 import { svgRing } from '../../components/svg.js';
 
 /* ---------- soft stop ---------- */
@@ -24,7 +24,7 @@ export function scrSoftStop() {
             <div dangerouslySetInnerHTML={{ __html: svgRing(score) }} />
             <h1 className="h1">That&rsquo;s everything perishable.</h1>
             <p className="sub" style={{ fontSize: '16.5px' }}>
-              The rest can wait — we&rsquo;ll message you.
+              The rest can wait. We&rsquo;ll message you.
             </p>
           </div>
 
@@ -82,12 +82,15 @@ export function scrSoftStop() {
         </div>
       </div>
 
+      {/* One control. "See what dispatch sees" was the demo harness leaking
+          into the product — the persona switcher in the chrome already does
+          that, and a driver has no such button. "Add something after all"
+          pointed at the perishability hub, which is gone: with the hub
+          removed there is no list to return to, and the outstanding items are
+          already named above as things we will message about. */}
       <div className="dock">
-        <button className="btn btn-primary btn-lg" data-act="go-fleet">
-          See what dispatch sees →
-        </button>
-        <button className="btn btn-ghost" data-act="goto" data-v="gaps">
-          Add something after all
+        <button className="btn btn-primary btn-lg" data-act="goto" data-v="archive">
+          See your copy
         </button>
       </div>
     </div>

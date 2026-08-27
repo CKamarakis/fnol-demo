@@ -1,7 +1,7 @@
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { Choice, YesNo } from '../../components/Choice.jsx';
-import { gapShell, textField } from './GapsHub.jsx';
+import { gapShell, textField } from './GapShell.jsx';
 
 /* ---------- cargo (freight profile only) ---------- */
 export function scrCargo() {
@@ -17,20 +17,22 @@ export function scrCargo() {
 
       {d.cargoLaden === true && (
         <>
-          {textField("What's on board — roughly", 'cargoDesc', '24 pallets, packaged food')}
+          {textField("Roughly what's on board", 'cargoDesc', '24 pallets, packaged food')}
           {textField('Trailer number', 'trailer', 'B-RL 8829')}
 
           <p className="lbl">Anything hazardous (ADR)?</p>
           <div className="grid2">
+            {/* Plain Yes and No. The question above already says ADR, so
+                "Yes, an ADR load" restated it inside the answer. */}
             <Choice act="set-hazard" value="no" label="No" selected={d.hazardous === false} />
-            <Choice act="set-hazard" value="yes" label="Yes — ADR load" selected={d.hazardous === true} />
+            <Choice act="set-hazard" value="yes" label="Yes" selected={d.hazardous === true} />
           </div>
 
           {d.hazardous === true && (
             <div className="card-quiet" style={{ marginTop: '12px', borderColor: '#e0a89c' }}>
               <p className="tiny" style={{ lineHeight: 1.5 }}>
-                <b style={{ color: '#b8341c' }}>ADR load flagged.</b> This escalates immediately —
-                it changes the recovery provider, the road closure, and who has to be told. This is
+                <b style={{ color: '#b8341c' }}>ADR load flagged.</b> This escalates immediately.
+                It changes the recovery provider, the road closure, and who has to be told. This is
                 the one “late” field that would justify being promoted.
               </p>
             </div>

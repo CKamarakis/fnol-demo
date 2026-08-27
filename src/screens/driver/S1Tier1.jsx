@@ -39,6 +39,17 @@ const WHO_HURT_NOTE =
   'they should not be asked to be sure of, and the bands already tell the handler whether to ' +
   'expect one ambulance or three.';
 
+const DERIVED_DRIVABLE_NOTE =
+  'ACORD 3 &middot; 38 asks whether the vehicle is drivable, and the answer is worth money: it ' +
+  'sets the reserve and starts the credit-hire clock. For a theft the fact is <b>already ' +
+  'determined</b> &mdash; the vehicle is gone, so it is not drivable and there is no address to ' +
+  'inspect it at. Asking anyway would be ritual: a question with one possible answer, put to ' +
+  'someone who has just lost a truck. So it is <b>derived from the incident type</b> and carried ' +
+  'to the handler marked as derived, never as something the driver said. The blocking count is ' +
+  'still six; one of them is settled by the facts rather than by a tap. This is the same move the ' +
+  'flow already makes with vehicle, time and location &mdash; the unit reports, the driver ' +
+  'confirms. Here there is nothing left to confirm.';
+
 const MONEY_FIELD_NOTE =
   '&ldquo;Can you drive it&rdquo; answered at minute 2 instead of hour 6 is the single ' +
   'highest-value field in the form. It starts recovery, and it starts &mdash; or does not start ' +
@@ -65,7 +76,7 @@ const TYPE_OPTIONS = [
   ['collision', 'Collision with another vehicle'],
   ['fire', 'Fire'],
   ['glass', 'Glass or windscreen'],
-  ['single', 'Single vehicle — no one else involved'],
+  ['single', 'Single vehicle, no one else involved'],
   ['spill', 'Spill or leak'],
   ['theft', 'Theft of the vehicle'],
   ['vandalism', 'Vandalism'],
@@ -76,7 +87,7 @@ const TYPE_OPTIONS = [
 const typeLabel = v => (TYPE_OPTIONS.find(o => o[0] === v) || [, v])[1];
 
 /** The row shows the whole answer: what happened, plus anything else damaged. */
-function typeSummary(d) {
+export function typeSummary(d) {
   const base = d.type === 'other'
     ? (d.typeOther?.trim() || 'Other')
     : (TYPE_LABELS[d.type] || typeLabel(d.type));
@@ -109,7 +120,7 @@ function TypeSelect({ id, act, value, index, placeholder }) {
   );
 }
 
-const SEVERITY_OPTIONS = [
+export const SEVERITY_OPTIONS = [
   ['walking', 'Walking and talking'],
   ['needs_help', 'Needs help but conscious'],
   ['serious', 'Serious'],
@@ -118,7 +129,7 @@ const SEVERITY_OPTIONS = [
 /* ACORD 2's INJURED table columns, in driver language. PED / INS VEH / OTH VEH
    on the form; "someone on foot" / "me" / "someone in the other vehicle" here.
    Still no names and no diagnoses — which party, not who or what. */
-const WHO_HURT_OPTIONS = [
+export const WHO_HURT_OPTIONS = [
   ['driver', 'Me'],
   ['our_vehicle', 'Someone else in my vehicle'],
   ['other_vehicle', 'Someone in the other vehicle'],
@@ -221,7 +232,7 @@ function InjuryDetail({ d }) {
           driver should not be asked to be sure of, and the bands already tell
           the handler whether to send one ambulance or three. */}
       <div className="sp12" />
-      <p className="lbl">How bad — roughly? Tap all that apply.</p>
+      <p className="lbl">How bad, roughly? Tap all that apply.</p>
       {SEVERITY_OPTIONS.map(([v, l]) => (
         <Choice key={v} act="toggle-severity" value={v} label={l} multi
           selected={(d.injurySeverity || []).includes(v)} />
@@ -277,6 +288,12 @@ export function scrTier1() {
 
   const ready = d.vehicleConfirmed && d.timeConfirmed && d.locationConfirmed
     && d.typeConfirmed && injuryAnswered && d.drivable !== null;
+
+  // Six fields block, always. For a theft, `drivable` arrives pre-answered
+  // from freshDraft(), so it is already inside `answered` and this counts only
+  // what is still visible on screen — a driver told "1 still to check" with
+  // nothing left to check would be reading a bug.
+  const outstanding = 6 - answered;
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -423,24 +440,39 @@ export function scrTier1() {
 
           {d.injured === true && <InjuryDetail d={d} />}
 
-          {/* 6 — the money field */}
-          <div className="sp20" />
-          <div className="dn-anchor">
-            <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-              6 · Can the vehicle still be driven?
-            </p>
-            {/* Plain yes/no. The sub-label promised "we mark it off the road",
-                which is fleet-side language for a consequence the driver has no
-                stake in — and arranging recovery is the fleet's job, not this
-                system's. The answer is what matters; what it triggers belongs
-                on the fleet screen. */}
-            <div className="grid2">
-              <Choice act="set-drivable" value="yes" label="Yes" selected={d.drivable === true} />
-              <Choice act="set-drivable" value="no" label="No" selected={d.drivable === false} />
-            </div>
-          </div>
+          {/* 6 — the money field.
 
-          {dn('The money field', MONEY_FIELD_NOTE)}
+              Not asked when the vehicle is gone. "Can the vehicle still be
+              driven?" has no answer a theft victim can give, and the fact it
+              exists to establish is already settled by the incident type: a
+              stolen vehicle is not drivable and has no inspection address.
+              freshDraft() pre-answers it and marks it derived, so the field
+              still reaches the handler, the six-field count is untouched, and
+              the driver is not asked to confirm the obvious about a truck
+              they cannot see. */}
+          {sc.type !== 'theft' && (
+            <>
+              <div className="sp20" />
+              <div className="dn-anchor">
+                <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
+                  6 · Can the vehicle still be driven?
+                </p>
+                {/* Plain yes/no. The sub-label promised "we mark it off the road",
+                    which is fleet-side language for a consequence the driver has no
+                    stake in — and arranging recovery is the fleet's job, not this
+                    system's. The answer is what matters; what it triggers belongs
+                    on the fleet screen. */}
+                <div className="grid2">
+                  <Choice act="set-drivable" value="yes" label="Yes" selected={d.drivable === true} />
+                  <Choice act="set-drivable" value="no" label="No" selected={d.drivable === false} />
+                </div>
+              </div>
+
+              {dn('The money field', MONEY_FIELD_NOTE)}
+            </>
+          )}
+
+          {sc.type === 'theft' && dn('A field answered by the facts', DERIVED_DRIVABLE_NOTE)}
 
           <div className="sp28" />
         </div>
@@ -458,7 +490,7 @@ export function scrTier1() {
           </button>
         ) : (
           <button className="btn btn-secondary btn-lg btn-seek" data-act="goto-unanswered">
-            {`${6 - answered} ${T('stillToCheck')} · ${T('seekHint')}`}
+            {`${outstanding} ${T('stillToCheck')} · ${T('seekHint')}`}
           </button>
         )}
       </div>

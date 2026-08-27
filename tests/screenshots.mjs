@@ -47,6 +47,9 @@ const SHOTS = [
   ['driver-de', { persona: 'driver', screen: 's0', scenario: 'glass', lang: 'de' }],
   ['driver-pl', { persona: 'driver', screen: 's0', scenario: 'theft', lang: 'pl' }],
   ['driver-theft', { persona: 'driver', screen: 's0', scenario: 'theft' }],
+  ['driver-theft-tier1', { persona: 'driver', screen: 's1', scenario: 'theft', notes: false }],
+  ['driver-theft-photos', { persona: 'driver', screen: 'photos', scenario: 'theft', navStack: ['s0'], notes: false }],
+  ['driver-theft-police', { persona: 'driver', screen: 'police', scenario: 'theft', navStack: ['s0'], notes: false }],
   // emgFrom is what the 112 screen's Back control points at. A deep link
   // that omits it renders the screen without a back bar, which is correct in
   // the app and wrong for a screenshot meant to show the finished screen.
@@ -54,6 +57,11 @@ const SHOTS = [
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
   ['driver-photos', { persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'], notes: false }],
   ['driver-otherins', { persona: 'driver', screen: 'otherins', scenario: 'collision', navStack: ['s0'], notes: false }],
+  ['driver-photos-glass', { persona: 'driver', screen: 'photos', scenario: 'glass', navStack: ['s0'], notes: false }],
+  ['driver-archive', { persona: 'driver', screen: 'archive', scenario: 'collision', navStack: ['done'], notes: false }],
+  ['driver-done', { persona: 'driver', screen: 'done', scenario: 'glass', navStack: ['photos'], notes: false }],
+  ['driver-archive-full', { persona: 'driver', screen: 'archive', scenario: 'collision', navStack: ['done'], notes: false, draft: { injured:true, injuredParties:['driver','pedestrian'], injurySeverity:['walking'], injuryEmergency:true, cargoLaden:true, cargoDesc:'24 pallets, packaged food', trailer:'B-RL 8829', hazardous:true, witnessPresent:true, witnessName:'Anna', witnessPhone:'+49 170 000', policeAttended:true, policeRef:'2026/074/0084217', otherPlate:'M-XY 1234', otherMake:'Silver Sprinter', otherDriver:'Jan', otherPhone:'+49 171 111', otherInsurer:'Some Insurer', otherPolicy:'POL-99', easA:[1,5], easB:[12], sigA:'x', sigB:'x', sketch:'x' } }],
+  ['driver-cargo', { persona: 'driver', screen: 'cargo', scenario: 'collision', navStack: ['s0'], notes: false }],
   ['fleet', { persona: 'fleet' }],
   ['system', { persona: 'system' }],
   ['system-telematics', { persona: 'system', sysTab: 'telematics', scenario: 'collision' }],

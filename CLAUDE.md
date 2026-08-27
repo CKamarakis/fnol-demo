@@ -49,6 +49,8 @@ src/
     svg.js            hand-authored inline SVG
   screens/
     driver/           one file per screen, index.jsx is the router
+      Archive.jsx     the driver's own copy of what was filed
+      GapShell.jsx    shared shell for the optional screens, + gapItems()
     fleet/ system/ export/
   styles/             numeric prefixes ARE the cascade order
 ```
@@ -126,6 +128,14 @@ These are load-bearing. Breaking one silently defeats the purpose.
    and it greps the source for copy promising what the product cannot do.
    Four instances of the recovery/ETA promise survived code review; that grep
    found the fifth.
+9. **Photo capture is proved in Chrome, not jsdom.** The path is
+   `FileReader` → `Image` → canvas → data URL, and jsdom has neither a raster
+   nor real `Blob` plumbing, so every jsdom suite can click the slot and prove
+   nothing. `tests/capture.mjs` appends `tests/probe-capture.js` to a throwaway
+   copy of the built artifact, feeds a real 1200×900 JPEG to the input the
+   handler creates, and asserts the thumbnail reaches the slot, the byte count
+   is real, and **the pixels never reach localStorage** — the whole app gets
+   ~5 MB and a phone photo is 3–6 MB. It skips when Chrome is absent.
 
 ## Domain rules
 
@@ -166,6 +176,69 @@ Product decisions with reasons. Do not change these without raising it first.
   decides whether the claim is also a **liability notification**. Presence
   alone cannot say so and forces the handler to phone back. Names, ages and
   diagnoses stay uncollected: Art. 9 is unchanged by this.
+- **No photograph is required, and none is owed.** ACORD 2 has no photo field:
+  the FNOL is a *notification*, and images are claims-handling evidence that
+  arrives later. No European jurisdiction obliges a driver to photograph a
+  scene, and the record that settles a disputed damage figure is the
+  assessor's — in Germany the *Sachverständiger* — not a phone on a hard
+  shoulder. The screen therefore asks by the only warrant it has: **position
+  and debris are gone the moment the truck moves**. That covers the wide shot;
+  it does not cover a damage close-up, which is why skipping is one tap and no
+  counter scolds. Copy on that screen must never imply the driver owes us a
+  picture.
+- **The driver gets their own copy.** Everything else in the flow moves
+  information *away* from the driver. `Archive.jsx` gives it back: the
+  reference, the six fields, **everything captured after them** — injuries,
+  cargo and ADR, witness, police, the other vehicle and insurer, the signed
+  accident statement — and the photographs taken and the ones **named as not
+  taken**. A section the driver skipped says *Skipped* rather than vanishing:
+  a blank cannot be told apart from data the app lost, and the skipped items
+  are exactly the ones they will be messaged about. Adding a driver-answered
+  field means adding it here; `tests/rules.mjs` renders a fully populated
+  draft and fails if any value is missing. It is what makes asking for optional photos honest, and it removes
+  the reason drivers photograph a scene twice. It states no retention period —
+  that is a policy decision with an Art. 13 disclosure attached, and inventing
+  a plausible number in a prototype is how an unagreed figure gets quoted back
+  in a procurement meeting.
+- **A theft is never asked what a theft victim cannot answer.** Six fields
+  still block. But *"can the vehicle still be driven?"* has one possible answer
+  when the vehicle is gone, so it is **derived from the incident type** rather
+  than asked: `freshDraft()` sets `drivable:false` and `drivableSource:
+  "derived"`, question 6 is not rendered, and the counter says five. The fact
+  still reaches the handler — ACORD 3 · 38 drives the reserve and the
+  credit-hire clock either way — but it is carried **flagged as derived**, so
+  nobody reads an inference as testimony. `damageDesc` and `whereSeen` are
+  dropped from the theft photos screen for the same reason: the driver has seen
+  no damage and there is no address to inspect. Both omissions are recorded in
+  `ACORD_OMITTED`. The photo slots stay; an empty parking space is worth
+  having. This is the same move the flow already makes with vehicle, time and
+  location — the unit reports, the driver confirms. Here there is nothing left
+  to confirm.
+- **"Where will the truck be?" is not the incident location.** Question 3
+  captured where it *happened*; this asks where the vehicle can be **inspected
+  once it moves**, which is what decides whether an inspection is booked or
+  wasted. The label has to say so, or it reads as a duplicate and the driver
+  retypes the roadside.
+- **There is no hub screen.** There was one: a list of the outstanding items in
+  perishability order, sitting between the reference and the first of them.
+  It was removed. The ordering is real and still governs the flow —
+  `gapItems()` in `screens/driver/GapShell.jsx` is what decides which screen
+  comes next, and `nextGap()` walks it — but a screen whose only content is a
+  menu of the screens after it costs the driver a tap to read a list they
+  cannot act on. `go-gaps` routes straight to the first outstanding item. The
+  argument for perishability ordering lives in the design notes on the screens
+  themselves, where it is read while the ordering is being felt.
+- **A named slot takes as many frames as the thing needs.** Damage rarely fits
+  one picture — a wing, a step and a windscreen are three frames of one
+  category. Extras hang off the named slot (`photos[k].extra`) rather than
+  becoming the unnamed pile the naming exists to prevent, and the counter says
+  how many *named things* are covered, never how many pictures were taken.
+  Retaking replaces the lead frame and keeps the extras: the driver is
+  correcting one picture, not discarding the set.
+- **The finished screen offers exactly one thing.** "See what dispatch sees"
+  was the demo harness leaking into the product — a driver has no such button,
+  and the persona switcher in the chrome already does it. The one control leads
+  to the driver's own copy.
 - **Ordered by perishability, not logical grouping.** Witness contact and the
   other party's plate are gone within the hour; their insurer can be chased
   next week. This ordering is the organising principle of the whole flow.
@@ -237,9 +310,51 @@ confirms by tap and corrects by the same control.
 
 **Anything that expands in place scrolls itself into view.**
 
-Driver-facing voice: short sentences, no insurance jargon, no "please", no
-"are you sure?" — make it undoable instead. Skipping is fine and is recorded
+### Driver-facing voice
+
+Four rules, enforced by `tests/copy.mjs`. They cover every string a driver
+reads: the driver screens, the shell around them, the toasts, and all five
+language packs. Run `/copy` when writing or changing any of them.
+
+1. **No em dash, no en dash.** Not in any driver-facing string. It is the tell
+   of generated prose and it reads as filler. A sentence that reaches for one
+   wants a full stop, a comma, or the middot this project already uses between
+   a label and its count. The single exception is a bare `'—'` standing alone
+   as the empty-value glyph in a summary row, which is typography, not prose.
+2. **Lean.** No label past 18 words, and nothing explained twice. The
+   threshold is generous on purpose: it catches an explanation that grew a
+   second clause, not a carefully written sentence.
+3. **Formal but friendly, and directing.** No "please", no "sorry", no
+   "are you sure?" — make it undoable instead. No exclamation marks. The
+   screen directs; it does not petition, apologise, or cheer.
+4. **Second person singular.** The driver is "you", never "the driver". German
+   and Dutch use *du* / *je*, French *tu*; the flow addresses one person at a
+   roadside, not an office. "The other driver" is a third party and is exempt.
+5. **The driver is on our side.** Never strict, never chasing. "We will chase
+   this one hard" shipped on the police screen; read from a hard shoulder it
+   is a threat, and the person reading it is the employee who just had a
+   collision and is reporting it at all. No "you must", no "required", no
+   "failure to". State what *we* do. Only the six fields block, and they say
+   so themselves.
+6. **A yes/no question needs no accompanying text.** Two buttons and a
+   question are self-explanatory. A paragraph under them is either restating
+   the question or apologising for asking it, and it pushes the next control
+   off the screen. Text conditional on an *answer* is fine — that is new
+   information, not a preamble.
+7. **Question every text block.** For each one ask: does the driver act
+   differently for having read it? If not, it goes. If it explains what to do
+   on this screen, it is the **subtitle**, not a card in the body. If it
+   argues *why* the product is built this way, it is a `dn()` design note.
+   A block that survives says one thing once: "add as many as you need" needs
+   no sentence after it defending the idea of named slots.
+
+Also: short sentences, no insurance jargon. Skipping is fine and is recorded
 as a known gap, never framed as failure.
+
+**Scope.** Code comments, `dn()` design notes and the demo chrome are exempt.
+They are written for whoever is reading the source or watching the demo, and
+the design notes quote the wording they argue against. The chrome is styled
+unlike the product for the same reason it is allowed a different voice.
 
 ## Working with Chris
 

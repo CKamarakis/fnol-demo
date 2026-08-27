@@ -51,9 +51,9 @@ is(St.s.screen, 's0', 'back from s1 returns to the cold open');
 
 // deep in the optional flow
 St.set({ screen: 's1' }); St.set({ screen: 's2' });
-St.set({ screen: 'gaps' }); St.set({ screen: 'witness' });
-is(St.s.navStack, ['s0', 's1', 's2', 'gaps'], 'full trail recorded');
-St.back(); is(St.s.screen, 'gaps', 'unwinds one step');
+St.set({ screen: 'witness' }); St.set({ screen: 'photos' });
+is(St.s.navStack, ['s0', 's1', 's2', 'witness'], 'full trail recorded');
+St.back(); is(St.s.screen, 'witness', 'unwinds one step');
 St.back(); St.back(); is(St.s.screen, 's1', 'unwinds to s1');
 St.back(); is(St.s.screen, 's0', 'reaches the root');
 is(backVisible(), false, 'hidden at the root — nothing behind it');

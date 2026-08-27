@@ -45,7 +45,7 @@ export function timerRail() {
       <span className="timer-lbl">{stopped ? 'blocking path took' : T('blockPath')}</span>
 
       {idle
-        ? <span className="timer-val idle-val">paused — window left open</span>
+        ? <span className="timer-val idle-val">paused · window left open</span>
         : <span className={`timer-val ${secs > 90 ? 'over' : secs > 65 ? 'warn' : ''}`}>
             {secs.toFixed(1)}s
           </span>}
@@ -93,9 +93,10 @@ export function langSelect(cur) {
    the page, and the page is called "Verify the tracker's data". */
 export const SCREEN_TITLES = {
   s0: 'the incident', s0det: 'the details', dismiss: 'dismiss', emg: 'emergency',
-  s1: "the tracker's data", s2: 'your reference', gaps: 'what disappears',
+  s1: "the tracker's data", s2: 'your reference',
   witness: 'the witness', otherv: 'the other vehicle', photos: 'photos', eas: 'circumstances',
   police: 'police', cargo: 'cargo', otherins: 'their insurer', done: 'finished',
+  archive: 'your copy',
 };
 
 /** Only the cold open has nothing behind it. */
@@ -124,8 +125,9 @@ export function navBar() {
       </button>
       {/* No "Saved" here. It appeared on every screen from the first keystroke
           and never changed again, so it stopped being information. The
-          reassurance still fires where it is actually earned — the gaps hub,
-          where the driver is deciding whether to walk away mid-report. */}
+          reassurance still fires where it is actually earned — the optional
+          screens after the reference, where the driver is deciding whether to
+          walk away mid-report. */}
     </div>
   );
 }
@@ -177,7 +179,7 @@ export function offlineBanner() {
     <div className="banner banner-offline">
       <span dangerouslySetInnerHTML={{ __html: I.offline }} />
       <div>
-        <div>No signal — you can keep going.</div>
+        <div>No signal. You can keep going.</div>
         <div style={{ fontWeight: 500, opacity: 0.85, marginTop: '2px' }}>
           Everything is saved on the phone and sent when you&rsquo;re back in coverage.
         </div>

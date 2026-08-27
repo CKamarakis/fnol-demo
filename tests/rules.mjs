@@ -269,7 +269,7 @@ async function boot(state) {
  * RULE 5 · No field asks whose fault it was. Anywhere.
  * ================================================================== */
 {
-  const SCREENS = ['s0', 's1', 'gaps', 'witness', 'otherv', 'eas', 'police', 'cargo', 'otherins'];
+  const SCREENS = ['s0', 's1', 'witness', 'otherv', 'eas', 'police', 'cargo', 'otherins', 'archive'];
   for (const screen of SCREENS) {
     const app = await boot({
       persona: 'driver', screen, scenario: 'collision',
@@ -779,6 +779,381 @@ for (const [persona, tabs] of [
       app.errors.slice(before, before + 2).join(' | '));
     app.close();
   }
+}
+
+/* ================================================================== *
+ * RULE 7 · No photograph is required, and none is owed.
+ *
+ * ACORD 2 has no photo field. The screen asks by perishability alone, so its
+ * copy must never tell the driver they owe us a picture — "required",
+ * "must", "you need to" on that screen is the failure this catches.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 'photos', scenario: 'glass', navStack: ['s0'] });
+  const text = app.text();
+
+  // Tests the claim, not one phrasing of it: "nothing here is required" and
+  // "none of them required" are the same promise, and a rule pinned to the
+  // exact sentence fails on a copy edit that changed nothing that matters.
+  check(/no(thing|ne)[^.]{0,40}required|not required/i.test(text),
+    'photos: states plainly that nothing is required',
+    text.slice(0, 120).replace(/\s+/g, ' '));
+
+  // "Nothing here is required" contains the word, so test the obligation
+  // phrasings rather than the bare token.
+  const OBLIGE = /(photos?|shots?|pictures?)\s+(are|is)\s+required|you\s+must\s+(take|photograph)|required\s+(photos?|shots?)/i;
+  check(!OBLIGE.test(text), 'photos: no copy obliges the driver to photograph',
+    (text.match(OBLIGE) || [])[0]);
+
+  // The counter states what it counts and never scolds.
+  check(!/(\d+\s+(left|remaining|missing)\b)/i.test(text),
+    'photos: the counter does not nag about what is outstanding',
+    (text.match(/\d+\s+(left|remaining|missing)\b/i) || [])[0]);
+
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 8 · The camera is real.
+ *
+ * The slots faked capture for the life of this prototype: they recorded a
+ * timestamp and opened nothing. A photo screen whose slots cannot take a
+ * photo is the one bug on it that a user notices immediately.
+ *
+ * jsdom cannot exercise the raster path — tests/capture.mjs does that in real
+ * Chrome. What is checkable here is that the handler reaches for a real file
+ * input at all, rather than silently recording a shot that never happened.
+ * ================================================================== */
+{
+  const src = readFileSync(join(ROOT, 'src', 'core', 'actions.jsx'), 'utf8');
+  const shoot = src.slice(src.indexOf('"shoot"'), src.indexOf('"retake"'));
+
+  check(/type\s*=\s*"file"/.test(shoot), 'shoot: creates a real file input');
+  check(/capture["']?\s*,\s*["']environment/.test(shoot) || /capture=["']environment/.test(shoot),
+    'shoot: asks for the rear camera');
+  check(/accept\s*=\s*"image\//.test(shoot), 'shoot: accepts images');
+  check(!/skipped\s*:\s*false/.test(shoot),
+    'shoot: does not record a capture without a file');
+}
+
+/* ================================================================== *
+ * RULE 9 · Photo pixels never reach localStorage.
+ *
+ * The whole app gets ~5 MB; a phone photo is 3–6 MB. Persisting a data URL
+ * fills the quota on the first shot and the save silently stops working —
+ * which loses the CLAIM, not just the picture.
+ * ================================================================== */
+{
+  const store = readFileSync(join(ROOT, 'src', 'core', 'store.js'), 'utf8');
+  const save = store.slice(store.indexOf('  save(){'), store.indexOf('  load(){'));
+
+  check(/thumb\s*:\s*null/.test(save),
+    'save: strips photo thumbnails before writing to localStorage');
+  check(/photos/.test(save),
+    'save: handles the photos map explicitly rather than serialising the draft whole');
+}
+
+/* ================================================================== *
+ * RULE 10 · "Where will the truck be" is not the incident location.
+ *
+ * Two fields that both read as "where?" send the driver back to retype the
+ * roadside, and the inspection gets booked against the wrong place.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'] });
+  const text = app.text();
+
+  check(/inspect/i.test(text),
+    'photos: the vehicle-location field says it is about inspection');
+  check(!/where will the truck be\?/i.test(text),
+    'photos: does not ask a bare "where" that duplicates question 3');
+
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 11 · The driver gets their own copy, and it promises no retention.
+ *
+ * A retention period is a policy decision with an Art. 13 disclosure behind
+ * it. A prototype that invents "kept for 12 months" gets that number quoted
+ * back as though someone agreed to it.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 'archive', scenario: 'collision', navStack: ['done'] });
+  const text = app.text();
+
+  check(app.errors.length === 0, 'archive: renders without errors',
+    app.errors.slice(0, 2).join(' | '));
+  check(/your copy/i.test(text), 'archive: names itself as the driver\'s copy');
+  check(/not taken|known gap/i.test(text),
+    'archive: names what was NOT captured rather than hiding it');
+
+  const RETENTION = /kept for \d|retained for \d|stored for \d|\d+\s*(months?|years?|days?)\s*(of )?(retention|storage)/i;
+  check(!RETENTION.test(text), 'archive: promises no retention period',
+    (text.match(RETENTION) || [])[0]);
+
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 12 · The reference leads straight into the flow, not into a menu.
+ *
+ * There was a hub screen listing the outstanding items in perishability
+ * order. The ordering is real and still governs what comes next; a screen
+ * that only *displays* it cost the driver a tap to read a menu of the
+ * screens after it.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'] });
+
+  // The hub's own back control lived in the body of every optional screen,
+  // alongside the nav bar's — two ways up from one screen.
+  check(!app.doc.querySelector('#root [data-act="goto"][data-v="gaps"]'),
+    'no control points at the removed hub');
+  check(!!app.doc.querySelector('#root [data-act="nav-back"]'),
+    'the standard Back control is still the way up');
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 13 · The finished screen offers the driver exactly one thing.
+ *
+ * "See what dispatch sees" was the demo harness leaking into the product —
+ * a driver has no such button, and the persona switcher already does it.
+ * "Add something after all" pointed at the removed hub.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 'done', scenario: 'collision', navStack: ['s0'] });
+
+  const dock = [...app.doc.querySelectorAll('#root .dock button')];
+  check(dock.length === 1, 'finished: the dock carries a single control',
+    `found ${dock.length}: ${dock.map(b => b.textContent.trim()).join(' | ')}`);
+  check(!app.doc.querySelector('#root [data-act="go-fleet"]'),
+    'finished: no persona switch in the driver product');
+  check(dock.length === 1 && /your copy/i.test(dock[0].textContent),
+    'finished: the one control leads to the driver\'s own record');
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 14 · A named slot takes as many frames as the thing needs.
+ *
+ * Damage rarely fits one picture — a wing, a step and a windscreen are three
+ * frames of one category. Extras hang off the named slot rather than becoming
+ * the unnamed pile the naming exists to prevent.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 'photos', scenario: 'glass', navStack: ['s0'] });
+
+  check(!!app.doc.querySelector('#root [data-act="shoot"]'),
+    'photos: the named slot is still the primary control');
+  check(!app.doc.querySelector('#root [data-act="skip-remaining-photos"]'),
+    'photos: "Skip the rest" is gone — it stayed on the screen and read as inert');
+
+  // The dock's skip is what leaves, and it must still be there.
+  check(!!app.doc.querySelector('#root [data-act="gap-skip"]'),
+    'photos: the dock still offers a non-shaming way out');
+  app.close();
+}
+
+/* Add-another appears only once a slot holds something. */
+{
+  const app = await boot({
+    persona: 'driver', screen: 'photos', scenario: 'glass', navStack: ['s0'],
+    draft: { photos: { wide: { at: '09:12', skipped: false, kb: 900, name: 'a.jpg', thumb: null, extra: [] } } },
+  });
+  const adds = [...app.doc.querySelectorAll('#root [data-act="add-photo"]')];
+  check(adds.length === 1, 'photos: "add another" appears on the captured slot only',
+    `found ${adds.length}`);
+  check(adds.length === 1 && adds[0].getAttribute('data-v') === 'wide',
+    'photos: it is bound to the slot it sits under');
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 15 · No control depicts something the product cannot do.
+ *
+ * Every text field carried a mic button whose handler raised a toast saying
+ * speech recognition needs a network service and this file makes none — a
+ * control that exists to announce its own impossibility. Constraint 1 makes
+ * that permanent, so the honest form is no button. Same class of bug as photo
+ * slots that opened nothing.
+ * ================================================================== */
+{
+  for (const screen of ['witness', 'otherv', 'photos', 'otherins']) {
+    const app = await boot({
+      persona: 'driver', screen, scenario: 'collision', navStack: ['s0'],
+      // The witness name and number appear only once someone HAS been seen —
+      // the screen asks the yes/no first and reveals the fields behind it.
+      draft: screen === 'witness' ? { witnessPresent: true } : undefined,
+    });
+
+    check(!app.doc.querySelector('#root [data-act="voice"]'),
+      `${screen}: no dictation control that cannot dictate`);
+
+    // The fields themselves must still be there and typable.
+    const inputs = [...app.doc.querySelectorAll('#root input[data-field]')];
+    check(inputs.length > 0, `${screen}: still offers text entry`);
+    check(inputs.every(i => !i.disabled && !i.readOnly),
+      `${screen}: every field accepts typing`);
+    app.close();
+  }
+}
+
+/* ================================================================== *
+ * RULE 16 · Theft never asks what a theft victim cannot answer.
+ *
+ * Six fields still block. But "can the vehicle still be driven?" has one
+ * possible answer when the vehicle is gone, and "what is damaged / where can
+ * it be inspected?" have none at all. The drivable fact still reaches the
+ * handler — derived from the incident type and flagged as derived, never
+ * presented as something the driver said.
+ * ================================================================== */
+{
+  const app = await boot({ persona: 'driver', screen: 's1', scenario: 'theft' });
+
+  check(!app.doc.querySelector('#root [data-act="set-drivable"]'),
+    'theft: question 6 is not put to someone whose vehicle is gone');
+
+  // The counter must match what is on screen. "6 still to check" with five
+  // questions visible is the bug this guards.
+  check(/5\s+still to check/i.test(app.text()),
+    'theft: the counter counts the questions actually asked',
+    (app.text().match(/\d+\s+still to check/i) || ['none'])[0]);
+
+  // Five answers must release submission — the sixth is already settled.
+  for (const act of ['confirm-vehicle', 'confirm-time', 'confirm-location', 'confirm-type']) {
+    await app.click(`#root [data-act="${act}"]`);
+  }
+  await app.click('#root [data-act="set-injured"][data-v="no"]');
+  check(!!app.submit(),
+    'theft: five answers unblock submission, the sixth is derived');
+
+  await app.click('#root [data-act="submit-tier1"]');
+  await new Promise(r => setTimeout(r, 700));
+  check(/INS-DE-\d{4}-\d+/.test(app.text()),
+    'theft: the report submits and a reference is issued');
+
+  // The value reaches storage, marked as inferred rather than answered.
+  const saved = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1'));
+  check(saved.draft.drivable === false,
+    'theft: drivable is carried to the handler, not left null');
+  check(saved.draft.drivableSource === 'derived',
+    'theft: it is flagged as derived, so nobody reads it as testimony',
+    String(saved.draft.drivableSource));
+  app.close();
+}
+
+/* The other scenarios still ask it, and are not marked derived. */
+{
+  const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision' });
+  check(!!app.doc.querySelector('#root [data-act="set-drivable"]'),
+    'collision: question 6 is still asked');
+  check(/6\s+still to check/i.test(app.text()),
+    'collision: all six are counted');
+  app.close();
+}
+
+/* Damage and inspection address are not asked for a theft either. */
+{
+  const app = await boot({ persona: 'driver', screen: 'photos', scenario: 'theft', navStack: ['s0'] });
+  const fields = [...app.doc.querySelectorAll('#root input[data-field]')]
+    .map(i => i.getAttribute('data-field'));
+
+  check(!fields.includes('damageDesc'),
+    'theft: no field asks a driver to describe damage they have not seen');
+  check(!fields.includes('whereSeen'),
+    'theft: no field asks where to inspect a vehicle nobody can find');
+  // The photo slots stay — the empty parking space is still worth having.
+  check(!!app.doc.querySelector('#root [data-act="shoot"]'),
+    'theft: the photo slots are still offered');
+  app.close();
+}
+
+/* The crime reference is typable without first answering the yes/no. */
+{
+  const app = await boot({ persona: 'driver', screen: 'police', scenario: 'theft', navStack: ['s0'] });
+  const ref = app.doc.querySelector('#root input[data-field="policeRef"]');
+  check(!!ref, 'theft: the crime reference field is there before the yes/no is answered');
+  check(!!ref && !ref.disabled && !ref.readOnly,
+    'theft: and it accepts typing');
+  app.close();
+}
+
+/* ================================================================== *
+ * RULE 17 · The driver's copy shows everything the driver answered.
+ *
+ * It shipped covering only the six blocking fields, so a driver who answered
+ * cargo, ADR, witness and police saw none of it back. A copy that omits half
+ * of what was sent is not a copy — and the omissions are invisible, because
+ * nothing on the screen says a section is missing.
+ * ================================================================== */
+{
+  const app = await boot({
+    persona: 'driver', screen: 'archive', scenario: 'collision', navStack: ['done'],
+    draft: {
+      injured: true, injuredParties: ['driver', 'pedestrian'],
+      injurySeverity: ['walking'], injuryEmergency: true,
+      cargoLaden: true, cargoDesc: '24 pallets, packaged food',
+      trailer: 'B-RL 8829', hazardous: true,
+      witnessPresent: true, witnessName: 'Anna', witnessPhone: '+49 170 000',
+      policeAttended: true, policeRef: '2026/074/0084217',
+      otherPlate: 'M-XY 1234', otherMake: 'Silver Sprinter',
+      otherDriver: 'Jan', otherPhone: '+49 171 111',
+      otherInsurer: 'Some Insurer', otherPolicy: 'POL-99',
+      easA: [1, 5], easB: [12], sigA: 'x', sigB: 'x', sketch: 'x',
+    },
+  });
+  const text = app.text();
+
+  check(app.errors.length === 0, 'archive: renders a full draft without errors',
+    app.errors.slice(0, 2).join(' | '));
+
+  // Every value the driver typed or tapped must appear somewhere on the page.
+  for (const [label, needle] of [
+    ['cargo description', '24 pallets, packaged food'],
+    ['trailer number', 'B-RL 8829'],
+    ['witness name', 'Anna'],
+    ['witness phone', '+49 170 000'],
+    ['crime/police reference', '2026/074/0084217'],
+    ['other plate', 'M-XY 1234'],
+    ['other make', 'Silver Sprinter'],
+    ['other driver', 'Jan'],
+    ['their insurer', 'Some Insurer'],
+    ['their policy number', 'POL-99'],
+  ]) {
+    check(text.includes(needle), `archive: shows the ${label}`);
+  }
+
+  // Answers chosen from a list must read as their label, not their key.
+  check(/Someone on foot or on a bike/.test(text),
+    'archive: injured parties read as labels, not stored keys');
+  check(/Walking and talking/.test(text),
+    'archive: severity bands read as labels');
+  check(!/\bour_vehicle\b|\bneeds_help\b|\bother_vehicle\b/.test(text),
+    'archive: no raw enum keys leak into the driver\'s copy');
+
+  // ADR is a safety fact and is stated either way.
+  check(/Hazardous/i.test(text), 'archive: states the ADR answer');
+  // Loaded/empty, not a bare "Yes".
+  check(/Loaded|Empty/.test(text), 'archive: says whether the truck was loaded');
+  // The signed statement is the thing a driver most wants a copy of.
+  check(/Signed by/i.test(text), 'archive: records who signed the accident statement');
+
+  app.close();
+}
+
+/* A skipped screen is shown as skipped, not left blank. */
+{
+  const app = await boot({
+    persona: 'driver', screen: 'archive', scenario: 'collision', navStack: ['done'],
+    draft: { skipped: ['witness', 'cargo', 'police'] },
+  });
+  const text = app.text();
+  check((text.match(/Skipped/g) || []).length >= 3,
+    'archive: each skipped screen says so rather than vanishing',
+    `found ${(text.match(/Skipped/g) || []).length}`);
+  app.close();
 }
 
 console.log(failed ? `\n${failed} rule assertion(s) failed` : '\nall rule assertions passed');

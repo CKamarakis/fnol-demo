@@ -3,13 +3,97 @@ import { SCENARIOS } from '../data/domain.js';
 import { Store, freshDraft, logAdd } from './store.js';
 import { el } from './dom.jsx';
 import { clockT, rnd, toast, uuid } from './utils.js';
-import { gapItems } from '../screens/driver/GapsHub.jsx';
+import { gapItems } from '../screens/driver/GapShell.jsx';
 
 /* ==================================================================
    §13 ACTIONS — one delegated listener for the whole app
    ================================================================== */
 export function startTimerIfNeeded(){
   if(!Store.s.startedAt){ Store.s.startedAt=Date.now(); Store.s.stoppedAt=null; }
+}
+
+/* ---- photo capture ----------------------------------------------------
+   A phone camera returns 3–6 MB. That is fine to forward and fatal to keep:
+   localStorage holds ~5 MB for the whole app, and Store.save() serialises the
+   entire draft on every keystroke. So the image is downscaled to a thumbnail
+   for the driver's own record, and Store.save strips even that before writing
+   (see the photos handling in store.js). The full-size file is never held —
+   FakeApi takes its size and forwards it, exactly as the real contract does.
+   All of it is FileReader and canvas: no network, no worker, no library. */
+const THUMB_MAX = 640;
+
+function thumbnail(file){
+  return new Promise(resolve => {
+    const fr=new FileReader();
+    fr.onerror=()=>resolve(null);
+    fr.onload=()=>{
+      const img=new Image();
+      img.onerror=()=>resolve(null);
+      img.onload=()=>{
+        try{
+          const scale=Math.min(1, THUMB_MAX/Math.max(img.width||1, img.height||1));
+          const w=Math.max(1, Math.round((img.width||1)*scale));
+          const h=Math.max(1, Math.round((img.height||1)*scale));
+          const c=document.createElement("canvas");
+          c.width=w; c.height=h;
+          c.getContext("2d").drawImage(img,0,0,w,h);
+          resolve({url:c.toDataURL("image/jpeg",0.72), w, h});
+        }catch(e){ resolve(null); }   // tainted or oversized canvas — metadata still stands
+      };
+      img.src=fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+
+/* A slot holds the FIRST shot at the top level and any further shots in
+   `extra`. Damage rarely fits one frame — a wing, a step and a windscreen are
+   three pictures of one category — but the named slot is still what an adjuster
+   reads, so extras hang off the name rather than becoming an unnamed pile.
+   The flat shape is kept for the first shot because six other readers already
+   dereference photos[k].thumb / .at, and a slot with one picture is the common
+   case. `mode` is "replace" (retake), "add" (another of the same), or falsy
+   for the first shot. */
+export async function capturePhoto(slot, file, mode){
+  const kb=Math.max(1, Math.round(file.size/1024));
+  const thumb=await thumbnail(file);
+  const photos=Object.assign({}, Store.s.draft.photos);
+  const prev=photos[slot];
+  const shot={at:clockT(), kb, name:file.name||"", thumb};
+
+  if(mode==="add" && prev && !prev.skipped){
+    photos[slot]=Object.assign({}, prev, {extra:(prev.extra||[]).concat([shot])});
+  }else{
+    // Retaking replaces the lead image and keeps the extras: the driver is
+    // correcting one frame, not discarding the set.
+    photos[slot]=Object.assign({skipped:false, extra:(prev&&prev.extra)||[]}, shot);
+  }
+
+  Store.patchDraft({photos});
+  const elm=document.querySelector('[data-act="shoot"][data-v="'+slot+'"]');
+  if(elm){ elm.classList.add("flashing"); setTimeout(()=>elm.classList.remove("flashing"),460); }
+  if(Store.s.incident) await FakeApi.postAttachment(Store.s.incident.id, slot, kb);
+}
+
+/* One file input, built on demand and thrown away. Kept out of the JSX because
+   a hidden input per slot is five inputs the render path has to keep in sync
+   with the store, and the click has to originate from the user's gesture. */
+function pickImages(slot, mode){
+  const inp=document.createElement("input");
+  inp.type="file"; inp.accept="image/*"; inp.setAttribute("capture","environment");
+  if(mode==="add") inp.multiple=true;
+  inp.style.display="none";
+  inp.addEventListener("change", async () => {
+    const files=Array.from(inp.files||[]);
+    if(inp.parentNode) inp.parentNode.removeChild(inp);
+    // Sequential, not Promise.all: each capture reads the store, and parallel
+    // writes would drop all but the last.
+    for(let i=0;i<files.length;i++){
+      await capturePhoto(slot, files[i], i===0 ? mode : "add");
+    }
+  });
+  document.body.appendChild(inp);
+  inp.click();
 }
 
 export const ACTIONS = {
@@ -46,7 +130,7 @@ export const ACTIONS = {
         if(inc.tpa_state!=="registered") FakeApi.forwardToTpa(inc,0);
       });
     }else{
-      toast("The TPA is back up — draining the queue.","ok",3200);
+      toast("The TPA is back up. Draining the queue.","ok",3200);
       logAdd({m:"SYS",p:"TPA health check",s:"200",ms:rnd(120,300),meta:"upstream recovered"});
       await FakeApi.drain();
     }
@@ -55,11 +139,11 @@ export const ACTIONS = {
     const on=!Store.s.fail.offline;
     Store.s.fail.offline=on; Store.save(); Store.emit();
     if(on){
-      toast("No signal. Keep going — nothing will be lost.","warn",4000);
+      toast("No signal. Keep going, nothing will be lost.","warn",4000);
       logAdd({m:"SYS",p:"connectivity",s:"offline",sq:true,ms:0,
         meta:"radio down · writes queue locally with their idempotency keys · reference generation moves client-side"});
     }else{
-      toast("Signal restored — replaying the queue.","ok",3200);
+      toast("Signal restored. Replaying the queue.","ok",3200);
       logAdd({m:"SYS",p:"connectivity",s:"online",ms:rnd(40,90),meta:"radio up · replaying outbox"});
       await FakeApi.drain();
     }
@@ -121,7 +205,7 @@ export const ACTIONS = {
   },
   "call112": () => {
     logAdd({m:"SYS",p:"tel:112",s:"—",sq:true,ms:0,meta:"emergency dialler invoked (simulated) — available on every screen, above the fold"});
-    toast("Dialling 112 — simulated.","err",3000);
+    toast("Dialling 112, simulated.","err",3000);
   },
   "emg-continue": () => Store.set({screen:"s1"}),
 
@@ -290,11 +374,26 @@ export const ACTIONS = {
       refLatencyMs: Math.max(1,Math.min(latency, 180)),
       screen:"s2"
     });
-    if(res.queued) toast("No signal — reference generated on this phone. It's already valid.","warn",4200);
+    if(res.queued) toast("No signal. Your reference was generated on this phone and is already valid.","warn",4200);
   },
 
   /* ---- gap fill ---- */
-  "go-gaps": () => Store.set({screen:"gaps"}),
+  // The hub's job is to show the perishability ORDER — witness before plate
+  // before photographs, each with its half-life. With one item outstanding
+  // there is no order to show, and the driver taps twice to reach the only
+  // thing on it. Glass is the case that exposed this: two items, one of them
+  // already answered, and the hub renders as a waypoint carrying nothing.
+  // Two or more outstanding and the list IS the argument, so it stays.
+  // Straight to the first outstanding item, in perishability order. There was
+  // a hub screen listing them all; it was removed. A menu of the screens that
+  // follow it costs the driver a tap and tells them nothing they act on — the
+  // ordering still governs what comes next, and nextGap() walks the same list.
+  // With nothing outstanding, the flow is already finished.
+  "go-gaps": () => {
+    const open = gapItems().filter(x => !x.done && !x.skipped);
+    if(!open.length) return ACTIONS["finish-now"]();
+    Store.set({screen: open[0].screen});
+  },
   "goto": v => Store.set({screen:v, subScreen:null}),
   "finish-now": async () => {
     if(Store.s.incident) await FakeApi.submitIncident(Store.s.incident.id);
@@ -320,22 +419,20 @@ export const ACTIONS = {
   "set-cargo":   v => Store.patchDraft({cargoLaden:v==="yes"}),
   "set-hazard":  v => Store.patchDraft({hazardous:v==="yes"}),
 
-  "shoot": async v => {
-    const d=Store.s.draft;
-    const photos=Object.assign({},d.photos);
-    photos[v]={at:clockT(), skipped:false};
-    Store.patchDraft({photos});
-    const slot=document.querySelector('[data-act="shoot"][data-v="'+v+'"]');
-    if(slot){ slot.classList.add("flashing"); setTimeout(()=>slot.classList.remove("flashing"),460); }
-    if(Store.s.incident) await FakeApi.postAttachment(Store.s.incident.id, v);
-  },
-  "skip-remaining-photos": () => {
-    const d=Store.s.draft, sc=SCENARIOS[Store.s.scenario];
-    const photos=Object.assign({},d.photos);
-    (sc.photos||[]).forEach(k=>{ if(!photos[k]) photos[k]={at:clockT(), skipped:true}; });
-    Store.patchDraft({photos});
-    toast("Skipped — logged as known gaps, not silent ones.","",2800);
-  },
+  // Opens the real camera. capture="environment" sends a phone straight to the
+  // rear lens; the same input on a laptop is a file picker, which is what a
+  // fleet manager reviewing the demo needs. Deliberately not getUserMedia:
+  // that wants a permission prompt and a live preview surface, and it is
+  // refused outright on a file:// page — which is how this artifact is opened.
+  "shoot": v => pickImages(v, "replace"),
+  // Another picture of the same named thing. multiple=true because a driver
+  // walking round a truck takes three in a row, and three round trips through
+  // the camera to add three frames is two too many.
+  "add-photo": v => pickImages(v, "add"),
+  // "Skip the rest" was removed. It marked the remaining slots skipped and
+  // stayed on the screen, so it read as doing nothing — and the dock's
+  // "Skip — I'll do this later" already leaves with the same gaps recorded.
+  // Two controls for one intention, one of them silent.
 
   "eas-tick": (v,elm) => {
     const col=elm.getAttribute("data-col"), n=parseInt(elm.getAttribute("data-n"),10);
@@ -349,8 +446,6 @@ export const ACTIONS = {
   "sketch-clear": () => { Store.s.draft.sketch=null; Store.save(); const c=document.getElementById("sketchCanvas"); if(c) c.dataset.wired=""; Store.emit(); },
   "sig-clear": v => { Store.s.draft["sig"+v]=null; Store.save(); const c=document.getElementById("sig"+v); if(c) c.dataset.wired=""; Store.emit(); },
 
-  "voice": v => toast("Voice input is a visual affordance in this demo — speech recognition needs a network service and this file makes no requests.","",4200),
-
   "copy-ref": () => {
     const r=Store.s.reference||"";
     const done=()=>toast("Copied "+r,"ok");
@@ -359,7 +454,7 @@ export const ACTIONS = {
     function fallback(){
       const ta=el("textarea",{style:"position:fixed;opacity:0"}); ta.value=r;
       document.body.append(ta); ta.select();
-      try{ document.execCommand("copy"); done(); }catch(e){ toast("Copy blocked by the browser — "+r,"warn",4000); }
+      try{ document.execCommand("copy"); done(); }catch(e){ toast("Copy blocked by the browser. "+r,"warn",4000); }
       ta.remove();
     }
   },
@@ -415,7 +510,7 @@ document.addEventListener("click", e=>{
   const fn  = ACTIONS[act];
   if(!fn) return;
   e.preventDefault();
-  try{ fn(v, node); }catch(err){ console.error(act,err); toast("Something broke — see the console.","err"); }
+  try{ fn(v, node); }catch(err){ console.error(act,err); toast("Something broke. See the console.","err"); }
 });
 
 /* native selects (language) — 'change', because click is preventDefaulted above */

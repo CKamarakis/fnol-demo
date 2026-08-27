@@ -70,7 +70,7 @@ export function scrReference() {
 
             <div className="ref-stamp">
               <span dangerouslySetInnerHTML={{ __html: I.shield }} />
-              issued by the insurer — independent of the TPA
+              issued by the insurer, independent of the TPA
             </div>
 
             <div style={{ marginTop: '10px' }}>
@@ -106,7 +106,7 @@ export function scrReference() {
                       Your fleet office can see this now. Stay behind the barrier.
                     </p>
                     <div className="chip warn" style={{ marginTop: '9px', fontSize: '10px' }}>
-                      SIMULATED — no recovery provider was contacted
+                      SIMULATED · no recovery provider was contacted
                     </div>
                   </div>
                 </div>
@@ -128,7 +128,7 @@ export function scrReference() {
               />
               <p className="tiny" style={{ lineHeight: 1.5 }}>
                 You can close the app now. Everything is saved. We&rsquo;ll message you a link to
-                finish the rest whenever you&rsquo;re ready —{' '}
+                finish the rest whenever you&rsquo;re ready.{' '}
                 <b style={{ color: 'var(--ink-2)' }}>the report is already filed</b>.
               </p>
             </div>
@@ -149,8 +149,15 @@ export function scrReference() {
             </span>
           </div>
         )}
+        {/* The urgency is real and belongs in the sentence above, where it can
+            be read. A button is a verb: it says what tapping does. The old
+            label — "A few things that disappear if we wait" — made the user
+            parse a claim to find out where they were going. */}
+        <p className="tiny" style={{ textAlign: 'center', margin: '0 0 10px', lineHeight: 1.5 }}>
+          Some things are hard to recover once the truck moves.
+        </p>
         <button className="btn btn-primary btn-lg" data-act="go-gaps">
-          A few things that disappear if we wait
+          Add what you can from the scene
         </button>
         <button className="btn btn-quiet" data-act="finish-now">I&rsquo;m done for now</button>
       </div>

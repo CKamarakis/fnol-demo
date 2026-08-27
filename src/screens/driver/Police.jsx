@@ -2,7 +2,7 @@ import { I } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { Note, YesNo } from '../../components/Choice.jsx';
-import { gapShell, textField } from './GapsHub.jsx';
+import { gapShell, textField } from './GapShell.jsx';
 
 /* ---------- police ---------- */
 export function scrPolice() {
@@ -13,7 +13,13 @@ export function scrPolice() {
     <div>
       <YesNo act="set-police" value={d.policeAttended} style={{ marginBottom: '14px' }} />
 
-      {d.policeAttended === true && textField(
+      {/* For a theft the reference field is always visible. A driver who
+          phoned it in an hour ago has the Aktenzeichen in their hand, and
+          gating the field behind the yes/no makes them answer a question they
+          have already answered by having the number. Everywhere else the
+          officer either gave a reference or did not, so it stays behind the
+          yes — there is nothing to type until someone attended. */}
+      {(theft || d.policeAttended === true) && textField(
         theft ? 'Crime reference (Aktenzeichen)' : 'Reference number, if they gave you one',
         'policeRef',
         'e.g. 2026/074/0084217',
@@ -21,9 +27,9 @@ export function scrPolice() {
 
       {theft && d.policeAttended !== true && (
         <Note icon={I.warn} tone="warn" style={{ borderColor: '#e8d3a4' }}>
-          <b style={{ color: 'var(--ink-2)' }}>For a theft this is nearly blocking.</b> No German
-          insurer will progress a theft claim without a police report. We still don&rsquo;t block on
-          it — you may be on a motorway at 4 a.m. — but we will chase this one hard.
+          <b style={{ color: 'var(--ink-2)' }}>A theft claim needs this.</b> No German insurer
+          will progress one without a police report. You can still continue without it, and add
+          the number whenever you have it.
         </Note>
       )}
     </div>
