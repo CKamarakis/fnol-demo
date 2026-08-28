@@ -65,10 +65,13 @@ export function freshDraft(scenId){
     cargoLaden:null, cargoDesc:"", trailer:"", hazardous:null,
     skipped:[],      // ids of things the driver chose to skip — logged, never nagged
     notes:"",
-    // Which way the driver chose to answer the six: the form or the chat. A
-    // presentation preference, not a claims field — it changes no value that
-    // reaches the handler, and nothing downstream reads it. Kept on the draft
-    // rather than in app state so a reopened report resumes the way it started.
+    // Which way the driver answered the six: the form or the chat. A record of
+    // what happened, not a claims field and not a routing input — the fork is
+    // shown every time the flow reaches it, because a stored preference that
+    // answers the question before it is asked means the driver never gets to
+    // change their mind. It exists so the two paths can be compared later
+    // (completion rate, time to reference, corrections) — see
+    // docs/open-questions.md.
     intakeMode:null, // "form" | "chat" | null (not yet chosen)
   };
 }

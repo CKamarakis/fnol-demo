@@ -84,8 +84,16 @@ answers and fails if the resulting drafts differ by anything but this key.
 It is recorded because it is the kind of thing worth knowing across a fleet —
 if nobody ever picks one, that is an answer — and for no other reason. Nothing
 downstream reads it, it is absent from `ACORD_MAP`, and it does not appear on
-the export. Deliberately on the draft rather than in app state, so a report
-reopened after a week resumes the way it was started.
+the export.
+
+**It is a record, not a routing input.** An earlier build read it to skip the
+choice screen for anyone who had chosen before, on the reasoning that a report
+should resume the way it started. That was wrong in the case that matters: this
+artifact is reopened for months, so on the second run the driver tapped
+"Everyone's fine" and landed in Roady without ever being asked. The fork is a
+step in the flow, and a stored preference that answers a question before it is
+put means nobody can change their mind. Resuming a report *in progress* is
+`Store.load`'s job — it restores the screen — and that is unaffected.
 
 ---
 

@@ -220,6 +220,12 @@ Product decisions with reasons. Do not change these without raising it first.
 - **Two ways through the six, one report.** The blocking six can be answered as
   a scrolling form (`S1Tier1.jsx`) or one question at a time in a chat
   (`Chat.jsx`), and the driver chooses on `ModeChoice.jsx` after the cold open.
+  **The fork is shown every time the flow reaches it.** `intakeMode` records
+  which path was used; it is never read to route. Reading it meant a driver who
+  had chosen once never saw the choice again — on the second run of a reopened
+  artifact, "Everyone's fine" landed straight in Roady. A stored preference
+  that answers a question before it is put is not a preference, it is a
+  decision taken away.
   This is a **presentation choice, not a second intake**: every control in the
   chat is the same component wired to the same `data-act` handler, so both
   paths write the same draft keys, and `tests/rules.mjs` runs both with

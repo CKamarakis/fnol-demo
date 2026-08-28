@@ -208,11 +208,17 @@ export const ACTIONS = {
     logAdd({m:"SYS",p:"tel:112",s:"—",sq:true,ms:0,meta:"emergency dialler invoked (simulated) — available on every screen, above the fold"});
     toast("Dialling 112, simulated.","err",3000);
   },
-  /* Back to wherever the driver was heading. Coming from the cold open that is
-     the mode choice; coming from the chat's own injury turn it is the chat,
-     which then asks who is hurt. The safety screen never decides the path. */
-  "emg-continue": () => Store.set({screen: Store.s.emgFrom==="s1chat" ? "s1chat" : intakeScreen(),
-    emgFrom:null}),
+  /* Back to wherever the driver was heading. From the cold open — the only
+     route that reaches 112 today — that is the fork, so the driver is asked how
+     they want to answer rather than dropped into a path they never picked.
+     A screen that routes here mid-flow returns to itself: continuing past a
+     safety interstitial should not restart the report. The safety screen
+     never decides the path. */
+  "emg-continue": () => {
+    const from = Store.s.emgFrom;
+    const back = from && from !== "s0" && from !== "s0det" ? from : intakeScreen();
+    Store.set({screen: back, emgFrom: null});
+  },
 
   /* ---- driver: which way through the six ---- */
   /* A presentation preference, not a claims field. Nothing downstream reads it
@@ -594,9 +600,16 @@ export const ACTIONS = {
 /* Which screen the six are answered on. The driver picks once, on s0choice,
    and the choice rides on the draft so a reopened report resumes the same way.
    Unset means they have not been asked yet. */
+/* Where "everyone is fine" and "continue past 112" lead.
+   ALWAYS the fork. It used to read draft.intakeMode and skip straight to
+   whichever path was chosen last, which meant the second run of the demo — and
+   any reopened artifact — never showed the choice again: the driver tapped
+   "Everyone's fine" and landed in Roady without being asked. The stored mode
+   is for RESUMING a report in progress, which Store.load already handles by
+   restoring the screen; it is not a standing preference that answers a
+   question before it is put. */
 export function intakeScreen(){
-  const m = Store.s.draft.intakeMode;
-  return m==="chat" ? "s1chat" : m==="form" ? "s1" : "s0choice";
+  return "s0choice";
 }
 
 /* Confirm one pre-filled field, and move on if the chat is asking.

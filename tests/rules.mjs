@@ -1224,6 +1224,42 @@ for (const [persona, tabs] of [
     'both paths: the chosen mode is recorded, and is the only difference');
 }
 
+/* ==================================================================
+ * RULE · The fork is always shown. A stored mode never answers for the driver.
+ *
+ * `intakeScreen()` used to read draft.intakeMode and route straight to
+ * whichever path was chosen last. On a second run — and this artifact is
+ * reopened for months — the driver tapped "Everyone's fine" and landed in
+ * Roady without ever being asked. The stored mode is a record of what
+ * happened, not a preference that answers a question before it is put.
+ *
+ * Every earlier test seeded a fresh draft, so none of them could see this.
+ * ================================================================== */
+{
+  const ROUTES = [
+    ['everyone is fine', ['s0-fine']],
+    ['112 then continue', ['s0-hurt', 'emg-continue']],
+  ];
+  // A draft carrying a mode from a previous report, which is the failing case.
+  for (const stored of [null, 'form', 'chat']) {
+    for (const [label, path] of ROUTES) {
+      const app = await boot({
+        persona: 'driver', screen: 's0', scenario: 'glass', notes: false,
+        draft: stored ? { intakeMode: stored } : {},
+      });
+      for (const act of path) await app.click(`#root [data-act="${act}"]`);
+
+      check(/fill the incident report/i.test(app.text()),
+        `fork: "${label}" reaches the choice with intakeMode=${stored || 'unset'}`,
+        app.text().slice(0, 90).replace(/\s+/g, ' '));
+      check(!!app.doc.querySelector('#root [data-act="set-intake-mode"][data-v="chat"]')
+         && !!app.doc.querySelector('#root [data-act="set-intake-mode"][data-v="form"]'),
+        `fork: both options are offered with intakeMode=${stored || 'unset'}`);
+      app.close();
+    }
+  }
+}
+
 /* The chat asks the six and only the six, and asks nothing about fault. */
 {
   const app = await boot({ persona: 'driver', screen: 's1chat', scenario: 'collision',
