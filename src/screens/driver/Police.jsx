@@ -1,3 +1,4 @@
+import { T } from '../../data/domain.js';
 import { I } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
@@ -37,7 +38,7 @@ export function scrPolice() {
 
   return gapShell({
     id: 'police',
-    title: theft ? 'Have you reported it stolen?' : 'Did the police attend?',
+    title: theft ? T('gPolTitleTheft') : T('gPolTitle'),
     sub: theft
       ? 'This is the one thing a theft claim cannot proceed without.'
       : 'One question while the officer is still here.',

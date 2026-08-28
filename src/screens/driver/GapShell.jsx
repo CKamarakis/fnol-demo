@@ -80,7 +80,7 @@ export function gapShell({ id, title, sub, body, note, dockExtra, nextLabel }) {
           {p && (
             <div className="card-quiet" style={{ marginTop: '16px' }}>
               <p className="tiny" style={{ lineHeight: 1.5 }}>
-                <b style={{ color: 'var(--ink-2)' }}>Why now:</b>{' '}
+                <b style={{ color: 'var(--ink-2)' }}>{T('pWhyNow')}</b>{' '}
                 {p.why}
               </p>
             </div>

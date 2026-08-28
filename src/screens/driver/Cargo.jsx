@@ -1,3 +1,4 @@
+import { T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { Choice, YesNo } from '../../components/Choice.jsx';
@@ -9,7 +10,7 @@ export function scrCargo() {
 
   const body = (
     <div>
-      <p className="lbl">Are you loaded?</p>
+      <p className="lbl">{T('gCargoQ')}</p>
       <div className="grid2" style={{ marginBottom: '14px' }}>
         <Choice act="set-cargo" value="yes" label="Loaded" selected={d.cargoLaden === true} />
         <Choice act="set-cargo" value="no" label="Empty" selected={d.cargoLaden === false} />
@@ -17,8 +18,8 @@ export function scrCargo() {
 
       {d.cargoLaden === true && (
         <>
-          {textField("Roughly what's on board", 'cargoDesc', '24 pallets, packaged food')}
-          {textField('Trailer number', 'trailer', 'B-RL 8829')}
+          {textField(T('gCargoDesc'), 'cargoDesc', T('gCargoDescHint'))}
+          {textField(T('gTrailerNo'), 'trailer', 'B-RL 8829')}
 
           <p className="lbl">Anything hazardous (ADR)?</p>
           <div className="grid2">
@@ -43,8 +44,8 @@ export function scrCargo() {
 
   return gapShell({
     id: 'cargo',
-    title: 'Cargo and trailer',
-    sub: 'Only shown because this vehicle has a freight profile.',
+    title: T('gCargoTitle'),
+    sub: T('gCargoSub'),
     body,
     note: dn(
       'Conditional on the vehicle profile, not on the driver',

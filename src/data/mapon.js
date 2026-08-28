@@ -246,9 +246,12 @@ export const MAPON_FIXTURES = {
 /* ── derived helpers ──────────────────────────────────────────────────── */
 
 const fmtTime = iso => iso.slice(11, 16);
-const fmtDate = iso => new Date(iso).toLocaleDateString('en-GB', {
-  day: 'numeric', month: 'long', year: 'numeric',
-});
+/* Kept as ISO rather than a formatted string. The date is seeded into the
+   draft once and then persisted, so a date formatted here would keep whichever
+   language was active when the report was created — a French driver saw
+   "19 August 2026" because the seed ran under en-GB. Formatting happens at
+   render instead, where the current language is known. */
+const isoDate = iso => iso.slice(0, 10);
 
 /** Peak deceleration across the route tail, in m/s and in g. */
 export function decelerationProfile(route) {
@@ -300,7 +303,7 @@ export function fromMapon(fixture, { locationNote } = {}) {
     lat: unit.lat,
     lon: unit.lng,
     time: fmtTime(at),
-    date: fmtDate(at),
+    date: isoDate(at),
     vehicle: unit.number,
     vin: unit.vin,
     driver: unit.drivers.length ? `${unit.drivers[0].name} ${unit.drivers[0].surname[0]}.` : '—',

@@ -1,3 +1,4 @@
+import { T } from '../../data/domain.js';
 import { I } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
@@ -21,14 +22,14 @@ export function scrWitness() {
   const body = (
     <div>
       <div className="grid2" style={{ marginBottom: '16px' }}>
-        <Choice value="yes" label="Yes, someone saw it" current={d.witnessPresent === true ? 'yes' : null} />
-        <Choice value="no" label="No one" current={d.witnessPresent === false ? 'no' : null} />
+        <Choice value="yes" label={T('gWitYes')} current={d.witnessPresent === true ? 'yes' : null} />
+        <Choice value="no" label={T('fNoOne')} current={d.witnessPresent === false ? 'no' : null} />
       </div>
 
       {d.witnessPresent === true && (
         <>
-          {textField('Their name, a first name is enough', 'witnessName', 'Anything you can get')}
-          {textField('A phone number', 'witnessPhone', '+49 …', 'tel')}
+          {textField(T('gWitName'), 'witnessName', T('gWitNameHint'))}
+          {textField(T('gWitPhone'), 'witnessPhone', '+49 …', 'tel')}
           <div className="card-quiet">
             <p className="tiny" style={{ lineHeight: 1.5 }}>
               <b style={{ color: 'var(--ink-2)' }}>A number with no name still works.</b>{' '}
@@ -42,8 +43,8 @@ export function scrWitness() {
 
   return gapShell({
     id: 'witness',
-    title: 'Did anyone see it?',
-    sub: 'If someone stopped, this is the most valuable thirty seconds of the whole report.',
+    title: T('gWitTitle'),
+    sub: T('gWitSub'),
     body,
     note: dn(
       'Highest value per character in the form',

@@ -91,14 +91,18 @@ export function langSelect(cur) {
 /* Each label names the screen the driver lands back on, so it has to match
    that screen's own title. "The six questions" described the rule rather than
    the page, and the page is called "Verify the tracker's data". */
-export const SCREEN_TITLES = {
-  s0: 'the incident', s0det: 'the details', dismiss: 'dismiss', emg: 'emergency',
-  s0choice: 'how to answer',
-  s1: "the tracker's data", s1chat: 'the questions', s2: 'your reference',
-  witness: 'the witness', otherv: 'the other vehicle', photos: 'photos', eas: 'circumstances',
-  police: 'police', cargo: 'cargo', otherins: 'their insurer', done: 'finished',
-  archive: 'your copy',
-};
+/* The whole phrase per screen, not "Back to" plus a noun. German, Polish and
+   French all inflect the preposition and article with the noun they govern —
+   "zum Vorfall" but "zur Ladung" — so a label assembled from two halves cannot
+   be made correct in any of them. A function, because a module-level map would
+   resolve every T() once at import and freeze the language it loaded in. */
+export const screenTitle = k => ({
+  s0: T('bS0'), s0det: T('bS0det'), dismiss: T('bDismiss'), emg: T('bEmg'),
+  s0choice: T('bS0choice'), s1: T('bS1'), s1chat: T('bS1chat'), s2: T('bS2'),
+  witness: T('bWitness'), otherv: T('bOtherv'), photos: T('bPhotos'), eas: T('bEas'),
+  police: T('bPolice'), cargo: T('bCargo'), otherins: T('bOtherins'), done: T('bDone'),
+  archive: T('bArchive'),
+}[k]);
 
 /** Only the cold open has nothing behind it. */
 export const NO_BACK = ['s0'];
@@ -114,15 +118,16 @@ export function navBar() {
     : s.navStack[s.navStack.length - 1];
   if (!prev) return null;
 
-  const label = SCREEN_TITLES[prev] || 'the previous screen';
+  // Already a full phrase — "Back to the witness", "Zurück zum Zeugen".
+  const label = screenTitle(prev) || T('bPrev');
 
   return (
     <div className="nav-bar">
-      <button className="nav-back" data-act="nav-back" aria-label={`Go back to ${label}`}>
+      <button className="nav-back" data-act="nav-back" aria-label={label}>
         <span className="nav-chev" dangerouslySetInnerHTML={{ __html: I.chevL }} />
         {/* Named as the action, not just the destination: a bare "Incident"
             beside a chevron reads as a heading for the screen you are on. */}
-        <span className="nav-lbl">Back to {label}</span>
+        <span className="nav-lbl">{label}</span>
       </button>
       {/* No "Saved" here. It appeared on every screen from the first keystroke
           and never changed again, so it stopped being information. The

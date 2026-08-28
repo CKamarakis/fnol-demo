@@ -70,6 +70,8 @@ const SHOTS = [
   ['driver-chat-edit-time', { persona: 'driver', screen: 's1chat', scenario: 'glass', navStack: ['s0choice'], notes: false, chatTurn: 1, chatSeen: 1, editing: 'time', draft: { intakeMode:'chat', vehicleConfirmed:true } }],
   ['driver-chat-edit', { persona: 'driver', screen: 's1chat', scenario: 'glass', navStack: ['s0choice'], notes: false, chatTurn: 2, chatSeen: 2, editing: 'location', draft: { intakeMode:'chat', vehicleConfirmed:true, timeConfirmed:true } }],
   ['driver-tier1', { persona: 'driver', screen: 's1', draft: null }],
+  ['driver-tier1-fr', { persona: 'driver', screen: 's1', scenario: 'collision', navStack: ['s0choice'], lang: 'fr', notes: false, draft: { injured: true } }],
+  ['driver-witness-fr', { persona: 'driver', screen: 'witness', scenario: 'collision', navStack: ['s0'], lang: 'fr', notes: false }],
   ['driver-photos', { persona: 'driver', screen: 'photos', scenario: 'collision', navStack: ['s0'], notes: false }],
   ['driver-otherins', { persona: 'driver', screen: 'otherins', scenario: 'collision', navStack: ['s0'], notes: false }],
   ['driver-photos-glass', { persona: 'driver', screen: 'photos', scenario: 'glass', navStack: ['s0'], notes: false }],

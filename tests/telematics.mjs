@@ -60,7 +60,11 @@ for (const key of ['collision', 'glass', 'theft']) {
   const m = fromMapon(MAPON_FIXTURES[key]);
   check(!!m.location && m.location.length > 10, `${key}: location resolves to a full address`);
   check(/^\d{2}:\d{2}$/.test(m.time), `${key}: time is HH:MM`, m.time);
-  check(/\d{4}$/.test(m.date), `${key}: date carries a year`, m.date);
+  // ISO, not a formatted string. The date is stored language-independent and
+  // formatted at render, so a report created in one language reads correctly
+  // in another — see dateLabel() in S1Tier1.jsx.
+  check(/^\d{4}-\d{2}-\d{2}$/.test(m.date),
+    `${key}: date is ISO, formatted at render`, m.date);
   check(m.vehicle === 'B-RL 4471', `${key}: vehicle registration mapped`);
   check(m.source.partner === 'Mapon', `${key}: provenance names the partner`);
   check(typeof m.source.odometer_km === 'number', `${key}: odometer derived from CAN`);

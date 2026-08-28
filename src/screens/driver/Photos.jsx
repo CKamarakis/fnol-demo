@@ -1,5 +1,5 @@
 import { I } from '../../core/utils.js';
-import { PHOTO_SLOTS, SCENARIOS } from '../../data/domain.js';
+import { PHOTO_SLOTS, SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { gapShell, textField } from './GapShell.jsx';
@@ -111,7 +111,7 @@ export function scrPhotos() {
 
       <div className="card-quiet" style={{ marginTop: '14px' }}>
         <p className="tiny" style={{ lineHeight: 1.5 }}>
-          The silhouette shows what to frame. Add as many as you need.
+          {T('gPhotoFrame')}
           <b style={{ color: 'var(--ink-2)' }}> Skipping one is fine.</b>
         </p>
       </div>
@@ -149,7 +149,7 @@ export function scrPhotos() {
       {sc.type !== 'theft' && (
         <>
           <div className="sp16" />
-          {textField('Where can the truck be inspected once it moves?', 'whereSeen',
+          {textField(T('gPhotoInspect'), 'whereSeen',
             'Depot Berlin-Süd, or the hard shoulder until recovery')}
         </>
       )}
@@ -179,7 +179,7 @@ export function scrPhotos() {
   // copy said "Five" on every one of them.
   return gapShell({
     id: 'photos',
-    title: 'Photographs',
+    title: T('gPhotoTitle'),
     sub: `Tap a slot to open the camera. ${slots.length} named shots, none of them required.`,
     body,
     note: (

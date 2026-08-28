@@ -1285,7 +1285,7 @@ for (const [persona, tabs] of [
   // The fixtures are dated 19 August 2026. Asserting that literal is the whole
   // point: a date rendered from Date.now() would read as today instead, which
   // is exactly the defect this guards.
-  const FIXTURE_DATE = '19 August 2026';
+  const FIXTURE_DATE = '19 August 2026';  // en-GB rendering of the ISO fixture date
   const todayish = new Date().toLocaleDateString('en-GB',
     { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -1312,12 +1312,29 @@ for (const [persona, tabs] of [
     'date of loss: the date editor opens pre-filled with what was reported',
     dateInput ? dateInput.value : 'no input');
 
-  // It is persisted, not recomputed on each render.
+  /* Persisted as ISO, not as the formatted string the driver reads. A stored
+     "19 August 2026" would keep the language the report was created in, so a
+     German handler reopening a French driver's report would read a French
+     month. The value is language-independent; dateLabel() formats it. */
   const stored = JSON.parse(app.window.localStorage.getItem('fnol.demo.v1') || '{}');
-  check((stored.draft || {}).occurredOn === FIXTURE_DATE,
-    'date of loss: it is stored on the draft, so it survives a reload',
+  check((stored.draft || {}).occurredOn === '2026-08-19',
+    'date of loss: stored as ISO, so it is language-independent',
     JSON.stringify((stored.draft || {}).occurredOn));
   app.close();
+}
+
+/* And the date the driver READS follows their language. */
+{
+  const EXPECT = { de: '19. August 2026', fr: '19 août 2026',
+    nl: '19 augustus 2026', pl: '19 sierpnia 2026' };
+  for (const [lang, want] of Object.entries(EXPECT)) {
+    const app = await boot({ persona: 'driver', screen: 's1', scenario: 'collision',
+      lang, notes: false });
+    check(app.text().includes(want),
+      `date of loss: renders in ${lang} as "${want}"`,
+      app.text().match(/14:32 · [^\n]{0,20}/)?.[0] || 'no date found');
+    app.close();
+  }
 }
 
 /* The driver's own copy states the date too — it is one of the six. */
@@ -1370,6 +1387,64 @@ for (const [persona, tabs] of [
       `archive in ${lang}: no English falls through to the driver's own copy`,
       leaks.join(', '));
     app.close();
+  }
+}
+
+/* ==================================================================
+ * RULE · Every driver screen follows the language, not just some.
+ *
+ * The packs were complete while most of what a driver read was hardcoded in
+ * the screens, so "all keys present" proved nothing. This walks every driver
+ * screen in every non-English language and fails on English that reaches the
+ * phone frame. Design notes are exempt by policy — they argue about wording
+ * and quote the English they argue against — so only the phone is read, with
+ * notes off.
+ * ================================================================== */
+{
+  /* Phrases with no plausible reading in German, French, Dutch or Polish.
+     Word-bounded: "Police" is also French, "Continue" is inside "Continuer",
+     and a substring match reports those as leaks when they are not. */
+  const MARKERS = [
+    '\\bBack to\\b', '\\btap to confirm\\b', '\\bNot right\\b', '\\bOptional\\b',
+    '\\bPhotographs\\b', '\\bWitness\\b', '\\bTrailer\\b', '\\bRegistration\\b',
+    'Did anyone', 'Did the police', 'Are you loaded', 'Where can the truck',
+    'Draw what', 'Are they insured', '\\bNot sure\\b', 'Add as many',
+    'Is anyone hurt', 'Can the vehicle', 'Who is hurt', 'How bad',
+    'emergency services', 'Use my version', '\\bCancel\\b', 'Anything else',
+    'Add damage', 'Add another', 'What was it', 'A few words',
+    'Make and colour', 'Policy number', 'Cargo and trailer',
+    // The perishability model reaches the driver too: the window chip on every
+    // gap screen and the "Why now" card under it.
+    'Why now', 'Gone in', 'Gone when', 'Gone once', 'Next week',
+    'someone saw it', '\\bNo one\\b', 'walks away', 'From the plate',
+    'Photos now show', 'officer is here', 'carries freight', 'empty bay',
+  ];
+  const SCREENS = ['s0', 's0choice', 's1', 's1chat', 'witness', 'otherv', 'photos',
+    'eas', 'police', 'cargo', 'otherins', 'done', 'archive', 's2'];
+
+  for (const lang of ['de', 'fr', 'nl', 'pl']) {
+    const leaks = [];
+    for (const screen of SCREENS) {
+      // Theft overrides some copy of its own — the photo window and reason
+      // describe an empty bay rather than moved vehicles — so both run.
+      for (const scenario of ['collision', 'theft']) {
+        const app = await boot({
+          persona: 'driver', screen, scenario, navStack: ['s0'],
+          lang, notes: false, reference: 'INS-DE-2026-1',
+          draft: { intakeMode: 'chat', injured: true, witnessPresent: true,
+            policeAttended: true, cargoLaden: true },
+        });
+        const text = app.doc.querySelector('#root .phone')?.textContent || '';
+        const found = MARKERS.filter(m => new RegExp(m).test(text));
+        if (found.length) {
+          leaks.push(`${screen}/${scenario}: ${found.join(', ').replace(/\\b/g, '')}`);
+        }
+        app.close();
+      }
+    }
+    check(leaks.length === 0,
+      `every driver screen is translated in ${lang}`,
+      leaks.join(' · '));
   }
 }
 

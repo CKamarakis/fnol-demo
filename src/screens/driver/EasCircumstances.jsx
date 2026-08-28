@@ -1,4 +1,4 @@
-import { EAS_STATEMENTS } from '../../data/domain.js';
+import { EAS_STATEMENTS, T } from '../../data/domain.js';
 import { I } from '../../core/utils.js';
 import { IMPACT_LABEL, svgImpact } from '../../components/svg.js';
 import { Store } from '../../core/store.js';
@@ -138,7 +138,7 @@ export function scrEAS() {
       {/* sketch — EAS box 13 */}
       <div className="sp20" />
       <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-        Draw what happened (EAS box 13)
+        {T('gEasDraw')}
       </p>
       <div className="sketch-wrap">
         <canvas id="sketchCanvas" width="640" height="420" />
@@ -187,8 +187,8 @@ export function scrEAS() {
 
   return gapShell({
     id: 'eas',
-    title: 'What was happening',
-    sub: 'The European Accident Statement, box 12. Both columns.',
+    title: T('gEasTitle'),
+    sub: T('gEasSub'),
     body,
     note: dn('Why we adopted the EAS instead of designing a schema', WHY_EAS_NOTE),
   });

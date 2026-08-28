@@ -1,3 +1,4 @@
+import { T } from '../../data/domain.js';
 import { I } from '../../core/utils.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
@@ -42,9 +43,9 @@ export function scrOtherVehicle() {
       {expanded && (
         <>
           <div className="sp16" />
-          {textField('Make and colour', 'otherMake', 'Silver Sprinter')}
-          {textField('Their name', 'otherDriver', '')}
-          {textField('Their phone', 'otherPhone', '', 'tel')}
+          {textField(T('gOtherMake'), 'otherMake', 'Silver Sprinter')}
+          {textField(T('gOtherName'), 'otherDriver', '')}
+          {textField(T('gOtherPhone'), 'otherPhone', '', 'tel')}
         </>
       )}
     </div>
@@ -52,8 +53,8 @@ export function scrOtherVehicle() {
 
   return gapShell({
     id: 'otherPlate',
-    title: 'The other vehicle',
-    sub: 'One field. Everything else about them can be found from it.',
+    title: T('gOtherTitle'),
+    sub: T('gOtherSub'),
     body,
     note: dn(
       'Plate-first, and everything else demoted',

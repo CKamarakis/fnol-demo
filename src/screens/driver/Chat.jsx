@@ -5,7 +5,7 @@ import { tier1Answered, tier1Ready } from '../../core/tier1.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { Choice } from '../../components/Choice.jsx';
 import {
-  EditRow, SEVERITY_OPTIONS, TypeSelect, WHO_HURT_OPTIONS, typeSummary, whenLabel,
+  EditRow, SEVERITY_OPTIONS, TypeSelect, WHO_HURT_OPTIONS, dateLabel, typeSummary, whenLabel,
 } from './S1Tier1.jsx';
 
 /* ---------- S1-CHAT — the same six, asked one at a time ---------- */
@@ -74,23 +74,23 @@ export function chatTurns() {
     !ok ? '' : corrected(k) ? val : T('chatConfirm');
 
   t.push({ id: 'vehicle', kind: 'confirm', label: T('qVehicle'),
-    value: d.vehicle, editKey: 'vehicle', editLabel: 'Registration', editHint: 'B-RL 4471',
+    value: d.vehicle, editKey: 'vehicle', editLabel: T('fReg'), editHint: 'B-RL 4471',
     act: 'confirm-vehicle', answered: d.vehicleConfirmed,
     said: confirmSaid(d.vehicleConfirmed, 'vehicle', d.vehicle) });
 
   const when = whenLabel(d);
   t.push({ id: 'time', kind: 'confirm', label: T('qTime'),
-    value: when, editKey: 'time', editLabel: 'Time it happened', editHint: '14:32',
+    value: when, editKey: 'time', editLabel: T('fTimeLbl'), editHint: '14:32',
     // The date is the second half of one fact, and it has to be correctable:
     // the truck reports an instant, and an incident found just after midnight
     // belongs to the day before.
-    editSecond: { key: 'date', label: 'Date it happened', value: d.occurredOn, hint: '19 August 2026' },
+    editSecond: { key: 'date', label: T('fDateLbl'), value: dateLabel(d.occurredOn), hint: dateLabel('2026-08-19') },
     act: 'confirm-time', answered: d.timeConfirmed,
     said: confirmSaid(d.timeConfirmed, 'occurredAt', when) });
 
   t.push({ id: 'location', kind: 'confirm', label: T('qLocation'),
-    value: d.location, editKey: 'location', editLabel: 'Where it happened',
-    editHint: 'Road, km marker, direction',
+    value: d.location, editKey: 'location', editLabel: T('fWhereLbl'),
+    editHint: T('fWhereHint'),
     act: 'confirm-location', answered: d.locationConfirmed,
     said: confirmSaid(d.locationConfirmed, 'location', d.location) });
 
@@ -103,7 +103,7 @@ export function chatTurns() {
   // The one question the truck cannot answer.
   t.push({ id: 'injured', kind: 'injured', label: T('qInjured'),
     answered: d.injured !== null,
-    said: d.injured === true ? 'Yes' : d.injured === false ? 'No one' : '' });
+    said: d.injured === true ? T('fYes') : d.injured === false ? T('fNoOne') : '' });
 
   /* Who and how bad are separate turns rather than one bubble that grows three
      controls tall. A message that expands into a form has stopped being a
@@ -121,9 +121,9 @@ export function chatTurns() {
       said: labelsFor(SEVERITY_OPTIONS(), d.injurySeverity || []) });
 
     t.push({ id: 'emergency', kind: 'yesno', label: T('qEmergency'),
-      act: 'set-emergency', value: d.injuryEmergency, yes: 'Yes', no: 'Not yet',
+      act: 'set-emergency', value: d.injuryEmergency, yes: T('fYes'), no: T('fNotYet'),
       answered: d.injuryEmergency !== null,
-      said: d.injuryEmergency === true ? 'Yes' : d.injuryEmergency === false ? 'Not yet' : '' });
+      said: d.injuryEmergency === true ? T('fYes') : d.injuryEmergency === false ? T('fNotYet') : '' });
   }
 
   /* Not asked when the vehicle is gone. Same derivation as the form: a stolen
@@ -132,9 +132,9 @@ export function chatTurns() {
      has just lost a truck. */
   if (sc.type !== 'theft') {
     t.push({ id: 'drivable', kind: 'yesno', label: T('qDrivable'),
-      act: 'set-drivable', value: d.drivable, yes: 'Yes', no: 'No',
+      act: 'set-drivable', value: d.drivable, yes: T('fYes'), no: T('fNo'),
       answered: d.drivable !== null,
-      said: d.drivable === true ? 'Yes' : d.drivable === false ? 'No' : '' });
+      said: d.drivable === true ? T('fYes') : d.drivable === false ? T('fNo') : '' });
   }
 
   return t;
@@ -222,18 +222,18 @@ function Answer({ turn }) {
         </div>
         {s.subScreen === 'type' && (
           <div className="type-picker" style={{ marginTop: '10px' }}>
-            <label className="lbl" htmlFor="chat-type">What happened?</label>
+            <label className="lbl" htmlFor="chat-type">{T('fWhat')}</label>
             <TypeSelect id="chat-type" act="set-type" value={d.type} />
 
             {d.type === 'other' && (
               <div style={{ marginTop: '10px' }}>
-                <label className="lbl" htmlFor="chat-type-other">What was it?</label>
+                <label className="lbl" htmlFor="chat-type-other">{T('fWhatWasIt')}</label>
                 <input
                   id="chat-type-other"
                   className="inp"
                   data-field="typeOther"
                   defaultValue={d.typeOther || ''}
-                  placeholder="A few words is enough"
+                  placeholder={T('fFewWords')}
                   autoComplete="off"
                 />
               </div>
@@ -243,20 +243,20 @@ function Answer({ turn }) {
                 become a second question later in the flow. */}
             <div className="also-block">
               <p className="lbl">
-                Anything else damaged?{' '}
-                <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>Optional</span>
+                {T('fAlsoDamaged')}{' '}
+                <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>{T('fOptional')}</span>
               </p>
               {(d.alsoDamaged || []).map((v, i) => (
                 <div className="also-row" key={i}>
-                  <TypeSelect id={`chat-also-${i}`} act="set-also" index={i} value={v} placeholder="Choose…" />
-                  <button className="also-remove" data-act="remove-also" data-v={String(i)} aria-label="Remove this one">
+                  <TypeSelect id={`chat-also-${i}`} act="set-also" index={i} value={v} placeholder={T('fChoose')} />
+                  <button className="also-remove" data-act="remove-also" data-v={String(i)} aria-label={T('fRemoveOne')}>
                     ×
                   </button>
                 </div>
               ))}
               <button className="also-add" data-act="add-also">
                 <span aria-hidden="true">+</span>
-                {(d.alsoDamaged || []).length ? 'Add another' : 'Add damage'}
+                {(d.alsoDamaged || []).length ? T('fAddAnother') : T('fAddDamage')}
               </button>
             </div>
 
@@ -274,7 +274,7 @@ function Answer({ turn }) {
               className="btn btn-primary btn-sm type-done"
               data-act="type-done"
             >
-              Done
+              {T('fDone')}
             </button>
           </div>
         )}
@@ -285,8 +285,8 @@ function Answer({ turn }) {
   if (turn.kind === 'injured') {
     return (
       <div className="grid2">
-        <Choice act="set-injured" value="no" label="No one" selected={d.injured === false} />
-        <Choice act="set-injured" value="yes" label="Yes" selected={d.injured === true} />
+        <Choice act="set-injured" value="no" label={T('fNoOne')} selected={d.injured === false} />
+        <Choice act="set-injured" value="yes" label={T('fYes')} selected={d.injured === true} />
       </div>
     );
   }

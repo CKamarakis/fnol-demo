@@ -1,5 +1,5 @@
 import { I } from '../../core/utils.js';
-import { SCENARIOS, T } from '../../data/domain.js';
+import { SCENARIOS, T, lang } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { tier1Answered, tier1Ready } from '../../core/tier1.js';
 import { dn } from '../../components/DriverShell.jsx';
@@ -100,8 +100,28 @@ const typeLabel = v => (TYPE_OPTIONS().find(o => o[0] === v) || [, v])[1];
  * filed after midnight or reopened the next day — which this artifact, emailed
  * and opened for months, does by design.
  */
+/* The unit reports an instant; the driver reads a date in their own language.
+   Stored as ISO so the value is language-independent, formatted here where the
+   current language is known — a date formatted at seed time would keep
+   whichever language created the report, and a French driver saw
+   "19 August 2026". A driver correction is stored as typed and shown back
+   unchanged: their words are the record, not something to reformat. */
+const DATE_LOCALE = { en: 'en-GB', de: 'de-DE', fr: 'fr-FR', nl: 'nl-NL', pl: 'pl-PL' };
+
+export function dateLabel(iso) {
+  if (!iso) return '';
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso;   // the driver typed it
+  const loc = DATE_LOCALE[lang()] || 'en-GB';
+  try {
+    return new Date(iso + 'T00:00:00Z').toLocaleDateString(loc, {
+      day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC',
+    });
+  } catch { return iso; }
+}
+
 export function whenLabel(d) {
-  return d.occurredOn ? `${d.occurredAt} · ${d.occurredOn}` : d.occurredAt;
+  const on = dateLabel(d.occurredOn);
+  return on ? `${d.occurredAt} · ${on}` : d.occurredAt;
 }
 
 /** The row shows the whole answer: what happened, plus anything else damaged. */
@@ -189,7 +209,7 @@ export function fieldRow({ ic, label, value, state, act, hint, editKey, correcte
             : <span className="tiny" style={{ fontSize: '11px' }}>{hint || ''}</span>}
           {editKey && (
             <span className="frow-edit" data-act="edit-field" data-v={editKey} role="button" tabIndex={0}>
-              Not right?
+              {T('fNotRight')}
             </span>
           )}
         </span>
@@ -233,13 +253,13 @@ export function EditRow({ editKey, label, value, hint, second }) {
         </>
       )}
       <p className="tiny" style={{ margin: '8px 0 10px', lineHeight: 1.45 }}>
-        What the truck reported is kept either way, so the handler can see both.
+        {T('fKeepBoth')}
       </p>
       <div style={{ display: 'flex', gap: '8px' }}>
         <button className="btn btn-primary btn-sm" data-act="save-field" data-v={editKey}>
-          Use my version
+          {T('fUseMine')}
         </button>
-        <button className="btn btn-ghost btn-sm" data-act="cancel-edit">Cancel</button>
+        <button className="btn btn-ghost btn-sm" data-act="cancel-edit">{T('fCancel')}</button>
       </div>
     </div>
   );
@@ -259,7 +279,7 @@ function InjuryDetail({ d }) {
           Who before how bad: the driver is looking at people, and naming them
           is what makes the severity question answerable. */}
       <div className="sp12" />
-      <p className="lbl">Who is hurt? Tap all that apply.</p>
+      <p className="lbl">{T('fWhoHurt')}</p>
       {WHO_HURT_OPTIONS().map(([v, l]) => (
         <Choice key={v} act="toggle-injured-party" value={v} label={l} multi
           selected={(d.injuredParties || []).includes(v)} />
@@ -273,17 +293,17 @@ function InjuryDetail({ d }) {
           driver should not be asked to be sure of, and the bands already tell
           the handler whether to send one ambulance or three. */}
       <div className="sp12" />
-      <p className="lbl">How bad, roughly? Tap all that apply.</p>
+      <p className="lbl">{T('fHowBad')}</p>
       {SEVERITY_OPTIONS().map(([v, l]) => (
         <Choice key={v} act="toggle-severity" value={v} label={l} multi
           selected={(d.injurySeverity || []).includes(v)} />
       ))}
 
       <div className="sp12" />
-      <p className="lbl">Are emergency services there?</p>
+      <p className="lbl">{T('fEmergency')}</p>
       <div className="grid2">
-        <Choice act="set-emergency" value="yes" label="Yes" selected={d.injuryEmergency === true} />
-        <Choice act="set-emergency" value="no" label="Not yet" selected={d.injuryEmergency === false} />
+        <Choice act="set-emergency" value="yes" label={T('fYes')} selected={d.injuryEmergency === true} />
+        <Choice act="set-emergency" value="no" label={T('fNotYet')} selected={d.injuryEmergency === false} />
       </div>
 
       {/* The Art. 9 refusal is a design note, not a greyed-out field. A driver
@@ -327,42 +347,42 @@ export function scrTier1() {
           {dn('Two-tier mandatory — the whole argument in one screen', TIER1_NOTE)}
 
           {fieldRow({
-            ic: I.truck, label: 'Vehicle', value: d.vehicle,
+            ic: I.truck, label: T('fVehicle'), value: d.vehicle,
             state: d.vehicleConfirmed ? 'confirmed' : 'pending',
-            act: 'confirm-vehicle', hint: 'tap to confirm',
+            act: 'confirm-vehicle', hint: T('fTapConfirm'),
             editKey: 'vehicle', corrected: d.corrected?.vehicle,
           })}
           {s.editing === 'vehicle' && (
-            <EditRow editKey="vehicle" label="Registration" value={d.vehicle} hint="B-RL 4471" />
+            <EditRow editKey="vehicle" label={T('fReg')} value={d.vehicle} hint="B-RL 4471" />
           )}
 
           {fieldRow({
-            ic: I.clock, label: 'Date & time',
+            ic: I.clock, label: T('fWhen'),
             value: whenLabel(d),
             state: d.timeConfirmed ? 'confirmed' : 'pending',
-            act: 'confirm-time', hint: 'tap to confirm',
+            act: 'confirm-time', hint: T('fTapConfirm'),
             editKey: 'time', corrected: d.corrected?.occurredAt,
           })}
           {s.editing === 'time' && (
             <EditRow
-              editKey="time" label="Time it happened" value={d.occurredAt} hint="14:32"
-              second={{ key: 'date', label: 'Date it happened', value: d.occurredOn, hint: '19 August 2026' }}
+              editKey="time" label={T('fTimeLbl')} value={d.occurredAt} hint="14:32"
+              second={{ key: 'date', label: T('fDateLbl'), value: dateLabel(d.occurredOn), hint: dateLabel('2026-08-19') }}
             />
           )}
 
           <div style={{ marginTop: '9px' }}>
             {fieldRow({
-              ic: I.pin, label: 'Location', value: d.location,
+              ic: I.pin, label: T('fLocation'), value: d.location,
               state: d.locationConfirmed ? 'confirmed' : 'pending',
-              act: 'confirm-location', hint: 'tap to confirm',
+              act: 'confirm-location', hint: T('fTapConfirm'),
               editKey: 'location', corrected: d.corrected?.location,
             })}
             {s.editing === 'location' && (
               <EditRow
                 editKey="location"
-                label="Where it happened"
+                label={T('fWhereLbl')}
                 value={d.location}
-                hint="Road, km marker, direction"
+                hint={T('fWhereHint')}
               />
             )}
             {!d.locationConfirmed && s.editing !== 'location' && (
@@ -378,10 +398,10 @@ export function scrTier1() {
 
           <div style={{ marginTop: '9px' }}>
             {fieldRow({
-              ic: I.crash, label: 'What happened',
+              ic: I.crash, label: T('fWhat'),
               value: typeSummary(d),
               state: d.typeConfirmed ? 'confirmed' : 'pending',
-              act: 'confirm-type', hint: 'tap to confirm',
+              act: 'confirm-type', hint: T('fTapConfirm'),
               // corrected by picking from the list rather than typing, but
               // entered through the same 'Not right?' control as the others
               editKey: 'type',
@@ -390,20 +410,20 @@ export function scrTier1() {
 
           {s.subScreen === 'type' && (
             <div className="type-picker">
-              <label className="lbl" htmlFor="type-main">What happened?</label>
+              <label className="lbl" htmlFor="type-main">{T('fWhat')}</label>
               <TypeSelect id="type-main" act="set-type" value={d.type} />
 
               {/* Picking "Other" without being able to say what it was leaves a
                   claim nobody can route. */}
               {d.type === 'other' && (
                 <div style={{ marginTop: '10px' }}>
-                  <label className="lbl" htmlFor="type-other">What was it?</label>
+                  <label className="lbl" htmlFor="type-other">{T('fWhatWasIt')}</label>
                   <input
                     id="type-other"
                     className="inp"
                     data-field="typeOther"
                     defaultValue={d.typeOther || ''}
-                    placeholder="A few words is enough"
+                    placeholder={T('fFewWords')}
                     autoComplete="off"
                   />
                 </div>
@@ -414,8 +434,8 @@ export function scrTier1() {
                   than becoming a second question later in the flow. */}
               <div className="also-block">
                 <p className="lbl">
-                  Anything else damaged?{' '}
-                  <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>Optional</span>
+                  {T('fAlsoDamaged')}{' '}
+                  <span style={{ fontWeight: 500, color: 'var(--ink-3)' }}>{T('fOptional')}</span>
                 </p>
 
                 {(d.alsoDamaged || []).map((v, i) => (
@@ -425,13 +445,13 @@ export function scrTier1() {
                       act="set-also"
                       index={i}
                       value={v}
-                      placeholder="Choose…"
+                      placeholder={T('fChoose')}
                     />
                     <button
                       className="also-remove"
                       data-act="remove-also"
                       data-v={String(i)}
-                      aria-label="Remove this one"
+                      aria-label={T('fRemoveOne')}
                     >
                       ×
                     </button>
@@ -440,7 +460,7 @@ export function scrTier1() {
 
                 <button className="also-add" data-act="add-also">
                   <span aria-hidden="true">+</span>
-                  {(d.alsoDamaged || []).length ? 'Add another' : 'Add damage'}
+                  {(d.alsoDamaged || []).length ? T('fAddAnother') : T('fAddDamage')}
                 </button>
               </div>
 
@@ -449,7 +469,7 @@ export function scrTier1() {
                   is a second gesture for one intention and it is above the
                   fold once the also-damaged list has a few rows in it. */}
               <button className="btn btn-primary btn-sm type-done" data-act="type-done">
-                Done
+                {T('fDone')}
               </button>
             </div>
           )}
@@ -460,11 +480,11 @@ export function scrTier1() {
 
           <div className="dn-anchor">
             <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-              5 · Is anyone hurt?
+              {T('q5')}
             </p>
             <div className="grid2">
-              <Choice act="set-injured" value="no" label="No one" selected={d.injured === false} />
-              <Choice act="set-injured" value="yes" label="Yes" selected={d.injured === true} />
+              <Choice act="set-injured" value="no" label={T('fNoOne')} selected={d.injured === false} />
+              <Choice act="set-injured" value="yes" label={T('fYes')} selected={d.injured === true} />
             </div>
           </div>
 
@@ -485,7 +505,7 @@ export function scrTier1() {
               <div className="sp20" />
               <div className="dn-anchor">
                 <p className="lbl" style={{ fontSize: '15px', color: 'var(--ink)' }}>
-                  6 · Can the vehicle still be driven?
+                  {T('q6')}
                 </p>
                 {/* Plain yes/no. The sub-label promised "we mark it off the road",
                     which is fleet-side language for a consequence the driver has no
@@ -493,8 +513,8 @@ export function scrTier1() {
                     system's. The answer is what matters; what it triggers belongs
                     on the fleet screen. */}
                 <div className="grid2">
-                  <Choice act="set-drivable" value="yes" label="Yes" selected={d.drivable === true} />
-                  <Choice act="set-drivable" value="no" label="No" selected={d.drivable === false} />
+                  <Choice act="set-drivable" value="yes" label={T('fYes')} selected={d.drivable === true} />
+                  <Choice act="set-drivable" value="no" label={T('fNo')} selected={d.drivable === false} />
                 </div>
               </div>
 
