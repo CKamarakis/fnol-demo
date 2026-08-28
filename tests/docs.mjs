@@ -32,7 +32,12 @@ const check = (ok, msg, detail) => {
 };
 
 // --- every incident type the driver can pick is documented ---
-const typeBlock = s1.match(/const TYPE_OPTIONS = \[([\s\S]*?)\];/)?.[1] || '';
+/* Tolerates both an array literal and a function returning one. TYPE_OPTIONS
+   became `() => [...]` when the labels started going through T(): a
+   module-level array would resolve every label once at import and freeze
+   whichever language was active. The KEYS are what this test reads, and those
+   are unchanged. */
+const typeBlock = s1.match(/const TYPE_OPTIONS = (?:\(\)\s*=>\s*)?\[([\s\S]*?)\];/)?.[1] || '';
 const types = [...typeBlock.matchAll(/\['([a-z_]+)',/g)].map(m => m[1]);
 
 check(types.length > 0, 'incident types can be read from the code');

@@ -61,7 +61,7 @@ Things that are neither faked nor finished.
 - **No accessibility audit.** Contrast is verified programmatically and touch targets meet the 56px minimum, but there has been no screen-reader testing.
 - **No usability testing.** Every UX claim in this repo is reasoning, not evidence. The perishability ordering in particular is a hypothesis that wants testing against real capture rates.
 - **German-centric.** Green Card handling, cross-border jurisdiction and multi-country policy schedules are acknowledged in the docs and absent from the code.
-- **Translations cover the load-bearing strings only.** DE and PL are real where they appear; the rest falls back to English.
+- **Translations are partial, and the gap is uneven.** The cold open, the emergency screen, the fork, Roady's questions, the driver's own copy, and every incident-type and injury-option label are translated in all five languages. The optional gap-fill screens (witness, cargo, police, photos, the other vehicle, the accident statement), the correction editors, and the Back-bar screen names are still hardcoded English — so a Polish driver gets a Polish flow through the six and their copy, then hits English on the perishable screens. Real translation throughout would need a native speaker per language; these are a developer's, checked for register and the *du / tu / je* second person, not reviewed by anyone who speaks them natively.
 
 ---
 

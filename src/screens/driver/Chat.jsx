@@ -111,14 +111,14 @@ export function chatTurns() {
      question with a single answer in front of them. */
   if (d.injured === true) {
     t.push({ id: 'parties', kind: 'multi', label: T('qParties'),
-      options: WHO_HURT_OPTIONS, act: 'toggle-injured-party', sel: d.injuredParties || [],
+      options: WHO_HURT_OPTIONS(), act: 'toggle-injured-party', sel: d.injuredParties || [],
       answered: (d.injuredParties || []).length > 0,
-      said: labelsFor(WHO_HURT_OPTIONS, d.injuredParties || []) });
+      said: labelsFor(WHO_HURT_OPTIONS(), d.injuredParties || []) });
 
     t.push({ id: 'severity', kind: 'multi', label: T('qSeverity'),
-      options: SEVERITY_OPTIONS, act: 'toggle-severity', sel: d.injurySeverity || [],
+      options: SEVERITY_OPTIONS(), act: 'toggle-severity', sel: d.injurySeverity || [],
       answered: (d.injurySeverity || []).length > 0,
-      said: labelsFor(SEVERITY_OPTIONS, d.injurySeverity || []) });
+      said: labelsFor(SEVERITY_OPTIONS(), d.injurySeverity || []) });
 
     t.push({ id: 'emergency', kind: 'yesno', label: T('qEmergency'),
       act: 'set-emergency', value: d.injuryEmergency, yes: 'Yes', no: 'Not yet',

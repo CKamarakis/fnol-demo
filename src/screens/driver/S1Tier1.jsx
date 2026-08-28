@@ -57,12 +57,6 @@ const MONEY_FIELD_NOTE =
   '&mdash; the <b>credit hire clock</b>. Replacement-vehicle exposure on a tractor unit runs into ' +
   'hundreds of euros a day, and the meter is running whether or not anyone has been told.';
 
-const TYPE_LABELS = {
-  collision: 'Collision with another vehicle',
-  glass: 'Glass / windscreen',
-  theft: 'Vehicle stolen',
-};
-
 /**
  * Everything that can be reported, alphabetical.
  *
@@ -70,22 +64,32 @@ const TYPE_LABELS = {
  * scanning a dropdown under pressure should not have to learn where a category
  * sits — alphabetical is the only order that needs no explanation. "Other"
  * stays pinned to the end, because it is a fallback rather than a choice.
+ *
+ * A FUNCTION, not a constant. These labels reach the driver, so they go
+ * through T() — and a module-level array would resolve every one of them once
+ * at import, freezing whichever language was active then. The keys are what is
+ * stored and exported; only the labels are translated, so a report filed in
+ * Polish still reads `type: "collision"` to the handler.
+ *
+ * Alphabetical in ENGLISH. Sorting per language would move a category between
+ * languages, and the ordering argument is that a driver learns one position.
+ * They do not switch language mid-report.
  */
-export const TYPE_OPTIONS = [
-  ['animal', 'Animal'],
-  ['cargo', 'Cargo or load damage'],
-  ['collision', 'Collision with another vehicle'],
-  ['fire', 'Fire'],
-  ['glass', 'Glass or windscreen'],
-  ['single', 'Single vehicle, no one else involved'],
-  ['spill', 'Spill or leak'],
-  ['theft', 'Theft of the vehicle'],
-  ['vandalism', 'Vandalism'],
-  ['weather', 'Weather or flood'],
-  ['other', 'Other'],
+export const TYPE_OPTIONS = () => [
+  ['animal', T('tAnimal')],
+  ['cargo', T('tCargo')],
+  ['collision', T('tCollision')],
+  ['fire', T('tFire')],
+  ['glass', T('tGlass')],
+  ['single', T('tSingle')],
+  ['spill', T('tSpill')],
+  ['theft', T('tTheft')],
+  ['vandalism', T('tVandalism')],
+  ['weather', T('tWeather')],
+  ['other', T('tOther')],
 ];
 
-const typeLabel = v => (TYPE_OPTIONS.find(o => o[0] === v) || [, v])[1];
+const typeLabel = v => (TYPE_OPTIONS().find(o => o[0] === v) || [, v])[1];
 
 /**
  * When it happened, as one string.
@@ -103,10 +107,10 @@ export function whenLabel(d) {
 /** The row shows the whole answer: what happened, plus anything else damaged. */
 export function typeSummary(d) {
   const base = d.type === 'other'
-    ? (d.typeOther?.trim() || 'Other')
-    : (TYPE_LABELS[d.type] || typeLabel(d.type));
+    ? (d.typeOther?.trim() || T('tOther'))
+    : typeLabel(d.type);
   const also = (d.alsoDamaged || []).filter(Boolean).map(v => typeLabel(v).toLowerCase());
-  return also.length ? `${base} · also ${also.join(', ')}` : base;
+  return also.length ? `${base} · ${T('tAlso')} ${also.join(', ')}` : base;
 }
 
 /**
@@ -127,27 +131,29 @@ export function TypeSelect({ id, act, value, index, placeholder }) {
         defaultValue={value || ''}
       >
         {placeholder && <option value="">{placeholder}</option>}
-        {TYPE_OPTIONS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+        {TYPE_OPTIONS().map(([v, l]) => <option key={v} value={v}>{l}</option>)}
       </select>
       <span className="lang-chev" dangerouslySetInnerHTML={{ __html: I.chevD }} />
     </div>
   );
 }
 
-export const SEVERITY_OPTIONS = [
-  ['walking', 'Walking and talking'],
-  ['needs_help', 'Needs help but conscious'],
-  ['serious', 'Serious'],
+/* Functions for the same reason as TYPE_OPTIONS: the labels are read by a
+   driver and must follow the language, the keys are what is stored. */
+export const SEVERITY_OPTIONS = () => [
+  ['walking', T('oWalking')],
+  ['needs_help', T('oNeedsHelp')],
+  ['serious', T('oSerious')],
 ];
 
 /* ACORD 2's INJURED table columns, in driver language. PED / INS VEH / OTH VEH
    on the form; "someone on foot" / "me" / "someone in the other vehicle" here.
    Still no names and no diagnoses — which party, not who or what. */
-export const WHO_HURT_OPTIONS = [
-  ['driver', 'Me'],
-  ['our_vehicle', 'Someone else in my vehicle'],
-  ['other_vehicle', 'Someone in the other vehicle'],
-  ['pedestrian', 'Someone on foot or on a bike'],
+export const WHO_HURT_OPTIONS = () => [
+  ['driver', T('oDriver')],
+  ['our_vehicle', T('oOurVeh')],
+  ['other_vehicle', T('oOtherVeh')],
+  ['pedestrian', T('oPed')],
 ];
 
 /**
@@ -254,7 +260,7 @@ function InjuryDetail({ d }) {
           is what makes the severity question answerable. */}
       <div className="sp12" />
       <p className="lbl">Who is hurt? Tap all that apply.</p>
-      {WHO_HURT_OPTIONS.map(([v, l]) => (
+      {WHO_HURT_OPTIONS().map(([v, l]) => (
         <Choice key={v} act="toggle-injured-party" value={v} label={l} multi
           selected={(d.injuredParties || []).includes(v)} />
       ))}
@@ -268,7 +274,7 @@ function InjuryDetail({ d }) {
           the handler whether to send one ambulance or three. */}
       <div className="sp12" />
       <p className="lbl">How bad, roughly? Tap all that apply.</p>
-      {SEVERITY_OPTIONS.map(([v, l]) => (
+      {SEVERITY_OPTIONS().map(([v, l]) => (
         <Choice key={v} act="toggle-severity" value={v} label={l} multi
           selected={(d.injurySeverity || []).includes(v)} />
       ))}

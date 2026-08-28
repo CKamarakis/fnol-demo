@@ -1329,6 +1329,50 @@ for (const [persona, tabs] of [
   app.close();
 }
 
+/* ==================================================================
+ * RULE · The driver's own copy is translated, in every language.
+ *
+ * It is the one screen the driver KEEPS, so it is the last place that can
+ * afford to fall back to English. Its labels were hardcoded, which meant a
+ * driver who read the whole flow in Polish reached their own record and found
+ * it in English.
+ *
+ * Also guards the shared option arrays: TYPE_OPTIONS, WHO_HURT_OPTIONS and
+ * SEVERITY_OPTIONS are functions rather than constants precisely so their
+ * labels follow the language. A module-level array would resolve every label
+ * once at import and freeze whichever language was active then.
+ * ================================================================== */
+{
+  // Words that must not survive into a non-English archive. Chosen to be
+  // absent from the other four languages: "Police" is skipped because it is
+  // also the French word, and design-note prose is exempt by policy, so this
+  // reads only the rendered rows.
+  const ENGLISH_ONLY = ['Your copy', 'Skipped', 'Where it happened', 'Signed by',
+    'Not taken', 'Trailer', 'Walking and talking', 'Collision with another vehicle'];
+
+  const draft = {
+    injured: true, injuredParties: ['driver'], injurySeverity: ['walking'],
+    injuryEmergency: true, cargoLaden: true, trailer: 'B-RL 8829', hazardous: true,
+    witnessPresent: true, policeAttended: true, otherPlate: 'M-XY 1234',
+    easA: [1], easB: [2], sigA: 'x', sigB: 'x', sketch: 'x',
+  };
+
+  for (const lang of ['de', 'fr', 'nl', 'pl']) {
+    const app = await boot({
+      persona: 'driver', screen: 'archive', scenario: 'collision',
+      navStack: ['done'], lang, reference: 'INS-DE-2026-1', draft,
+    });
+    // Rows only. The design notes quote English deliberately and are exempt.
+    const rows = [...app.doc.querySelectorAll('#root .arch-row, #root .h1, #root .sub')]
+      .map(n => n.textContent).join(' | ');
+    const leaks = ENGLISH_ONLY.filter(w => rows.includes(w));
+    check(leaks.length === 0,
+      `archive in ${lang}: no English falls through to the driver's own copy`,
+      leaks.join(', '));
+    app.close();
+  }
+}
+
 /* A theft is not asked what a theft victim cannot answer, on either path. */
 {
   const app = await boot({ persona: 'driver', screen: 's1chat', scenario: 'theft',

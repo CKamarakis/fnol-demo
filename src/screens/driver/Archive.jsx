@@ -1,5 +1,5 @@
 import { I } from '../../core/utils.js';
-import { PHOTO_SLOTS, SCENARIOS } from '../../data/domain.js';
+import { PHOTO_SLOTS, SCENARIOS, T } from '../../data/domain.js';
 import { Store } from '../../core/store.js';
 import { dn } from '../../components/DriverShell.jsx';
 import { svgSilhouette } from '../../components/svg.js';
@@ -58,7 +58,12 @@ function Section({ title, children }) {
    witness screen and sees nothing about witnesses cannot tell whether the app
    lost it or they never answered — and it is the skipped items they will be
    messaged about tomorrow. */
-const SKIPPED = <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>Skipped</span>;
+/* A function, not a constant. A module-level element would call T() once at
+   import and freeze whichever language happened to be active then, so switching
+   language would leave this one word behind. */
+const skipped = () => (
+  <span style={{ color: 'var(--ink-3)', fontWeight: 500 }}>{T('aSkipped')}</span>
+);
 
 export function scrArchive() {
   const s = Store.s;
@@ -73,12 +78,12 @@ export function scrArchive() {
   // The same summary the confirm row showed, so the copy matches what the
   // driver saw — including anything else they reported as damaged.
   const typeLabel = typeSummary(d);
-  const injuredLabel = d.injured === null ? 'Not answered' : d.injured ? 'Yes' : 'No one';
+  const injuredLabel = d.injured === null ? T('aNotAnswered') : d.injured ? T('aYes') : T('aNoOne');
   // The driver's own copy must not tell them they answered something they were
   // never asked. For theft this row is the system's inference, and says so.
   const drivableLabel = d.drivableSource === 'derived'
-    ? 'No, the vehicle is gone'
-    : d.drivable === null ? 'Not answered' : d.drivable ? 'Yes' : 'No';
+    ? T('aGone')
+    : d.drivable === null ? T('aNotAnswered') : d.drivable ? T('aYes') : T('aNo');
 
   /* Everything captured after the reference. Each group renders only when the
      driver reached that screen, so the copy shows what happened rather than a
@@ -91,56 +96,56 @@ export function scrArchive() {
 
   const injuryRows = [];
   if (d.injured === true) {
-    const parties = labelsFor(WHO_HURT_OPTIONS, d.injuredParties);
-    const bands = labelsFor(SEVERITY_OPTIONS, d.injurySeverity);
-    if (parties) injuryRows.push(<Row key="who" label="Who is hurt" value={parties} />);
-    if (bands) injuryRows.push(<Row key="band" label="How bad" value={bands} />);
+    const parties = labelsFor(WHO_HURT_OPTIONS(), d.injuredParties);
+    const bands = labelsFor(SEVERITY_OPTIONS(), d.injurySeverity);
+    if (parties) injuryRows.push(<Row key="who" label={T('aWho')} value={parties} />);
+    if (bands) injuryRows.push(<Row key="band" label={T('aBand')} value={bands} />);
     if (d.injuryEmergency !== null) {
       injuryRows.push(
-        <Row key="emg" label="Emergency services"
-          value={d.injuryEmergency ? 'There' : 'Not yet'} />,
+        <Row key="emg" label={T('aEmergency')}
+          value={d.injuryEmergency ? T('aThere') : T('aNotYet')} />,
       );
     }
   }
 
   const cargoRows = [];
   if (wasSkipped('cargo')) {
-    cargoRows.push(<Row key="s" label="Cargo" value={SKIPPED} />);
+    cargoRows.push(<Row key="s" label={T('aSecCargo')} value={skipped()} />);
   } else if (d.cargoLaden !== null) {
-    cargoRows.push(<Row key="laden" label="Loaded" value={d.cargoLaden ? 'Loaded' : 'Empty'} />);
-    if (d.cargoDesc) cargoRows.push(<Row key="desc" label="What is on board" value={d.cargoDesc} />);
-    if (d.trailer) cargoRows.push(<Row key="tr" label="Trailer" value={d.trailer} />);
+    cargoRows.push(<Row key="laden" label={T('aLoaded')} value={d.cargoLaden ? T('aLoaded') : T('aEmpty')} />);
+    if (d.cargoDesc) cargoRows.push(<Row key="desc" label={T('aOnBoard')} value={d.cargoDesc} />);
+    if (d.trailer) cargoRows.push(<Row key="tr" label={T('aTrailer')} value={d.trailer} />);
     // ADR is a safety fact, so it is stated either way rather than only when
     // the answer is yes. A blank here reads as "nobody asked".
     if (d.hazardous !== null) {
-      cargoRows.push(<Row key="adr" label="Hazardous (ADR)" value={d.hazardous ? 'Yes' : 'No'} />);
+      cargoRows.push(<Row key="adr" label={T('aAdr')} value={d.hazardous ? T('aYes') : T('aNo')} />);
     }
   }
 
   const witnessRows = [];
   if (wasSkipped('witness')) {
-    witnessRows.push(<Row key="s" label="Witness" value={SKIPPED} />);
+    witnessRows.push(<Row key="s" label={T('aSecWitness')} value={skipped()} />);
   } else if (d.witnessPresent !== null) {
     witnessRows.push(
-      <Row key="p" label="Anyone saw it" value={d.witnessPresent ? 'Yes' : 'No one'} />,
+      <Row key="p" label={T('aSawIt')} value={d.witnessPresent ? T('aYes') : T('aNoOne')} />,
     );
-    if (d.witnessName) witnessRows.push(<Row key="n" label="Name" value={d.witnessName} />);
-    if (d.witnessPhone) witnessRows.push(<Row key="ph" label="Phone" value={d.witnessPhone} />);
+    if (d.witnessName) witnessRows.push(<Row key="n" label={T('aName')} value={d.witnessName} />);
+    if (d.witnessPhone) witnessRows.push(<Row key="ph" label={T('aPhone')} value={d.witnessPhone} />);
   }
 
   const policeRows = [];
   if (wasSkipped('police')) {
-    policeRows.push(<Row key="s" label="Police" value={SKIPPED} />);
+    policeRows.push(<Row key="s" label={T('aSecPolice')} value={skipped()} />);
   } else if (d.policeAttended !== null || d.policeRef) {
     if (d.policeAttended !== null) {
       policeRows.push(
-        <Row key="a" label={sc.type === 'theft' ? 'Reported stolen' : 'Police attended'}
-          value={d.policeAttended ? 'Yes' : 'No'} />,
+        <Row key="a" label={sc.type === 'theft' ? T('aStolen') : T('aAttended')}
+          value={d.policeAttended ? T('aYes') : T('aNo')} />,
       );
     }
     if (d.policeRef) {
       policeRows.push(
-        <Row key="r" label={sc.type === 'theft' ? 'Crime reference' : 'Reference'}
+        <Row key="r" label={sc.type === 'theft' ? T('aCrimeRef') : T('aPoliceRef')}
           value={d.policeRef} />,
       );
     }
@@ -153,47 +158,45 @@ export function scrArchive() {
   const easRows = [];
   if (sc.eas) {
     if (wasSkipped('eas')) {
-      easRows.push(<Row key="s" label="Accident statement" value={SKIPPED} />);
+      easRows.push(<Row key="s" label={T('aSecEas')} value={skipped()} />);
     } else if (d.easA.length || d.easB.length || d.sketch || d.sigA || d.sigB) {
       easRows.push(
-        <Row key="a" label="Boxes you ticked" value={d.easA.length || 'None'} />,
-        <Row key="b" label="Boxes they ticked" value={d.easB.length || 'None'} />,
+        <Row key="a" label={T('aBoxesYou')} value={d.easA.length || T('aNone')} />,
+        <Row key="b" label={T('aBoxesThem')} value={d.easB.length || T('aNone')} />,
       );
-      if (d.sketch) easRows.push(<Row key="sk" label="Sketch" value="Drawn" />);
+      if (d.sketch) easRows.push(<Row key="sk" label={T('aSketch')} value={T('aDrawn')} />);
       // Signed by one party is a real and common state, and it is exactly the
       // thing a driver would want to know they are holding.
-      const signed = [d.sigA && 'you', d.sigB && 'the other driver'].filter(Boolean);
+      const signed = [d.sigA && T('aYouSig'), d.sigB && T('aOtherSig')].filter(Boolean);
       easRows.push(
-        <Row key="sg" label="Signed by"
-          value={signed.length ? signed.join(' and ') : SKIPPED} />,
+        <Row key="sg" label={T('aSignedBy')}
+          value={signed.length ? signed.join(` ${T('aAnd')} `) : skipped()} />,
       );
     }
   }
 
   const otherRows = [];
   if (wasSkipped('otherPlate')) {
-    otherRows.push(<Row key="s" label="The other vehicle" value={SKIPPED} />);
+    otherRows.push(<Row key="s" label={T('aSecOther')} value={skipped()} />);
   } else {
-    if (d.otherPlate) otherRows.push(<Row key="p" label="Plate" value={d.otherPlate} />);
-    if (d.otherMake) otherRows.push(<Row key="m" label="Make and colour" value={d.otherMake} />);
-    if (d.otherDriver) otherRows.push(<Row key="d" label="Driver" value={d.otherDriver} />);
-    if (d.otherPhone) otherRows.push(<Row key="ph" label="Phone" value={d.otherPhone} />);
+    if (d.otherPlate) otherRows.push(<Row key="p" label={T('aPlate')} value={d.otherPlate} />);
+    if (d.otherMake) otherRows.push(<Row key="m" label={T('aMake')} value={d.otherMake} />);
+    if (d.otherDriver) otherRows.push(<Row key="d" label={T('aDriverName')} value={d.otherDriver} />);
+    if (d.otherPhone) otherRows.push(<Row key="ph" label={T('aPhone')} value={d.otherPhone} />);
   }
   if (wasSkipped('otherIns')) {
-    otherRows.push(<Row key="si" label="Their insurer" value={SKIPPED} />);
+    otherRows.push(<Row key="si" label={T('aInsurer')} value={skipped()} />);
   } else {
-    if (d.otherInsurer) otherRows.push(<Row key="i" label="Their insurer" value={d.otherInsurer} />);
-    if (d.otherPolicy) otherRows.push(<Row key="pol" label="Policy number" value={d.otherPolicy} />);
+    if (d.otherInsurer) otherRows.push(<Row key="i" label={T('aInsurer')} value={d.otherInsurer} />);
+    if (d.otherPolicy) otherRows.push(<Row key="pol" label={T('aPolicy')} value={d.otherPolicy} />);
   }
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <div className="scroll">
         <div className="pad">
-          <h1 className="h1">Your copy</h1>
-          <p className="sub">
-            What you sent, and what you didn&rsquo;t. This stays on your phone.
-          </p>
+          <h1 className="h1">{T('aTitle')}</h1>
+          <p className="sub">{T('aSub')}</p>
 
           <div className="sp16" />
 
@@ -202,7 +205,7 @@ export function scrArchive() {
               className="tiny"
               style={{ textTransform: 'uppercase', letterSpacing: '.07em', fontSize: '10.5px' }}
             >
-              Reference
+              {T('aRef')}
             </div>
             <div className="mono" style={{ fontSize: '18px', fontWeight: 700, marginTop: '3px' }}>
               {s.reference || '—'}
@@ -212,49 +215,49 @@ export function scrArchive() {
           <div className="sp16" />
 
           {/* The six that blocked submission, in the order they were asked. */}
-          <Section title="The report">
-            <Row label="Vehicle" value={d.vehicle || '—'} />
-            <Row label="When" value={whenLabel(d) || "—"} />
-            <Row label="Where it happened" value={d.location || '—'} />
-            <Row label="What happened" value={typeLabel} />
-            <Row label="Anyone hurt" value={injuredLabel} />
-            <Row label="Still drivable" value={drivableLabel} />
-            {d.whereSeen && <Row label="Where to inspect it" value={d.whereSeen} />}
+          <Section title={T('aSecReport')}>
+            <Row label={T('aVehicle')} value={d.vehicle || '—'} />
+            <Row label={T('aWhen')} value={whenLabel(d) || "—"} />
+            <Row label={T('aWhere')} value={d.location || '—'} />
+            <Row label={T('aWhat')} value={typeLabel} />
+            <Row label={T('aHurt')} value={injuredLabel} />
+            <Row label={T('aDrivable')} value={drivableLabel} />
+            {d.whereSeen && <Row label={T('aInspect')} value={d.whereSeen} />}
           </Section>
 
           {/* Everything after the reference. A copy that stops at the six is
               not a copy of what was sent — the driver answered these too, and
               the ones they skipped are the ones they will be asked about. */}
           {injuryRows.length > 0 && (
-            <Section title="Injuries">{injuryRows}</Section>
+            <Section title={T('aSecInjuries')}>{injuryRows}</Section>
           )}
 
           {cargoRows.length > 0 && (
-            <Section title="Cargo">{cargoRows}</Section>
+            <Section title={T('aSecCargo')}>{cargoRows}</Section>
           )}
 
           {witnessRows.length > 0 && (
-            <Section title="Witness">{witnessRows}</Section>
+            <Section title={T('aSecWitness')}>{witnessRows}</Section>
           )}
 
           {policeRows.length > 0 && (
-            <Section title="Police">{policeRows}</Section>
+            <Section title={T('aSecPolice')}>{policeRows}</Section>
           )}
 
           {otherRows.length > 0 && (
-            <Section title="The other vehicle">{otherRows}</Section>
+            <Section title={T('aSecOther')}>{otherRows}</Section>
           )}
 
           {easRows.length > 0 && (
-            <Section title="Accident statement">{easRows}</Section>
+            <Section title={T('aSecEas')}>{easRows}</Section>
           )}
 
           {slots.length > 0 && (
             <>
               <div className="sp16" />
               <div className="tiny" style={{ fontWeight: 700, color: 'var(--ink-2)', marginBottom: '7px' }}>
-                Photographs · {captured.length} of {slots.length} covered
-                {frames > captured.length ? `, ${frames} pictures` : ''}
+                {T('aPhotos')} · {captured.length} {T('aCovered')} {slots.length} {T('aCoveredSuffix')}
+                {frames > captured.length ? `, ${frames} ${T('aPictures')}` : ''}
               </div>
 
               {captured.length > 0 ? (
@@ -275,7 +278,7 @@ export function scrArchive() {
                   })}
                 </div>
               ) : (
-                <p className="tiny">No photographs were taken. That is recorded as a known gap.</p>
+                <p className="tiny">{T('aNoPhotos')}</p>
               )}
 
               {/* Named, not hidden. A skipped slot the driver can see is a
@@ -285,7 +288,7 @@ export function scrArchive() {
                   <div className="sp12" />
                   <div className="card-quiet">
                     <div className="tiny" style={{ fontWeight: 700, color: 'var(--ink-2)' }}>
-                      Not taken
+                      {T('aNotTaken')}
                     </div>
                     <div className="chipset" style={{ marginTop: '8px' }}>
                       {missing.map(k => (
@@ -312,8 +315,8 @@ export function scrArchive() {
                 dangerouslySetInnerHTML={{ __html: I.info }}
               />
               <p className="tiny" style={{ lineHeight: 1.5 }}>
-                The pictures themselves stay on your phone for now. This list is what we hold
-                against <span className="mono">{s.reference || 'the reference'}</span>.
+                {T('aPixels')}{' '}
+                <span className="mono">{s.reference || T('aTheRef')}</span>.
               </p>
             </div>
           </div>
@@ -325,7 +328,7 @@ export function scrArchive() {
       </div>
 
       <div className="dock">
-        <button className="btn btn-quiet" data-act="nav-back">Back</button>
+        <button className="btn btn-quiet" data-act="nav-back">{T('aBack')}</button>
       </div>
     </div>
   );
